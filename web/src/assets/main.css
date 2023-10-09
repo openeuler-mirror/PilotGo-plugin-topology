@@ -1,0 +1,19 @@
+@import './base.css';
+
+html {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+body {
+  height: 100%;
+  width: 100% !important;
+  margin: 0;
+}
+
+#app {
+  height: 100%;
+  width: 100%;
+  font-weight: normal;
+}
