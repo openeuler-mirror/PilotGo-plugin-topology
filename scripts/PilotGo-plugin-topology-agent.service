@@ -1,0 +1,13 @@
+[Unit]
+Description=PilotGo plugin topology agent
+Requires=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=3s
+ExecStart=/usr/bin/PilotGo-plugin-topology-agent 
+
+[Install]
+WantedBy=multi-user.target
