@@ -4,3 +4,4 @@ server/vendor/
 build
 web/node_modules
 web/dist/
+src-openeuler/

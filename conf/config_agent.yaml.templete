@@ -6,6 +6,6 @@ PilotGo:
 log:
   level: debug
   driver: file # 可选stdout和file。stdout：输出到终端控制台；file：输出到path下的指定文件。
-  path: /var/log/PilotGo/plugin/PilotGo-plugin-topology-agent.log
+  path: /var/log/PilotGo/PilotGo-plugin-topology-agent.log
   max_file: 1
   max_size: 10485760
