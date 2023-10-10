@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 	"sync"
@@ -24,6 +25,7 @@ type Topoclient struct {
 	AgentMap  sync.Map
 	ErrGroup  *sync.WaitGroup
 	ErrCh     chan error
+	Out       io.Writer
 }
 
 func (t *Topoclient) InitMachineList() {
@@ -161,6 +163,17 @@ func (t *Topoclient) InitJanusGraph() {
 }
 
 func (t *Topoclient) InitErrorControl(errch <-chan error, errgroup *sync.WaitGroup) {
+	switch conf.Global_config.Logopts.Driver {
+	case "stdout":
+		t.Out = os.Stdout
+	case "file":
+		logfile, err := os.OpenFile(conf.Global_config.Logopts.Path, os.O_WRONLY|os.O_CREATE, 0666)
+		if err != nil {
+			panic(err)
+		}
+		t.Out = logfile
+	}
+
 	go func(ch <-chan error, group *sync.WaitGroup) {
 		for {
 			err, ok := <-errch
@@ -172,10 +185,10 @@ func (t *Topoclient) InitErrorControl(errch <-chan error, errgroup *sync.WaitGro
 				errarr := strings.Split(err.Error(), "**")
 				switch errarr[1] {
 				case "warn":
-					fmt.Printf("%+v\n", err)
+					fmt.Fprintf(t.Out, "%+v\n", err)
 					// errors.EORE(err)
 				case "fatal":
-					fmt.Printf("%+v\n", err)
+					fmt.Fprintf(t.Out, "%+v\n", err)
 					// errors.EORE(err)
 					errgroup.Done()
 				default:
