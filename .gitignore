@@ -1,6 +1,5 @@
-pkg/
-agent/vendor/
-server/vendor/
+!agent/vendor/
+!server/vendor/
 build
 web/node_modules
 web/dist/
