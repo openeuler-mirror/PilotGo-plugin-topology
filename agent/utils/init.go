@@ -1,5 +1,5 @@
 package utils
 
 const (
-	Agentuuid_filepath = "/etc/PilotGo/agent/.pilotgo-agent.data"
+	Agentuuid_filepath = "/opt/PilotGo/agent/.pilotgo-agent.data"
 )

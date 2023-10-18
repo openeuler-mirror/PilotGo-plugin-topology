@@ -201,7 +201,7 @@ func (t *Topoclient) InitErrorControl(errch <-chan error, errgroup *sync.WaitGro
 }
 
 func (t *Topoclient) InitConfig() {
-	flag.StringVar(&conf.Config_dir, "conf", "/etc/PilotGo/plugin/topology/server", "topo-server configuration directory")
+	flag.StringVar(&conf.Config_dir, "conf", "/opt/PilotGo/plugin/topology/server", "topo-server configuration directory")
 	flag.Parse()
 
 	bytes, err := os.ReadFile(conf.Config_file())
