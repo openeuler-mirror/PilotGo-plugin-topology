@@ -43,21 +43,21 @@ GO111MODULE=on go build -mod=vendor -o PilotGo-plugin-topology-agent main.go
 
 %install
 # server
-install -D -m 0755 server/PilotGo-plugin-topology-server %{buildroot}%{_bindir}/PilotGo-plugin-topology-server
+install -D -m 0755 server/PilotGo-plugin-topology-server %{buildroot}/opt/PilotGo/plugin/topology/server/PilotGo-plugin-topology-server
 install -D -m 0644 conf/config_server.yaml.templete %{buildroot}/opt/PilotGo/plugin/topology/server/config_server.yaml
 install -D -m 0644 scripts/PilotGo-plugin-topology-server.service %{buildroot}/usr/lib/systemd/system/PilotGo-plugin-topology-server.service
 # agent
-install -D -m 0755 agent/PilotGo-plugin-topology-agent %{buildroot}%{_bindir}/PilotGo-plugin-topology-agent
+install -D -m 0755 agent/PilotGo-plugin-topology-agent %{buildroot}/opt/PilotGo/plugin/topology/agent/PilotGo-plugin-topology-agent
 install -D -m 0644 conf/config_agent.yaml.templete %{buildroot}/opt/PilotGo/plugin/topology/agent/config_agent.yaml
 install -D -m 0644 scripts/PilotGo-plugin-topology-agent.service %{buildroot}/usr/lib/systemd/system/PilotGo-plugin-topology-agent.service
 
 %files          server
-%{_bindir}/PilotGo-plugin-topology-server
+/opt/PilotGo/plugin/topology/server/PilotGo-plugin-topology-server
 /opt/PilotGo/plugin/topology/server/config_server.yaml
 /usr/lib/systemd/system/PilotGo-plugin-topology-server.service
 
 %files          agent
-%{_bindir}/PilotGo-plugin-topology-agent
+/opt/PilotGo/plugin/topology/agent/PilotGo-plugin-topology-agent
 /opt/PilotGo/plugin/topology/agent/config_agent.yaml
 /usr/lib/systemd/system/PilotGo-plugin-topology-agent.service
 
