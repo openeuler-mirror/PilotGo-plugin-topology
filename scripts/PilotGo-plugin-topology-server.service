@@ -7,7 +7,7 @@ After=network-online.target
 Type=simple
 Restart=always
 RestartSec=3s
-ExecStart=/usr/bin/PilotGo-plugin-topology-server
+ExecStart=/opt/PilotGo/plugin/topology/server/PilotGo-plugin-topology-server
 
 [Install]
 WantedBy=multi-user.target
