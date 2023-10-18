@@ -1,6 +1,21 @@
 !agent/vendor/
 !server/vendor/
+
+src-openeuler/
+
+# configuration files
+config_server.yaml
+config_agent.yaml
+
+# binary files
 build
+toserver
+toagent
+
+# static files
+server/handler/assets/
+server/handler/index.html
 web/node_modules
 web/dist/
-src-openeuler/
+
+go.work

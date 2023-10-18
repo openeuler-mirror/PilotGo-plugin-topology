@@ -43,7 +43,7 @@ func config_file() string {
 var global_config ServerConfig
 
 func init() {
-	flag.StringVar(&Config_dir, "conf", "/etc/PilotGo/plugin/topology/agent", "topo-agent configuration directory")
+	flag.StringVar(&Config_dir, "conf", "/opt/PilotGo/plugin/topology/agent", "topo-agent configuration directory")
 	flag.Parse()
 
 	err := readConfig(config_file(), &global_config)
