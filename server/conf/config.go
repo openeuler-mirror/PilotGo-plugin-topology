@@ -9,6 +9,7 @@ import (
 type TopoConf struct {
 	Server_addr string `yaml:"server_addr"`
 	Agent_port  string `yaml:"agent_port"`
+	Database    string `yaml:"database"`
 	Period      int    `yaml:"period"`
 }
 
@@ -21,11 +22,19 @@ type ArangodbConf struct {
 	Database string `yaml:"database"`
 }
 
+type Neo4jConf struct {
+	Addr     string `yaml:"addr"`
+	Username string `yaml:"username"`
+	Password string `yaml:"password"`
+	DB       string `yaml:"DB"`
+}
+
 type ServerConfig struct {
 	Topo     *TopoConf       `yaml:"topo"`
 	PilotGo  *PilotGoConf    `yaml:"PilotGo"`
 	Logopts  *logger.LogOpts `yaml:"log"`
 	Arangodb *ArangodbConf   `yaml:"arangodb"`
+	Neo4j    *Neo4jConf      `yaml:"neo4j"`
 }
 
 const config_type = "config_server.yaml"

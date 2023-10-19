@@ -18,4 +18,4 @@ server/handler/index.html
 web/node_modules
 web/dist/
 
-go.work
+go.work*
