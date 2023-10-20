@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/agentmanager"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/dao"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/handler"
 )
 
@@ -31,20 +32,15 @@ func main() {
 	agentmanager.Topo.InitLogger()
 
 	/*
-		init JanusGraph
-		TODO: 图数据库
-	*/
-	agentmanager.Topo.InitJanusGraph()
-
-	/*
 		init machine agent list
 		TODO: 实时更新machine agent、topo agent的状态
 	*/
 	agentmanager.Topo.InitMachineList()
 
 	/*
-		init topo agent status
+		init database
 	*/
+	dao.InitDB()
 
 	/*
 		init web server
