@@ -158,10 +158,6 @@ func (t *Topoclient) InitPluginClient() {
 	}
 }
 
-func (t *Topoclient) InitJanusGraph() {
-
-}
-
 func (t *Topoclient) InitErrorControl(errch <-chan error, errgroup *sync.WaitGroup) {
 	switch conf.Global_config.Logopts.Driver {
 	case "stdout":
