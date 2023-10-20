@@ -2,7 +2,7 @@ topo:
   server_addr: "localhost:9991"
   agent_port: "9992"
   database: "neo4j"
-  period: 60
+  period: 5
 PilotGo:
   http_addr: "localhost:8888"
 log:

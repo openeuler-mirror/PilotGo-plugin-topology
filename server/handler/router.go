@@ -14,11 +14,13 @@ import (
 )
 
 func InitWebServer() {
+	// go func() {
 	engine := gin.Default()
 	engine.Use(TimeoutMiddleware())
 	agentmanager.Topo.Sdkmethod.RegisterHandlers(engine)
 	InitRouter(engine)
 	StaticRouter(engine)
+
 	err := engine.Run(conf.Config().Topo.Server_addr)
 	if err != nil {
 		err = errors.Errorf("%s **fatal**2", err.Error()) // err top
@@ -28,6 +30,7 @@ func InitWebServer() {
 		close(agentmanager.Topo.ErrCh)
 		os.Exit(1)
 	}
+	// }()
 }
 
 func InitRouter(router *gin.Engine) {

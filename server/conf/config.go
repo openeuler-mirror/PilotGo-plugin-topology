@@ -10,7 +10,7 @@ type TopoConf struct {
 	Server_addr string `yaml:"server_addr"`
 	Agent_port  string `yaml:"agent_port"`
 	Database    string `yaml:"database"`
-	Period      int    `yaml:"period"`
+	Period      int64  `yaml:"period"`
 }
 
 type PilotGoConf struct {
