@@ -24,8 +24,10 @@ func CreateDataProcesser() *DataProcesser {
 
 func (d *DataProcesser) Process_data() (*meta.Nodes, *meta.Edges, []error, []error) {
 	nodes := &meta.Nodes{
-		Lookup: make(map[string]*meta.Node, 0),
-		Nodes:  make([]*meta.Node, 0),
+		Lookup:       make(map[string]*meta.Node, 0),
+		LookupByType: make(map[string][]*meta.Node, 0),
+		LookupByUUID: make(map[string][]*meta.Node, 0),
+		Nodes:        make([]*meta.Node, 0),
 	}
 	edges := &meta.Edges{
 		SrcToDsts: make(map[string][]string, 0),

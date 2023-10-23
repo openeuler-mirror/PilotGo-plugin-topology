@@ -7,8 +7,10 @@ import (
 )
 
 type Nodes struct {
-	Lookup map[string]*Node
-	Nodes  []*Node
+	Lookup       map[string]*Node
+	LookupByType  map[string][]*Node
+	LookupByUUID map[string][]*Node
+	Nodes        []*Node
 }
 
 type Node struct {
@@ -32,18 +34,35 @@ func (ns *Nodes) Add(node *Node) {
 	}
 
 	ns.Lookup[node.ID] = node
+	ns.LookupByType[node.Type] = append(ns.LookupByType[node.Type], node)
+	ns.LookupByUUID[node.UUID] = append(ns.LookupByUUID[node.UUID], node)
 	ns.Nodes = append(ns.Nodes, node)
 }
 
-func (ns *Nodes) Remove(id string) error {
+func (ns *Nodes) Remove(node *Node) error {
 	for i := 0; i < len(ns.Nodes); i++ {
-		if ns.Nodes[i].ID != id {
+		if ns.Nodes[i].ID != node.ID {
 			continue
 		}
+
+		for j, n := range ns.LookupByType[ns.Nodes[i].Type] {
+			if n.ID == node.ID {
+				ns.LookupByType[ns.Nodes[i].Type] = append(ns.LookupByType[ns.Nodes[i].Type][:j], ns.LookupByType[ns.Nodes[i].Type][j+1:]...)
+				break
+			}
+		}
+
+		for j, n := range ns.LookupByUUID[ns.Nodes[i].UUID] {
+			if n.ID == node.ID {
+				ns.LookupByUUID[ns.Nodes[i].Type] = append(ns.LookupByUUID[ns.Nodes[i].UUID][:j], ns.LookupByUUID[ns.Nodes[i].UUID][j+1:]...)
+			}
+		}
+
 		ns.Nodes = append(ns.Nodes[:i], ns.Nodes[i+1:]...)
-		delete(ns.Lookup, id)
+		delete(ns.Lookup, node.ID)
+
 		return nil
 	}
 
-	return errors.New(fmt.Sprintf("node %s not found**9", id))
+	return errors.New(fmt.Sprintf("node %s not found**9", node.ID))
 }
