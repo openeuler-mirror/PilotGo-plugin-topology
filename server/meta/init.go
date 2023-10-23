@@ -1,3 +1,4 @@
+// 禁止调用utils包
 package meta
 
 const (
