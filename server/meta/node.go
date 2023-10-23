@@ -8,7 +8,7 @@ import (
 
 type Nodes struct {
 	Lookup       map[string]*Node
-	LookupByType  map[string][]*Node
+	LookupByType map[string][]*Node
 	LookupByUUID map[string][]*Node
 	Nodes        []*Node
 }
@@ -55,6 +55,7 @@ func (ns *Nodes) Remove(node *Node) error {
 		for j, n := range ns.LookupByUUID[ns.Nodes[i].UUID] {
 			if n.ID == node.ID {
 				ns.LookupByUUID[ns.Nodes[i].Type] = append(ns.LookupByUUID[ns.Nodes[i].UUID][:j], ns.LookupByUUID[ns.Nodes[i].UUID][j+1:]...)
+				break
 			}
 		}
 

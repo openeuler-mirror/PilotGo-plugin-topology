@@ -42,3 +42,21 @@ func (t *Topoclient) DeleteAgent(uuid string) {
 		t.ErrCh <- err
 	}
 }
+
+// 获取运行状态agent的数目
+func (t *Topoclient) GetRunningAgentNumber() int {
+	var agent_count int
+
+	agent_count = 0
+
+	Topo.AgentMap.Range(func(key, value interface{}) bool {
+		agent := value.(*Agent_m)
+		if agent.Host_2 != nil {
+			agent_count++
+		}
+
+		return true
+	})
+
+	return agent_count
+}

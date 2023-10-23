@@ -36,7 +36,6 @@ func (d *DataProcesser) Process_data() (*meta.Nodes, *meta.Edges, []error, []err
 	}
 
 	var wg sync.WaitGroup
-	agent_count := 0
 	create_node_rwlock := &sync.RWMutex{}
 	agent_node_count = 0
 	agent_node_count_rwlock = &sync.RWMutex{}
@@ -44,14 +43,7 @@ func (d *DataProcesser) Process_data() (*meta.Nodes, *meta.Edges, []error, []err
 	var process_errorlist []error
 
 	// 获取运行状态agent的数目
-	agentmanager.Topo.AgentMap.Range(func(key, value interface{}) bool {
-		agent := value.(*agentmanager.Agent_m)
-		if agent.Host_2 != nil {
-			agent_count++
-		}
-
-		return true
-	})
+	agent_count := agentmanager.Topo.GetRunningAgentNumber()
 
 	datacollector := collector.CreateDataCollector()
 	collect_errorlist = datacollector.Collect_instant_data()
