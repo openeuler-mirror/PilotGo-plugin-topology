@@ -13,15 +13,24 @@ import (
 func InitDB() {
 	var unixtime_now int64
 	var period int64
+	var runningAgents int
 	period = conf.Global_config.Topo.Period
 
 	switch conf.Global_config.Topo.Database {
 	case "neo4j":
 		go func(pt int64) {
 			for true {
+				// if runningAgents = agentmanager.Topo.GetRunningAgentNumber(); runningAgents <= 0 {
+				// 	err := errors.New("no running agent **warn**1")
+				// 	agentmanager.Topo.ErrCh <- err
+
+				// 	time.Sleep(5 * time.Second)
+				// 	continue
+				// }
+
 				unixtime_now = time.Now().Unix()
 
-				PeriodProcessNeo4j(unixtime_now)
+				PeriodProcessNeo4j(unixtime_now, runningAgents)
 
 				time.Sleep(time.Duration(period) * time.Second)
 

@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/agentmanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/collector"
@@ -23,27 +24,27 @@ func CreateDataProcesser() *DataProcesser {
 }
 
 func (d *DataProcesser) Process_data() (*meta.Nodes, *meta.Edges, []error, []error) {
+	start := time.Now()
 	nodes := &meta.Nodes{
+		Lock:         sync.Mutex{},
 		Lookup:       make(map[string]*meta.Node, 0),
 		LookupByType: make(map[string][]*meta.Node, 0),
 		LookupByUUID: make(map[string][]*meta.Node, 0),
 		Nodes:        make([]*meta.Node, 0),
 	}
 	edges := &meta.Edges{
+		Lock:      sync.Mutex{},
+		Lookup:    sync.Map{},
 		SrcToDsts: make(map[string][]string, 0),
 		DstToSrcs: make(map[string][]string, 0),
 		Edges:     make([]*meta.Edge, 0),
 	}
 
 	var wg sync.WaitGroup
-	create_node_rwlock := &sync.RWMutex{}
 	agent_node_count = 0
 	agent_node_count_rwlock = &sync.RWMutex{}
 	var collect_errorlist []error
 	var process_errorlist []error
-
-	// 获取运行状态agent的数目
-	agent_count := agentmanager.Topo.GetRunningAgentNumber()
 
 	datacollector := collector.CreateDataCollector()
 	collect_errorlist = datacollector.Collect_instant_data()
@@ -55,16 +56,20 @@ func (d *DataProcesser) Process_data() (*meta.Nodes, *meta.Edges, []error, []err
 		// return nil, nil, collect_errorlist, nil
 	}
 
+	// TODO: 临时获取运行状态agent的数目
+	agent_count := agentmanager.Topo.GetRunningAgentNumber()
+
 	agentmanager.Topo.AgentMap.Range(
 		func(key, value interface{}) bool {
 			wg.Add(1)
 
-			go func() {
-				defer wg.Done()
-				agent := value.(*agentmanager.Agent_m)
+			agent := value.(*agentmanager.Agent_m)
 
-				if agent.Host_2 != nil && agent.Processes_2 != nil && agent.Netconnections_2 != nil {
-					err := d.Create_node_entities(agent, nodes, create_node_rwlock)
+			go func(_agent *agentmanager.Agent_m, _nodes *meta.Nodes, _edges *meta.Edges) {
+				defer wg.Done()
+
+				if _agent.Host_2 != nil && _agent.Processes_2 != nil && _agent.Netconnections_2 != nil {
+					err := d.Create_node_entities(_agent, _nodes)
 					if err != nil {
 						process_errorlist = append(process_errorlist, errors.Wrap(err, "**2"))
 					}
@@ -73,27 +78,27 @@ func (d *DataProcesser) Process_data() (*meta.Nodes, *meta.Edges, []error, []err
 						if agent_node_count == agent_count {
 							break
 						}
-						// ttcode
-						// fmt.Printf("\033[32m agent_node_count\033[0m: %d\n", agent_node_count)
-						// fmt.Printf("\033[32magent_count\033[0m: %d\n", agent_count)
 					}
 
-					err = d.Create_edge_entities(agent, edges, nodes)
+					err = d.Create_edge_entities(_agent, _edges, _nodes)
 					if err != nil {
 						process_errorlist = append(process_errorlist, errors.Wrap(err, "**2"))
 					}
 				}
-			}()
+			}(agent, nodes, edges)
 
 			return true
 		},
 	)
 	wg.Wait()
 
+	elapse := time.Since(start)
+	fmt.Fprintf(agentmanager.Topo.Out, "\033[32mtopo server 采集数据处理时间\033[0m: %v\n", elapse)
+
 	return nodes, edges, collect_errorlist, process_errorlist
 }
 
-func (d *DataProcesser) Create_node_entities(agent *agentmanager.Agent_m, nodes *meta.Nodes, mu *sync.RWMutex) error {
+func (d *DataProcesser) Create_node_entities(agent *agentmanager.Agent_m, nodes *meta.Nodes) error {
 	host_node := &meta.Node{
 		ID:      fmt.Sprintf("%s_%s_%s", agent.UUID, meta.NODE_HOST, agent.IP),
 		Name:    agent.UUID,
@@ -102,9 +107,7 @@ func (d *DataProcesser) Create_node_entities(agent *agentmanager.Agent_m, nodes 
 		Metrics: *utils.HostToMap(agent.Host_2, &agent.AddrInterfaceMap_2),
 	}
 
-	mu.Lock()
 	nodes.Add(host_node)
-	mu.Unlock()
 
 	for _, process := range agent.Processes_2 {
 		proc_node := &meta.Node{
@@ -115,9 +118,7 @@ func (d *DataProcesser) Create_node_entities(agent *agentmanager.Agent_m, nodes 
 			Metrics: *utils.ProcessToMap(process),
 		}
 
-		mu.Lock()
 		nodes.Add(proc_node)
-		mu.Unlock()
 
 		for _, thread := range process.Threads {
 			thre_node := &meta.Node{
@@ -128,9 +129,7 @@ func (d *DataProcesser) Create_node_entities(agent *agentmanager.Agent_m, nodes 
 				Metrics: *utils.ThreadToMap(&thread),
 			}
 
-			mu.Lock()
 			nodes.Add(thre_node)
-			mu.Unlock()
 		}
 
 		// for _, net := range process.NetIOCounters {
@@ -156,9 +155,7 @@ func (d *DataProcesser) Create_node_entities(agent *agentmanager.Agent_m, nodes 
 			Metrics: *utils.NetToMap(net),
 		}
 
-		mu.Lock()
 		nodes.Add(net_node)
-		mu.Unlock()
 	}
 
 	for _, disk := range agent.Disks_2 {
@@ -170,9 +167,7 @@ func (d *DataProcesser) Create_node_entities(agent *agentmanager.Agent_m, nodes 
 			Metrics: *utils.DiskToMap(disk),
 		}
 
-		mu.Lock()
 		nodes.Add(disk_node)
-		mu.Unlock()
 	}
 
 	for _, cpu := range agent.Cpus_2 {
@@ -184,9 +179,7 @@ func (d *DataProcesser) Create_node_entities(agent *agentmanager.Agent_m, nodes 
 			Metrics: *utils.CpuToMap(cpu),
 		}
 
-		mu.Lock()
 		nodes.Add(cpu_node)
-		mu.Unlock()
 	}
 
 	for _, ifaceio := range agent.NetIOcounters_2 {
@@ -198,9 +191,7 @@ func (d *DataProcesser) Create_node_entities(agent *agentmanager.Agent_m, nodes 
 			Metrics: *utils.InterfaceToMap(ifaceio),
 		}
 
-		mu.Lock()
 		nodes.Add(iface_node)
-		mu.Unlock()
 	}
 
 	agent_node_count_rwlock.Lock()
@@ -228,10 +219,9 @@ func (d *DataProcesser) Create_edge_entities(agent *agentmanager.Agent_m, edges 
 		}
 	}
 
-	// TODO: edge实例重复
 	for _, obj := range nodes_map[meta.NODE_HOST] {
 		for _, sub := range nodes_map[meta.NODE_PROCESS] {
-			if sub.Metrics["Pid"] == "1" && sub.UUID == obj.UUID {
+			if sub.UUID == obj.UUID && sub.Metrics["Pid"] == "1" {
 				belong_edge := &meta.Edge{
 					ID:   fmt.Sprintf("%s_%s_%s", sub.ID, meta.EDGE_BELONG, obj.ID),
 					Type: meta.EDGE_BELONG,

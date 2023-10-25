@@ -11,13 +11,13 @@ import (
 )
 
 func main() {
-	
+
 	InitLogger()
 
 	engine := gin.Default()
 	handler.InitRouter(engine)
 	if err := engine.Run(conf.Config().Topo.Agent_addr); err != nil {
-		logger.Fatal("failed to run server")
+		logger.Fatal("failed to run web server")
 	}
 
 }

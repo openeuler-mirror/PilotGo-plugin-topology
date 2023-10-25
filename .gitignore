@@ -11,6 +11,7 @@ config_agent.yaml
 build
 toserver
 toagent
+test
 
 # static files
 server/handler/assets/

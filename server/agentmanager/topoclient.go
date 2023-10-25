@@ -43,7 +43,7 @@ func (t *Topoclient) InitMachineList() {
 
 	statuscode := resp.StatusCode
 	if statuscode != 200 {
-		err = errors.Errorf("http返回状态码异常: %d **fatal**2", statuscode) // err top
+		err = errors.Errorf("http返回状态码异常: %d; %s **fatal**2", statuscode, url) // err top
 		t.ErrCh <- err
 		t.ErrGroup.Add(1)
 		t.ErrGroup.Wait()
