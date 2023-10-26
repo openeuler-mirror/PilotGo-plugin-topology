@@ -24,7 +24,7 @@ func main() {
 	/*
 		init error control
 	*/
-	agentmanager.Topo.InitErrorControl(agentmanager.Topo.ErrCh, agentmanager.Topo.ErrGroup)
+	agentmanager.Topo.InitErrorControl(agentmanager.Topo.ErrCh, agentmanager.Topo.Errmu, agentmanager.Topo.ErrCond)
 
 	/*
 		init logger

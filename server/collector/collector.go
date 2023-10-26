@@ -60,7 +60,11 @@ func (d *DataCollector) GetCollectDataFromTopoAgent(agent *agentmanager.Agent_m)
 
 	resp, err := httputils.Get(url, nil)
 	if err != nil {
-		return errors.Errorf("%s**2", err.Error())
+		return errors.Errorf("%v, %s, %s **2", resp.StatusCode, url, err.Error())
+	}
+
+	if statuscode := resp.StatusCode; statuscode != 200 {
+		return errors.Errorf("%v, %s **2", resp.StatusCode, url)
 	}
 
 	results := &struct {
@@ -71,12 +75,7 @@ func (d *DataCollector) GetCollectDataFromTopoAgent(agent *agentmanager.Agent_m)
 
 	err = json.Unmarshal(resp.Body, &results)
 	if err != nil {
-		return errors.Errorf("%s**2", err.Error())
-	}
-
-	statuscode := results.Code
-	if statuscode != 0 {
-		return errors.Errorf("%s**2", results.Error)
+		return errors.Errorf("%s **2", err.Error())
 	}
 
 	collectdata := &struct {
