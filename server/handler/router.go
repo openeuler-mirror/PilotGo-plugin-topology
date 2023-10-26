@@ -25,8 +25,9 @@ func InitWebServer() {
 	if err != nil {
 		err = errors.Errorf("%s **fatal**2", err.Error()) // err top
 		agentmanager.Topo.ErrCh <- err
-		agentmanager.Topo.ErrGroup.Add(1)
-		agentmanager.Topo.ErrGroup.Wait()
+		agentmanager.Topo.Errmu.Lock()
+		agentmanager.Topo.ErrCond.Wait()
+		agentmanager.Topo.Errmu.Unlock()
 		close(agentmanager.Topo.ErrCh)
 		os.Exit(1)
 	}

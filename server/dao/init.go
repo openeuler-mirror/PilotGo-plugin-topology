@@ -42,8 +42,9 @@ func InitDB() {
 	default:
 		err := errors.Errorf("unknown database in config_server.yaml: %s **fatal**4", conf.Global_config.Topo.Database) // err top
 		agentmanager.Topo.ErrCh <- err
-		agentmanager.Topo.ErrGroup.Add(1)
-		agentmanager.Topo.ErrGroup.Wait()
+		agentmanager.Topo.Errmu.Lock()
+		agentmanager.Topo.ErrCond.Wait()
+		agentmanager.Topo.Errmu.Unlock()
 		close(agentmanager.Topo.ErrCh)
 		os.Exit(1)
 	}

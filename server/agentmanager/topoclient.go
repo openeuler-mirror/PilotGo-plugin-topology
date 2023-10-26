@@ -23,7 +23,8 @@ var Topo *Topoclient
 type Topoclient struct {
 	Sdkmethod *client.Client
 	AgentMap  sync.Map
-	ErrGroup  *sync.WaitGroup
+	Errmu     sync.Locker
+	ErrCond   *sync.Cond
 	ErrCh     chan error
 	Out       io.Writer
 }
@@ -35,18 +36,20 @@ func (t *Topoclient) InitMachineList() {
 	if err != nil {
 		err = errors.Errorf("%s **fatal**2", err.Error()) // err top
 		t.ErrCh <- err
-		t.ErrGroup.Add(1)
-		t.ErrGroup.Wait()
+		t.Errmu.Lock()
+		t.ErrCond.Wait()
+		t.Errmu.Unlock()
 		close(t.ErrCh)
 		os.Exit(1)
 	}
 
 	statuscode := resp.StatusCode
 	if statuscode != 200 {
-		err = errors.Errorf("http返回状态码异常: %d; %s **fatal**2", statuscode, url) // err top
+		err := errors.Errorf("http返回状态码异常: %d, %s **fatal**2", statuscode, url) // err top
 		t.ErrCh <- err
-		t.ErrGroup.Add(1)
-		t.ErrGroup.Wait()
+		t.Errmu.Lock()
+		t.ErrCond.Wait()
+		t.Errmu.Unlock()
 		close(t.ErrCh)
 		os.Exit(1)
 	}
@@ -60,8 +63,9 @@ func (t *Topoclient) InitMachineList() {
 	if err != nil {
 		err = errors.Errorf("%s **fatal**2", err.Error()) // err top
 		t.ErrCh <- err
-		t.ErrGroup.Add(1)
-		t.ErrGroup.Wait()
+		t.Errmu.Lock()
+		t.ErrCond.Wait()
+		t.Errmu.Unlock()
 		close(t.ErrCh)
 		os.Exit(1)
 	}
@@ -81,8 +85,9 @@ func (t *Topoclient) UpdateMachineList() {
 	if err != nil {
 		err = errors.Errorf("%s **fatal**2", err.Error()) // err top
 		t.ErrCh <- err
-		t.ErrGroup.Add(1)
-		t.ErrGroup.Wait()
+		t.Errmu.Lock()
+		t.ErrCond.Wait()
+		t.Errmu.Unlock()
 		close(t.ErrCh)
 		os.Exit(1)
 	}
@@ -91,8 +96,9 @@ func (t *Topoclient) UpdateMachineList() {
 	if statuscode != 200 {
 		err = errors.Errorf("http返回状态码异常: %d **fatal**2", statuscode) // err top
 		t.ErrCh <- err
-		t.ErrGroup.Add(1)
-		t.ErrGroup.Wait()
+		t.Errmu.Lock()
+		t.ErrCond.Wait()
+		t.Errmu.Unlock()
 		close(t.ErrCh)
 		os.Exit(1)
 	}
@@ -106,8 +112,9 @@ func (t *Topoclient) UpdateMachineList() {
 	if err != nil {
 		err = errors.Errorf("%s **fatal**2", err.Error()) // err top
 		t.ErrCh <- err
-		t.ErrGroup.Add(1)
-		t.ErrGroup.Wait()
+		t.Errmu.Lock()
+		t.ErrCond.Wait()
+		t.Errmu.Unlock()
 		close(t.ErrCh)
 		os.Exit(1)
 	}
@@ -140,25 +147,29 @@ func (t *Topoclient) InitLogger() {
 	if err != nil {
 		err = errors.Errorf("%s **fatal**2", err.Error()) // err top
 		t.ErrCh <- err
-		t.ErrGroup.Add(1)
-		t.ErrGroup.Wait()
+		t.Errmu.Lock()
+		t.ErrCond.Wait()
+		t.Errmu.Unlock()
 		close(t.ErrCh)
 		os.Exit(1)
 	}
 }
 
 func (t *Topoclient) InitPluginClient() {
+	var errcondmu sync.Mutex
 	PluginInfo.Url = "http://" + conf.Config().Topo.Server_addr + "/plugin/topology"
 	PluginClient := client.DefaultClient(PluginInfo)
 	PluginClient.Server = "http://" + conf.Config().PilotGo.Addr
+
 	Topo = &Topoclient{
 		Sdkmethod: PluginClient,
-		ErrGroup:  &sync.WaitGroup{},
+		Errmu:     &errcondmu,
+		ErrCond:   sync.NewCond(&errcondmu),
 		ErrCh:     make(chan error, 10),
 	}
 }
 
-func (t *Topoclient) InitErrorControl(errch <-chan error, errgroup *sync.WaitGroup) {
+func (t *Topoclient) InitErrorControl(errch <-chan error, emu sync.Locker, econd *sync.Cond) {
 	switch conf.Global_config.Logopts.Driver {
 	case "stdout":
 		t.Out = os.Stdout
@@ -170,9 +181,9 @@ func (t *Topoclient) InitErrorControl(errch <-chan error, errgroup *sync.WaitGro
 		t.Out = logfile
 	}
 
-	go func(ch <-chan error, group *sync.WaitGroup) {
+	go func(ch <-chan error, mu sync.Locker, ec *sync.Cond) {
 		for {
-			err, ok := <-errch
+			err, ok := <-ch
 			if !ok {
 				break
 			}
@@ -184,16 +195,18 @@ func (t *Topoclient) InitErrorControl(errch <-chan error, errgroup *sync.WaitGro
 					fmt.Fprintf(t.Out, "%+v\n", err)
 					// errors.EORE(err)
 				case "fatal":
+					mu.Lock()
 					fmt.Fprintf(t.Out, "%+v\n", err)
 					// errors.EORE(err)
-					errgroup.Done()
+					ec.Broadcast()
+					mu.Unlock()
 				default:
 					fmt.Printf("only support warn and fatal error type: %+v\n", err)
 					os.Exit(1)
 				}
 			}
 		}
-	}(errch, errgroup)
+	}(errch, emu, econd)
 }
 
 func (t *Topoclient) InitConfig() {
