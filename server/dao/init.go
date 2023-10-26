@@ -29,9 +29,8 @@ func InitDB() {
 				// }
 
 				unixtime_now = time.Now().Unix()
-
+				Neo4j = CreateNeo4j(conf.Global_config.Neo4j.Addr, conf.Global_config.Neo4j.Username, conf.Global_config.Neo4j.Password, conf.Global_config.Neo4j.DB)
 				PeriodProcessNeo4j(unixtime_now, runningAgents)
-
 				time.Sleep(time.Duration(period) * time.Second)
 
 				// break

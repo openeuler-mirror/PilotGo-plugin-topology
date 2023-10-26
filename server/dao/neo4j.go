@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/agentmanager"
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/conf"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/meta"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/processor"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/utils"
@@ -15,13 +14,13 @@ import (
 	"github.com/pkg/errors"
 )
 
+var Neo4j *Neo4jclient
+
 type Neo4jclient struct {
 	addr     string
 	username string
 	password string
 	DB       string
-
-	driver neo4j.Driver
 }
 
 func CreateNeo4j(url, user, pass, db string) *Neo4jclient {
@@ -37,12 +36,12 @@ func (n *Neo4jclient) Create_driver() (neo4j.Driver, error) {
 	return neo4j.NewDriver(n.addr, neo4j.BasicAuth(n.username, n.password, ""))
 }
 
-func (n *Neo4jclient) Close_driver() error {
-	return n.driver.Close()
+func (n *Neo4jclient) Close_driver(driver neo4j.Driver) error {
+	return driver.Close()
 }
 
-func (n *Neo4jclient) Entity_create(cypher string, params map[string]interface{}) error {
-	session := n.driver.NewSession(neo4j.SessionConfig{AccessMode: neo4j.AccessModeWrite, DatabaseName: n.DB})
+func (n *Neo4jclient) Entity_create(cypher string, params map[string]interface{}, driver neo4j.Driver) error {
+	session := driver.NewSession(neo4j.SessionConfig{AccessMode: neo4j.AccessModeWrite, DatabaseName: n.DB})
 	defer session.Close()
 
 	_, err := session.WriteTransaction(func(tx neo4j.Transaction) (interface{}, error) {
@@ -61,9 +60,9 @@ func (n *Neo4jclient) Entity_create(cypher string, params map[string]interface{}
 	return nil
 }
 
-func (n *Neo4jclient) Node_query(cypher string) ([]neo4j.Node, error) {
+func (n *Neo4jclient) Node_query(cypher string, driver neo4j.Driver) ([]neo4j.Node, error) {
 	var list []neo4j.Node
-	session := n.driver.NewSession(neo4j.SessionConfig{AccessMode: neo4j.AccessModeRead, DatabaseName: n.DB})
+	session := driver.NewSession(neo4j.SessionConfig{AccessMode: neo4j.AccessModeRead, DatabaseName: n.DB})
 	defer session.Close()
 	_, err := session.ReadTransaction(func(tx neo4j.Transaction) (interface{}, error) {
 		result, err := tx.Run(cypher, nil)
@@ -93,9 +92,9 @@ func (n *Neo4jclient) Node_query(cypher string) ([]neo4j.Node, error) {
 	return list, err
 }
 
-func (n *Neo4jclient) Relation_query(cypher string) ([]neo4j.Relationship, error) {
+func (n *Neo4jclient) Relation_query(cypher string, driver neo4j.Driver) ([]neo4j.Relationship, error) {
 	var list []neo4j.Relationship
-	session := n.driver.NewSession(neo4j.SessionConfig{AccessMode: neo4j.AccessModeRead, DatabaseName: n.DB})
+	session := driver.NewSession(neo4j.SessionConfig{AccessMode: neo4j.AccessModeRead, DatabaseName: n.DB})
 	defer session.Close()
 	_, err := session.ReadTransaction(func(tx neo4j.Transaction) (interface{}, error) {
 		result, err := tx.Run(cypher, nil)
@@ -131,9 +130,7 @@ func PeriodProcessNeo4j(unixtime int64, agentnum int) {
 	var edgeBreakWg sync.WaitGroup
 	_unixtime := unixtime
 
-	_neo4j := CreateNeo4j(conf.Global_config.Neo4j.Addr, conf.Global_config.Neo4j.Username, conf.Global_config.Neo4j.Password, conf.Global_config.Neo4j.DB)
-
-	d, err := _neo4j.Create_driver()
+	dri, err := Neo4j.Create_driver()
 	if err != nil {
 		err := errors.Errorf("create neo4j driver failed: %s **fatal**2", err.Error()) // err top
 		agentmanager.Topo.ErrCh <- err
@@ -143,8 +140,7 @@ func PeriodProcessNeo4j(unixtime int64, agentnum int) {
 		close(agentmanager.Topo.ErrCh)
 		os.Exit(1)
 	}
-	_neo4j.driver = d
-	defer _neo4j.Close_driver()
+	defer Neo4j.Close_driver(dri)
 
 	dataprocesser := processor.CreateDataProcesser()
 	nodes, edges, collect_errlist, process_errlist := dataprocesser.Process_data()
@@ -198,7 +194,7 @@ func PeriodProcessNeo4j(unixtime int64, agentnum int) {
 							"metrics": _node.Metrics,
 						}
 
-						err := _neo4j.Entity_create(cqlIN, params)
+						err := Neo4j.Entity_create(cqlIN, params, dri)
 						if err != nil {
 							err = errors.Wrapf(err, "create neo4j node failed; %s **warn**2", cqlIN) // err top
 							agentmanager.Topo.ErrCh <- err
@@ -232,7 +228,7 @@ func PeriodProcessNeo4j(unixtime int64, agentnum int) {
 					"metrics": _edge.Metrics,
 				}
 
-				err := _neo4j.Entity_create(cqlIN, params)
+				err := Neo4j.Entity_create(cqlIN, params, dri)
 				if err != nil {
 					err = errors.Wrapf(err, "create neo4j edge failed **warn**2") // err top
 					agentmanager.Topo.ErrCh <- err
