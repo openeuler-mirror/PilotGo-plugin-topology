@@ -8,6 +8,7 @@ import (
 )
 
 type Edges struct {
+	Lock      sync.Mutex
 	SrcToDsts map[string][]string
 	DstToSrcs map[string][]string
 	Lookup    sync.Map
@@ -23,19 +24,28 @@ type Edge struct {
 	Metrics map[string]string
 }
 
-// 镜像id检测：多个goruntine并发添加、访问、修改相同的edge实例
+// 网络边镜像id检测：多个goruntine并发添加、访问、修改相同的edge实例
 func (e *Edges) Add(edge *Edge) {
-	id_slice := strings.Split(edge.ID, "_")
-	id_slice[0], id_slice[2] = id_slice[2], id_slice[0]
+	if edge.Type == EDGE_TCP || edge.Type == EDGE_UDP {
+		id_slice := strings.Split(edge.ID, "_")
+		id_slice[0], id_slice[2] = id_slice[2], id_slice[0]
+		mirror_id := strings.Join(id_slice, "_")
 
-	mirror_id := strings.Join(id_slice, "_")
+		e.Lock.Lock()
+		if _, ok := e.Lookup.Load(mirror_id); !ok {
+			e.Lookup.Store(edge.ID, edge)
+			e.Edges = append(e.Edges, edge)
+		}
+		e.Lock.Unlock()
 
-	if _, ok := e.Lookup.Load(mirror_id); ok {
 		return
 	}
 
-	e.Lookup.Store(edge.ID, edge)
-	e.Edges = append(e.Edges, edge)
+	e.Lock.Lock()
+	if _, ok := e.Lookup.LoadOrStore(edge.ID, edge); !ok {
+		e.Edges = append(e.Edges, edge)
+	}
+	e.Lock.Unlock()
 }
 
 func (e *Edges) Remove(id string) error {
