@@ -8,7 +8,7 @@ import (
 )
 
 type Nodes struct {
-	Lock           sync.Mutex
+	Lock         sync.Mutex
 	Lookup       map[string]*Node
 	LookupByType map[string][]*Node
 	LookupByUUID map[string][]*Node
@@ -25,18 +25,13 @@ type Node struct {
 
 func (ns *Nodes) Add(node *Node) {
 	ns.Lock.Lock()
+	defer ns.Lock.Unlock()
 	if _, ok := ns.Lookup[node.ID]; !ok {
-		// for k, v := range node.Attrs {
-		// 	if _, ok := old_n.Attrs[k]; !ok {
-		// 		old_n.Attrs[k] = v
-		// 	}
-		// }
 		ns.Lookup[node.ID] = node
 		ns.LookupByType[node.Type] = append(ns.LookupByType[node.Type], node)
 		ns.LookupByUUID[node.UUID] = append(ns.LookupByUUID[node.UUID], node)
 		ns.Nodes = append(ns.Nodes, node)
 	}
-	ns.Lock.Unlock()
 }
 
 func (ns *Nodes) Remove(node *Node) error {

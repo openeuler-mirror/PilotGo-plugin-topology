@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/agentmanager"
@@ -16,8 +17,7 @@ import (
 
 type DataProcesser struct{}
 
-var agent_node_count int
-var agent_node_count_rwlock *sync.RWMutex
+var agent_node_count int32
 
 func CreateDataProcesser() *DataProcesser {
 	return &DataProcesser{}
@@ -41,8 +41,6 @@ func (d *DataProcesser) Process_data() (*meta.Nodes, *meta.Edges, []error, []err
 	}
 
 	var wg sync.WaitGroup
-	agent_node_count = 0
-	agent_node_count_rwlock = &sync.RWMutex{}
 	var collect_errorlist []error
 	var process_errorlist []error
 
@@ -75,7 +73,7 @@ func (d *DataProcesser) Process_data() (*meta.Nodes, *meta.Edges, []error, []err
 					}
 
 					for {
-						if agent_node_count == agent_count {
+						if atomic.LoadInt32(&agent_node_count) == agent_count {
 							break
 						}
 					}
@@ -91,6 +89,8 @@ func (d *DataProcesser) Process_data() (*meta.Nodes, *meta.Edges, []error, []err
 		},
 	)
 	wg.Wait()
+
+	atomic.StoreInt32(&agent_node_count, int32(0))
 
 	elapse := time.Since(start)
 	fmt.Fprintf(agentmanager.Topo.Out, "\033[32mtopo server 采集数据处理时间\033[0m: %v\n", elapse)
@@ -194,9 +194,7 @@ func (d *DataProcesser) Create_node_entities(agent *agentmanager.Agent_m, nodes 
 		nodes.Add(iface_node)
 	}
 
-	agent_node_count_rwlock.Lock()
-	agent_node_count++
-	agent_node_count_rwlock.Unlock()
+	atomic.AddInt32(&agent_node_count, int32(1))
 
 	return nil
 }

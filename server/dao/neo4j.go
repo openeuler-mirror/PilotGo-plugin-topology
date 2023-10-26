@@ -211,7 +211,7 @@ func PeriodProcessNeo4j(unixtime int64, agentnum int) {
 	}
 	nodeUuidWg.Wait()
 
-	for _, _edges := range utils.SplitEdgesByBreakpoint(edges.Edges, _agentnum) {
+	for _, _edges := range utils.SplitEdgesByBreakpoint(edges.Edges, int(_agentnum)) {
 		__edges := _edges
 		edgeBreakWg.Add(1)
 		go func(___edges []*meta.Edge) {
