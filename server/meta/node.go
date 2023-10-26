@@ -2,11 +2,13 @@ package meta
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/pkg/errors"
 )
 
 type Nodes struct {
+	Lock           sync.Mutex
 	Lookup       map[string]*Node
 	LookupByType map[string][]*Node
 	LookupByUUID map[string][]*Node
@@ -22,21 +24,19 @@ type Node struct {
 }
 
 func (ns *Nodes) Add(node *Node) {
-	_, ok := ns.Lookup[node.ID]
-	if ok {
+	ns.Lock.Lock()
+	if _, ok := ns.Lookup[node.ID]; !ok {
 		// for k, v := range node.Attrs {
 		// 	if _, ok := old_n.Attrs[k]; !ok {
 		// 		old_n.Attrs[k] = v
 		// 	}
 		// }
-
-		return
+		ns.Lookup[node.ID] = node
+		ns.LookupByType[node.Type] = append(ns.LookupByType[node.Type], node)
+		ns.LookupByUUID[node.UUID] = append(ns.LookupByUUID[node.UUID], node)
+		ns.Nodes = append(ns.Nodes, node)
 	}
-
-	ns.Lookup[node.ID] = node
-	ns.LookupByType[node.Type] = append(ns.LookupByType[node.Type], node)
-	ns.LookupByUUID[node.UUID] = append(ns.LookupByUUID[node.UUID], node)
-	ns.Nodes = append(ns.Nodes, node)
+	ns.Lock.Unlock()
 }
 
 func (ns *Nodes) Remove(node *Node) error {
