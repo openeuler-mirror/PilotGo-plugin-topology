@@ -16,11 +16,13 @@ type Nodes struct {
 }
 
 type Node struct {
-	ID      string            `json:"id"` // uuid-type-basicinfo
-	Name    string            `json:"name"`
-	Type    string            `json:"type"`
-	UUID    string            `json:"uuid"`
-	Metrics map[string]string `json:"metrics"`
+	DBID     int64             `json:"dbid"`
+	ID       string            `json:"id"` // uuid-type-basicinfo
+	Name     string            `json:"name"`
+	Type     string            `json:"type"`
+	UUID     string            `json:"uuid"`
+	Unixtime string            `json:"unixtime"`
+	Metrics  map[string]string `json:"metrics"`
 }
 
 func (ns *Nodes) Add(node *Node) {
