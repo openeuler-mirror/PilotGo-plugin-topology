@@ -1,37 +1,60 @@
 package service
 
 import (
+	"fmt"
+	"os"
+
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/agentmanager"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/dao"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/meta"
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/processor"
 	"github.com/pkg/errors"
 )
 
-func SingleHostTreeService(uuid string) (*TreeTopoNode, []error, []error) {
-	dataprocesser := processor.CreateDataProcesser()
-	nodes, _, collect_errlist, process_errlist := dataprocesser.Process_data()
-	if len(collect_errlist) != 0 || len(process_errlist) != 0 {
-		for i, cerr := range collect_errlist {
-			collect_errlist[i] = errors.Wrap(cerr, "**3")
-		}
-
-		for i, perr := range process_errlist {
-			process_errlist[i] = errors.Wrap(perr, "**7")
-		}
-	}
-
+func SingleHostTreeService(uuid string) (*TreeTopoNode, error) {
+	var latest string
+	var cqlOUT string
 	var treerootnode *TreeTopoNode
 	single_nodes := make([]*meta.Node, 0)
-	single_nodes_map := make(map[string]*meta.Node)
+	single_nodes_map := make(map[int64]*meta.Node)
 	treenodes_process := make([]*TreeTopoNode, 0)
 	treenodes_net := make([]*TreeTopoNode, 0)
 	nodes_type_map := make(map[string][]*meta.Node)
 
-	for _, node := range nodes.Nodes {
-		if node.UUID == uuid {
-			if _, ok := single_nodes_map[node.ID]; !ok {
-				single_nodes_map[node.ID] = node
-				single_nodes = append(single_nodes, node)
-			}
+	driver, err := dao.Neo4j.Create_driver()
+	if err != nil {
+		err := errors.Errorf("create neo4j driver failed: %s **fatal**2", err.Error()) // err top
+		agentmanager.Topo.ErrCh <- err
+		agentmanager.Topo.Errmu.Lock()
+		agentmanager.Topo.ErrCond.Wait()
+		agentmanager.Topo.Errmu.Unlock()
+		close(agentmanager.Topo.ErrCh)
+		os.Exit(1)
+	}
+	defer dao.Neo4j.Close_driver(driver)
+
+	cqlOUT = "match (n:host) return collect(distinct n.unixtime) as times"
+	times, err := dao.Neo4j.General_query(cqlOUT, "times", driver)
+	if err != nil {
+		err = errors.Wrap(err, " **2")
+		return nil, err
+	}
+
+	if len(times) < 2 {
+		latest = times[0]
+	} else {
+		latest = times[len(times)-2]
+	}
+
+	cqlOUT = fmt.Sprintf("match (nodes:`%s`) where nodes.unixtime='%s' return nodes", uuid, latest)
+	single_nodes, err = dao.Neo4j.Node_query(cqlOUT, "nodes", driver)
+	if err != nil {
+		err = errors.Wrap(err, " **2")
+		return nil, err
+	}
+
+	for _, node := range single_nodes {
+		if _, ok := single_nodes_map[node.DBID]; !ok {
+			single_nodes_map[node.DBID] = node
 		}
 	}
 
@@ -66,5 +89,5 @@ func SingleHostTreeService(uuid string) (*TreeTopoNode, []error, []error) {
 		}
 	}
 
-	return treerootnode, collect_errlist, process_errlist
+	return treerootnode, nil
 }
