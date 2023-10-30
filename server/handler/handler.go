@@ -53,18 +53,17 @@ func SingleHostTreeHandle(ctx *gin.Context) {
 	agentmanager.Topo.UpdateMachineList()
 
 	uuid := ctx.Param("uuid")
-	nodes, collect_errlist, process_errlist := service.SingleHostTreeService(uuid)
+	nodes, err := service.SingleHostTreeService(uuid)
+	if err != nil {
+		err = errors.Wrap(err, " **warn**2") // err top
+		agentmanager.Topo.ErrCh <- err
 
-	if len(collect_errlist) != 0 || len(process_errlist) != 0 {
-		for i, cerr := range collect_errlist {
-			collect_errlist[i] = errors.Wrap(cerr, "**warn**4") // err top
-			agentmanager.Topo.ErrCh <- collect_errlist[i]
-		}
-
-		for i, perr := range process_errlist {
-			process_errlist[i] = errors.Wrap(perr, "**warn**10") // err top
-			agentmanager.Topo.ErrCh <- process_errlist[i]
-		}
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"code":  -1,
+			"error": err.Error(),
+			"data":  nil,
+		})
+		return
 	}
 
 	if nodes == nil {
@@ -90,19 +89,18 @@ func SingleHostTreeHandle(ctx *gin.Context) {
 
 func MultiHostHandle(ctx *gin.Context) {
 	agentmanager.Topo.UpdateMachineList()
-	
-	nodes, edges, collect_errlist, process_errlist := service.MultiHostService()
 
-	if len(collect_errlist) != 0 || len(process_errlist) != 0 {
-		for i, cerr := range collect_errlist {
-			collect_errlist[i] = errors.Wrap(cerr, "**warn**4") // err top
-			agentmanager.Topo.ErrCh <- collect_errlist[i]
-		}
+	nodes, edges, err := service.MultiHostService()
+	if err != nil {
+		err = errors.Wrap(err, " **warn**2") // err top
+		agentmanager.Topo.ErrCh <- err
 
-		for i, perr := range process_errlist {
-			process_errlist[i] = errors.Wrap(perr, "**warn**10") // err top
-			agentmanager.Topo.ErrCh <- process_errlist[i]
-		}
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"code":  -1,
+			"error": err.Error(),
+			"data":  nil,
+		})
+		return
 	}
 
 	if len(nodes) == 0 || len(edges) == 0 {
