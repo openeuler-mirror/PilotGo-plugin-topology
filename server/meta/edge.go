@@ -16,12 +16,16 @@ type Edges struct {
 }
 
 type Edge struct {
-	ID      string
-	Type    string
-	Src     string `json:"source"`
-	Dst     string `json:"target"`
-	Dir     bool
-	Metrics map[string]string
+	DBID     int64             `json:"dbid"`
+	ID       string            `json:"id"`
+	Type     string            `json:"type"`
+	SrcID    int64             `json:"sourceid"`
+	DstID    int64             `json:"targetid"`
+	Src      string            `json:"source"`
+	Dst      string            `json:"target"`
+	Dir      string            `json:"dir"`
+	Unixtime string            `json:"unixtime"`
+	Metrics  map[string]string `json:"metrics"`
 }
 
 // 网络边镜像id检测：多个goruntine并发添加、访问、修改相同的edge实例
