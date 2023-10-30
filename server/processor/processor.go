@@ -225,7 +225,7 @@ func (d *DataProcesser) Create_edge_entities(agent *agentmanager.Agent_m, edges 
 					Type: meta.EDGE_BELONG,
 					Src:  sub.ID,
 					Dst:  obj.ID,
-					Dir:  true,
+					Dir:  "direct",
 				}
 
 				edges.Add(belong_edge)
@@ -241,7 +241,7 @@ func (d *DataProcesser) Create_edge_entities(agent *agentmanager.Agent_m, edges 
 					Type: meta.EDGE_BELONG,
 					Src:  sub.ID,
 					Dst:  obj.ID,
-					Dir:  true,
+					Dir:  "direct",
 				}
 
 				edges.Add(belong_edge)
@@ -257,7 +257,7 @@ func (d *DataProcesser) Create_edge_entities(agent *agentmanager.Agent_m, edges 
 					Type: meta.EDGE_BELONG,
 					Src:  sub.ID,
 					Dst:  obj.ID,
-					Dir:  true,
+					Dir:  "direct",
 				}
 
 				edges.Add(belong_edge)
@@ -274,7 +274,7 @@ func (d *DataProcesser) Create_edge_entities(agent *agentmanager.Agent_m, edges 
 					Type: meta.EDGE_SERVER,
 					Src:  sub.ID,
 					Dst:  obj.ID,
-					Dir:  true,
+					Dir:  "direct",
 				}
 
 				edges.Add(server_edge)
@@ -314,7 +314,7 @@ func (d *DataProcesser) Create_edge_entities(agent *agentmanager.Agent_m, edges 
 				Type: edgetype,
 				Src:  peernode1.ID,
 				Dst:  peernode2.ID,
-				Dir:  false,
+				Dir:  "undirect",
 			}
 
 			edges.Add(peernet_edge)
