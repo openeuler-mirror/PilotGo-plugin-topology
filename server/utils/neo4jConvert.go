@@ -17,10 +17,32 @@ func Neo4jnodeToToponode(neo4jnode neo4j.Node) *meta.Node {
 		DBID:     neo4jnode.Id,
 		ID:       neo4jnode.Props["nid"].(string),
 		Name:     neo4jnode.Props["name"].(string),
-		Type:     neo4jnode.Labels[0],
-		UUID:     neo4jnode.Labels[1],
 		Unixtime: neo4jnode.Props["unixtime"].(string),
 		Metrics:  metrics,
+	}
+
+	switch neo4jnode.Labels[0] {
+	case meta.NODE_APP:
+		toponode.Type = neo4jnode.Labels[0]
+		toponode.UUID = neo4jnode.Labels[1]
+	case meta.NODE_HOST:
+		toponode.Type = neo4jnode.Labels[0]
+		toponode.UUID = neo4jnode.Labels[1]
+	case meta.NODE_NET:
+		toponode.Type = neo4jnode.Labels[0]
+		toponode.UUID = neo4jnode.Labels[1]
+	case meta.NODE_PROCESS:
+		toponode.Type = neo4jnode.Labels[0]
+		toponode.UUID = neo4jnode.Labels[1]
+	case meta.NODE_RESOURCE:
+		toponode.Type = neo4jnode.Labels[0]
+		toponode.UUID = neo4jnode.Labels[1]
+	case meta.NODE_THREAD:
+		toponode.Type = neo4jnode.Labels[0]
+		toponode.UUID = neo4jnode.Labels[1]
+	default:
+		toponode.Type = neo4jnode.Labels[1]
+		toponode.UUID = neo4jnode.Labels[0]
 	}
 
 	return toponode
@@ -35,11 +57,13 @@ func Neo4jrelaToToporela(neo4jrela neo4j.Relationship) *meta.Edge {
 
 	toporela := &meta.Edge{
 		DBID:     neo4jrela.Id,
-		Src:      neo4jrela.StartId,
-		Dst:      neo4jrela.EndId,
+		SrcID:    neo4jrela.StartId,
+		DstID:    neo4jrela.EndId,
+		Src:      neo4jrela.Props["src"].(string),
+		Dst:      neo4jrela.Props["dst"].(string),
 		ID:       neo4jrela.Props["rid"].(string),
 		Type:     neo4jrela.Type,
-		Dir:      neo4jrela.Props["dir"].(bool),
+		Dir:      neo4jrela.Props["dir"].(string),
 		Unixtime: neo4jrela.Props["unixtime"].(string),
 		Metrics:  metrics,
 	}
