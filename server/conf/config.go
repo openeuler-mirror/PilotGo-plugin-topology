@@ -8,8 +8,9 @@ import (
 
 type TopoConf struct {
 	Server_addr string `yaml:"server_addr"`
+	Use   bool   `yaml:"use"`
 	Agent_port  string `yaml:"agent_port"`
-	Database    string `yaml:"database"`
+	GraphDB    string `yaml:"graphDB"`
 	Period      int64  `yaml:"period"`
 }
 
@@ -29,12 +30,19 @@ type Neo4jConf struct {
 	DB       string `yaml:"DB"`
 }
 
+type PrometheusConf struct {
+	Use    bool   `yaml:"use"`
+	Addr   string `yaml:"addr"`
+	Period int64  `yaml:"period"`
+}
+
 type ServerConfig struct {
-	Topo     *TopoConf       `yaml:"topo"`
-	PilotGo  *PilotGoConf    `yaml:"PilotGo"`
-	Logopts  *logger.LogOpts `yaml:"log"`
-	Arangodb *ArangodbConf   `yaml:"arangodb"`
-	Neo4j    *Neo4jConf      `yaml:"neo4j"`
+	Topo       *TopoConf       `yaml:"topo"`
+	PilotGo    *PilotGoConf    `yaml:"PilotGo"`
+	Logopts    *logger.LogOpts `yaml:"log"`
+	Arangodb   *ArangodbConf   `yaml:"arangodb"`
+	Neo4j      *Neo4jConf      `yaml:"neo4j"`
+	Prometheus *PrometheusConf `yaml:"prometheus"`
 }
 
 const config_type = "config_server.yaml"
