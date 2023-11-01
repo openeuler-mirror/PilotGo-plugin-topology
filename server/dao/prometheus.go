@@ -36,7 +36,26 @@ func (p *Prometheus) CreateAPI() error {
 	return nil
 }
 
-func (p *Prometheus) GetMetricList() ([]string, error) {
+func (p *Prometheus) GetTargets() ([]map[string]string, error) {
+	targets := make([]map[string]string, 0)
+
+	result, err := p.Api.Targets(p.Ctx)
+	if err != nil {
+		err = errors.Errorf("failed to get prometheus targets: %s **2", err.Error())
+		return nil, err
+	}
+
+	for _, t := range result.Active {
+		targets = append(targets, map[string]string{
+			"instance": string(t.Labels["instance"]),
+			"job":      string(t.Labels["job"]),
+		})
+	}
+
+	return targets, nil
+}
+
+func (p *Prometheus) GetMetrics() ([]string, error) {
 	metrics := make([]string, 0)
 
 	result, err := p.Api.Metadata(p.Ctx, "", "")
