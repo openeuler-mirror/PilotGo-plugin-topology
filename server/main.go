@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/agentmanager"
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/dao"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/handler"
+	service "gitee.com/openeuler/PilotGo-plugin-topology-server/service/background"
 )
 
 func main() {
@@ -40,7 +40,7 @@ func main() {
 	/*
 		init database
 	*/
-	dao.InitDB()
+	service.InitDB()
 
 	/*
 		init web server
