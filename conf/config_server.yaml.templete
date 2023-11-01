@@ -1,7 +1,8 @@
 topo:
   server_addr: "localhost:9991"
+  use: true
   agent_port: "9992"
-  database: "neo4j"
+  graphDB: "neo4j"
   period: 5
 PilotGo:
   http_addr: "localhost:8888"
@@ -12,7 +13,11 @@ log:
   max_file: 1
   max_size: 10485760
 neo4j:
-  addr: "bolt://10.41.121.1:7687"
+  addr: "bolt://localhost:7687"
   username: ""
   password: ""
   DB: "neo4j"
+prometheus:
+  use: false
+  addr: "http://localhost:9090"
+  period: 5
