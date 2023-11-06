@@ -2,9 +2,7 @@ package service
 
 import (
 	"fmt"
-	"os"
 
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/agentmanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/dao"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/meta"
 	"github.com/pkg/errors"
@@ -23,20 +21,8 @@ func MultiHostService() ([]*meta.Node, []*meta.Edge, error) {
 	multi_edges_map := make(map[int64]*meta.Edge)
 	multi_edges := make([]*meta.Edge, 0)
 
-	driver, err := dao.Neo4j.Create_driver()
-	if err != nil {
-		err := errors.Errorf("create neo4j driver failed: %s **fatal**2", err.Error()) // err top
-		agentmanager.Topo.ErrCh <- err
-		agentmanager.Topo.Errmu.Lock()
-		agentmanager.Topo.ErrCond.Wait()
-		agentmanager.Topo.Errmu.Unlock()
-		close(agentmanager.Topo.ErrCh)
-		os.Exit(1)
-	}
-	defer dao.Neo4j.Close_driver(driver)
-
 	cqlOUT = "match (n:host) return collect(distinct n.unixtime) as times"
-	times, err := dao.Neo4j.General_query(cqlOUT, "times", driver)
+	times, err := dao.Neo4j.General_query(cqlOUT, "times")
 	if err != nil {
 		err = errors.Wrap(err, " **2")
 		return nil, nil, err
@@ -49,7 +35,7 @@ func MultiHostService() ([]*meta.Node, []*meta.Edge, error) {
 	}
 
 	cqlOUT = fmt.Sprintf("match (nodes) where nodes.unixtime='%s' return nodes", latest)
-	nodes, err = dao.Neo4j.Node_query(cqlOUT, "nodes", driver)
+	nodes, err = dao.Neo4j.Node_query(cqlOUT, "nodes")
 	if err != nil {
 		err = errors.Wrap(err, " **2")
 		return nil, nil, err
@@ -60,7 +46,7 @@ func MultiHostService() ([]*meta.Node, []*meta.Edge, error) {
 	}
 
 	cqlOUT = fmt.Sprintf("match ()-[relas]->() where relas.unixtime='%s' return relas", latest)
-	edges, err = dao.Neo4j.Relation_query(cqlOUT, "relas", driver)
+	edges, err = dao.Neo4j.Relation_query(cqlOUT, "relas")
 	if err != nil {
 		err = errors.Wrap(err, " **2")
 		return nil, nil, err

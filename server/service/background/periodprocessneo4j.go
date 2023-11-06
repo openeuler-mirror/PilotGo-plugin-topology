@@ -2,7 +2,6 @@ package service
 
 import (
 	"fmt"
-	"os"
 	"strconv"
 	"sync"
 	"time"
@@ -22,18 +21,6 @@ func PeriodProcessNeo4j(unixtime int64, agentnum int) {
 	var nodeUuidWg sync.WaitGroup
 	var edgeBreakWg sync.WaitGroup
 	_unixtime := strconv.Itoa(int(unixtime))
-
-	dri, err := dao.Neo4j.Create_driver()
-	if err != nil {
-		err := errors.Errorf("create neo4j driver failed: %s **fatal**2", err.Error()) // err top
-		agentmanager.Topo.ErrCh <- err
-		agentmanager.Topo.Errmu.Lock()
-		agentmanager.Topo.ErrCond.Wait()
-		agentmanager.Topo.Errmu.Unlock()
-		close(agentmanager.Topo.ErrCh)
-		os.Exit(1)
-	}
-	defer dao.Neo4j.Close_driver(dri)
 
 	dataprocesser := processor.CreateDataProcesser()
 	nodes, edges, collect_errlist, process_errlist := dataprocesser.Process_data()
@@ -87,7 +74,7 @@ func PeriodProcessNeo4j(unixtime int64, agentnum int) {
 							"metrics": _node.Metrics,
 						}
 
-						err := dao.Neo4j.Entity_create(cqlIN, params, dri)
+						err := dao.Neo4j.Entity_create(cqlIN, params)
 						if err != nil {
 							err = errors.Wrapf(err, "create neo4j node failed; %s **warn**2", cqlIN) // err top
 							agentmanager.Topo.ErrCh <- err
@@ -121,7 +108,7 @@ func PeriodProcessNeo4j(unixtime int64, agentnum int) {
 					"metrics": _edge.Metrics,
 				}
 
-				err := dao.Neo4j.Entity_create(cqlIN, params, dri)
+				err := dao.Neo4j.Entity_create(cqlIN, params)
 				if err != nil {
 					err = errors.Wrapf(err, "create neo4j edge failed **warn**2") // err top
 					agentmanager.Topo.ErrCh <- err

@@ -1,6 +1,8 @@
 package dao
 
 import (
+	"time"
+
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/meta"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/utils"
 	"github.com/neo4j/neo4j-go-driver/v4/neo4j"
@@ -14,6 +16,7 @@ type Neo4jclient struct {
 	username string
 	password string
 	DB       string
+	Driver   neo4j.Driver
 }
 
 func CreateNeo4j(url, user, pass, db string) *Neo4jclient {
@@ -26,15 +29,15 @@ func CreateNeo4j(url, user, pass, db string) *Neo4jclient {
 }
 
 func (n *Neo4jclient) Create_driver() (neo4j.Driver, error) {
-	return neo4j.NewDriver(n.addr, neo4j.BasicAuth(n.username, n.password, ""))
+	return neo4j.NewDriver(n.addr, neo4j.BasicAuth(n.username, n.password, ""), func(config *neo4j.Config) {
+		config.MaxTransactionRetryTime = 30 * time.Second
+		config.MaxConnectionPoolSize = 50
+		config.MaxConnectionLifetime = 1 * time.Hour
+	})
 }
 
-func (n *Neo4jclient) Close_driver(driver neo4j.Driver) error {
-	return driver.Close()
-}
-
-func (n *Neo4jclient) Entity_create(cypher string, params map[string]interface{}, driver neo4j.Driver) error {
-	session := driver.NewSession(neo4j.SessionConfig{AccessMode: neo4j.AccessModeWrite, DatabaseName: n.DB})
+func (n *Neo4jclient) Entity_create(cypher string, params map[string]interface{}) error {
+	session := n.Driver.NewSession(neo4j.SessionConfig{AccessMode: neo4j.AccessModeWrite, DatabaseName: n.DB})
 	defer session.Close()
 
 	_, err := session.WriteTransaction(func(tx neo4j.Transaction) (interface{}, error) {
@@ -53,9 +56,9 @@ func (n *Neo4jclient) Entity_create(cypher string, params map[string]interface{}
 	return nil
 }
 
-func (n *Neo4jclient) General_query(cypher string, varia string, driver neo4j.Driver) ([]string, error) {
+func (n *Neo4jclient) General_query(cypher string, varia string) ([]string, error) {
 	var list []string
-	session := driver.NewSession(neo4j.SessionConfig{AccessMode: neo4j.AccessModeRead, DatabaseName: n.DB})
+	session := n.Driver.NewSession(neo4j.SessionConfig{AccessMode: neo4j.AccessModeRead, DatabaseName: n.DB})
 	defer session.Close()
 	_, err := session.ReadTransaction(func(tx neo4j.Transaction) (interface{}, error) {
 		result, err := tx.Run(cypher, nil)
@@ -89,9 +92,9 @@ func (n *Neo4jclient) General_query(cypher string, varia string, driver neo4j.Dr
 	return list, nil
 }
 
-func (n *Neo4jclient) Node_query(cypher string, varia string, driver neo4j.Driver) ([]*meta.Node, error) {
+func (n *Neo4jclient) Node_query(cypher string, varia string) ([]*meta.Node, error) {
 	var list []*meta.Node
-	session := driver.NewSession(neo4j.SessionConfig{AccessMode: neo4j.AccessModeRead, DatabaseName: n.DB})
+	session := n.Driver.NewSession(neo4j.SessionConfig{AccessMode: neo4j.AccessModeRead, DatabaseName: n.DB})
 	defer session.Close()
 	_, err := session.ReadTransaction(func(tx neo4j.Transaction) (interface{}, error) {
 		result, err := tx.Run(cypher, nil)
@@ -122,9 +125,9 @@ func (n *Neo4jclient) Node_query(cypher string, varia string, driver neo4j.Drive
 	return list, err
 }
 
-func (n *Neo4jclient) Relation_query(cypher string, varia string, driver neo4j.Driver) ([]*meta.Edge, error) {
+func (n *Neo4jclient) Relation_query(cypher string, varia string) ([]*meta.Edge, error) {
 	var list []*meta.Edge
-	session := driver.NewSession(neo4j.SessionConfig{AccessMode: neo4j.AccessModeRead, DatabaseName: n.DB})
+	session := n.Driver.NewSession(neo4j.SessionConfig{AccessMode: neo4j.AccessModeRead, DatabaseName: n.DB})
 	defer session.Close()
 	_, err := session.ReadTransaction(func(tx neo4j.Transaction) (interface{}, error) {
 		result, err := tx.Run(cypher, nil)
