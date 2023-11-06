@@ -10,7 +10,6 @@ import (
 
 func MultiHostService() ([]*meta.Node, []*meta.Edge, error) {
 	var latest string
-	var cqlOUT string
 	nodes := make([]*meta.Node, 0)
 	nodes_map := make(map[int64]*meta.Node)
 	edges := make([]*meta.Edge, 0)
@@ -21,8 +20,7 @@ func MultiHostService() ([]*meta.Node, []*meta.Edge, error) {
 	multi_edges_map := make(map[int64]*meta.Edge)
 	multi_edges := make([]*meta.Edge, 0)
 
-	cqlOUT = "match (n:host) return collect(distinct n.unixtime) as times"
-	times, err := dao.Neo4j.General_query(cqlOUT, "times")
+	times, err := dao.Global_GraphDB.Timestamps_query()
 	if err != nil {
 		err = errors.Wrap(err, " **2")
 		return nil, nil, err
@@ -34,8 +32,7 @@ func MultiHostService() ([]*meta.Node, []*meta.Edge, error) {
 		latest = times[len(times)-2]
 	}
 
-	cqlOUT = fmt.Sprintf("match (nodes) where nodes.unixtime='%s' return nodes", latest)
-	nodes, err = dao.Neo4j.Node_query(cqlOUT, "nodes")
+	nodes, err = dao.Global_GraphDB.MultiHost_node_query(latest)
 	if err != nil {
 		err = errors.Wrap(err, " **2")
 		return nil, nil, err
@@ -45,8 +42,7 @@ func MultiHostService() ([]*meta.Node, []*meta.Edge, error) {
 		nodes_map[_node.DBID] = _node
 	}
 
-	cqlOUT = fmt.Sprintf("match ()-[relas]->() where relas.unixtime='%s' return relas", latest)
-	edges, err = dao.Neo4j.Relation_query(cqlOUT, "relas")
+	edges, err = dao.Global_GraphDB.MultiHost_relation_query(latest)
 	if err != nil {
 		err = errors.Wrap(err, " **2")
 		return nil, nil, err
