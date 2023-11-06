@@ -6,14 +6,17 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/signal"
 	"strings"
 	"sync"
+	"syscall"
 
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/conf"
 	"gitee.com/openeuler/PilotGo/sdk/logger"
 	"gitee.com/openeuler/PilotGo/sdk/plugin/client"
 	"gitee.com/openeuler/PilotGo/sdk/utils/httputils"
 	"github.com/mitchellh/mapstructure"
+	"github.com/neo4j/neo4j-go-driver/v4/neo4j"
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
 )
@@ -225,5 +228,21 @@ func (t *Topoclient) InitConfig() {
 		err = errors.Errorf("yaml unmarshal failed: %s", err.Error()) // err top
 		fmt.Printf("%+v\n", err)
 		os.Exit(-1)
+	}
+}
+
+func (t *Topoclient) SignalMonitoring(driver neo4j.Driver) {
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+	for {
+		s := <-c
+		switch s {
+		case syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT:
+			driver.Close()
+			fmt.Printf("close connection with neo4j\n")
+			os.Exit(-1)
+		default:
+			fmt.Printf("unknown signal: %s\n", s.String())
+		}
 	}
 }
