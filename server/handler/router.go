@@ -14,24 +14,24 @@ import (
 )
 
 func InitWebServer() {
-	// go func() {
-	engine := gin.Default()
-	engine.Use(TimeoutMiddleware())
-	agentmanager.Topo.Sdkmethod.RegisterHandlers(engine)
-	InitRouter(engine)
-	StaticRouter(engine)
+	go func() {
+		engine := gin.Default()
+		engine.Use(TimeoutMiddleware())
+		agentmanager.Topo.Sdkmethod.RegisterHandlers(engine)
+		InitRouter(engine)
+		StaticRouter(engine)
 
-	err := engine.Run(conf.Config().Topo.Server_addr)
-	if err != nil {
-		err = errors.Errorf("%s **fatal**2", err.Error()) // err top
-		agentmanager.Topo.ErrCh <- err
-		agentmanager.Topo.Errmu.Lock()
-		agentmanager.Topo.ErrCond.Wait()
-		agentmanager.Topo.Errmu.Unlock()
-		close(agentmanager.Topo.ErrCh)
-		os.Exit(1)
-	}
-	// }()
+		err := engine.Run(conf.Config().Topo.Server_addr)
+		if err != nil {
+			err = errors.Errorf("%s **fatal**2", err.Error()) // err top
+			agentmanager.Topo.ErrCh <- err
+			agentmanager.Topo.Errmu.Lock()
+			agentmanager.Topo.ErrCond.Wait()
+			agentmanager.Topo.Errmu.Unlock()
+			close(agentmanager.Topo.ErrCh)
+			os.Exit(1)
+		}
+	}()
 }
 
 func InitRouter(router *gin.Engine) {
@@ -46,20 +46,18 @@ func InitRouter(router *gin.Engine) {
 	}
 }
 
-func TimeoutResponse(ctx *gin.Context) {
-	ctx.JSON(http.StatusGatewayTimeout, gin.H{
-		"code":  http.StatusGatewayTimeout,
-		"error": "timeout",
-		"data":  nil,
-	})
-}
-
 func TimeoutMiddleware() gin.HandlerFunc {
 	return timeout.New(
 		timeout.WithTimeout(600*time.Second),
 		timeout.WithHandler(func(ctx *gin.Context) {
 			ctx.Next()
 		}),
-		timeout.WithResponse(TimeoutResponse),
+		timeout.WithResponse(func(ctx *gin.Context) {
+			ctx.JSON(http.StatusGatewayTimeout, gin.H{
+				"code":  http.StatusGatewayTimeout,
+				"error": "timeout",
+				"data":  nil,
+			})
+		}),
 	)
 }
