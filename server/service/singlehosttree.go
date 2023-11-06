@@ -2,9 +2,7 @@ package service
 
 import (
 	"fmt"
-	"os"
 
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/agentmanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/dao"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/meta"
 	"github.com/pkg/errors"
@@ -20,20 +18,8 @@ func SingleHostTreeService(uuid string) (*TreeTopoNode, error) {
 	treenodes_net := make([]*TreeTopoNode, 0)
 	nodes_type_map := make(map[string][]*meta.Node)
 
-	driver, err := dao.Neo4j.Create_driver()
-	if err != nil {
-		err := errors.Errorf("create neo4j driver failed: %s **fatal**2", err.Error()) // err top
-		agentmanager.Topo.ErrCh <- err
-		agentmanager.Topo.Errmu.Lock()
-		agentmanager.Topo.ErrCond.Wait()
-		agentmanager.Topo.Errmu.Unlock()
-		close(agentmanager.Topo.ErrCh)
-		os.Exit(1)
-	}
-	defer dao.Neo4j.Close_driver(driver)
-
 	cqlOUT = "match (n:host) return collect(distinct n.unixtime) as times"
-	times, err := dao.Neo4j.General_query(cqlOUT, "times", driver)
+	times, err := dao.Neo4j.General_query(cqlOUT, "times")
 	if err != nil {
 		err = errors.Wrap(err, " **2")
 		return nil, err
@@ -46,7 +32,7 @@ func SingleHostTreeService(uuid string) (*TreeTopoNode, error) {
 	}
 
 	cqlOUT = fmt.Sprintf("match (nodes:`%s`) where nodes.unixtime='%s' return nodes", uuid, latest)
-	single_nodes, err = dao.Neo4j.Node_query(cqlOUT, "nodes", driver)
+	single_nodes, err = dao.Neo4j.Node_query(cqlOUT, "nodes")
 	if err != nil {
 		err = errors.Wrap(err, " **2")
 		return nil, err

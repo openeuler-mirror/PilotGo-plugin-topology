@@ -13,13 +13,24 @@ import (
 
 func InitDB() {
 	var graphperiod int64
-	var promeperiod int64
 	var runningAgents int
 
 	graphperiod = conf.Global_config.Topo.Period
 	switch conf.Global_config.Topo.GraphDB {
 	case "neo4j":
 		dao.Neo4j = dao.CreateNeo4j(conf.Global_config.Neo4j.Addr, conf.Global_config.Neo4j.Username, conf.Global_config.Neo4j.Password, conf.Global_config.Neo4j.DB)
+		driver, err := dao.Neo4j.Create_driver()
+		if err != nil {
+			err := errors.Errorf("create neo4j driver failed: %s **fatal**2", err.Error()) // err top
+			agentmanager.Topo.ErrCh <- err
+			agentmanager.Topo.Errmu.Lock()
+			agentmanager.Topo.ErrCond.Wait()
+			agentmanager.Topo.Errmu.Unlock()
+			close(agentmanager.Topo.ErrCh)
+			os.Exit(1)
+		}
+		dao.Neo4j.Driver = driver
+		
 		go func(interval int64) {
 			if conf.Config().Topo.Use {
 				for true {
@@ -50,22 +61,4 @@ func InitDB() {
 		close(agentmanager.Topo.ErrCh)
 		os.Exit(1)
 	}
-
-	promeperiod = conf.Config().Prometheus.Period
-	go func(interval int64) {
-		if conf.Config().Prometheus.Use {
-			dao.Prome = dao.CreatePrometheus(conf.Config().Prometheus.Addr)
-			err := dao.Prome.CreateAPI()
-			if err != nil {
-				err = errors.Wrap(err, " **warn**2") // err top
-				agentmanager.Topo.ErrCh <- err
-			}
-
-			for true {
-				unixtime_now := time.Now().Unix()
-				PeriodProcessPrometheus(unixtime_now, runningAgents)
-				time.Sleep(time.Duration(interval) * time.Second)
-			}
-		}
-	}(promeperiod)
 }
