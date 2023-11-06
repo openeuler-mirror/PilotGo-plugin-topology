@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/agentmanager"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/conf"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/dao"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/meta"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/processor"
@@ -14,7 +15,31 @@ import (
 	"github.com/pkg/errors"
 )
 
-func PeriodProcessNeo4j(unixtime int64, agentnum int) {
+func PeriodCollectWorking() {
+	var graphperiod int64
+	var runningAgents int
+
+	graphperiod = conf.Global_config.Topo.Period
+	go func(interval int64, gdb dao.GraphdbIface) {
+		for {
+			// if runningAgents = agentmanager.Topo.GetRunningAgentNumber(); runningAgents <= 0 {
+			// 	err := errors.New("no running agent **warn**1")
+			// 	agentmanager.Topo.ErrCh <- err
+
+			// 	time.Sleep(5 * time.Second)
+			// 	continue
+			// }
+
+			unixtime_now := time.Now().Unix()
+			PeriodProcessWorking(unixtime_now, runningAgents, gdb)
+			time.Sleep(time.Duration(interval) * time.Second)
+
+			// break
+		}
+	}(graphperiod, dao.Global_GraphDB)
+}
+
+func PeriodProcessWorking(unixtime int64, agentnum int, graphdb dao.GraphdbIface) {
 	start := time.Now()
 
 	var nodeTypeWg sync.WaitGroup
@@ -70,11 +95,7 @@ func PeriodProcessNeo4j(unixtime int64, agentnum int) {
 								_node.Type, _unixtime, _node.ID, _node.Name, _node.UUID)
 						}
 
-						params := map[string]interface{}{
-							"metrics": _node.Metrics,
-						}
-
-						err := dao.Neo4j.Entity_create(cqlIN, params)
+						err := graphdb.Node_create(_unixtime, _node)
 						if err != nil {
 							err = errors.Wrapf(err, "create neo4j node failed; %s **warn**2", cqlIN) // err top
 							agentmanager.Topo.ErrCh <- err
@@ -94,21 +115,8 @@ func PeriodProcessNeo4j(unixtime int64, agentnum int) {
 		go func(___edges []*meta.Edge) {
 			defer edgeBreakWg.Done()
 
-			var cqlIN string
-
 			for _, _edge := range ___edges {
-				if len(_edge.Metrics) == 0 {
-					cqlIN = fmt.Sprintf("match (src {unixtime:'%s', nid:'%s'}), (dst {unixtime:'%s', nid:'%s'}) create (src)-[r:`%s` {unixtime:'%s', rid:'%s', dir:'%s', src:'%s', dst:'%s'}]->(dst)",
-						_unixtime, _edge.Src, _unixtime, _edge.Dst, _edge.Type, _unixtime, _edge.ID, _edge.Dir, _edge.Src, _edge.Dst)
-				} else {
-					cqlIN = fmt.Sprintf("match (src {unixtime:'%s', nid:'%s'}), (dst {unixtime:'%s', nid:'%s'}) create (src)-[r:`%s` {unixtime:'%s', rid:'%s', dir:'%s', src:'%s', dst:'%s'}]->(dst) set r += $metrics",
-						_unixtime, _edge.Src, _unixtime, _edge.Dst, _edge.Type, _unixtime, _edge.ID, _edge.Dir, _edge.Src, _edge.Dst)
-				}
-				params := map[string]interface{}{
-					"metrics": _edge.Metrics,
-				}
-
-				err := dao.Neo4j.Entity_create(cqlIN, params)
+				err := graphdb.Edge_create(_unixtime, _edge)
 				if err != nil {
 					err = errors.Wrapf(err, "create neo4j edge failed **warn**2") // err top
 					agentmanager.Topo.ErrCh <- err
