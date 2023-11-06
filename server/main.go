@@ -49,6 +49,11 @@ func main() {
 	handler.InitWebServer()
 
 	/*
+		topo插件自身数据采集模块周期性数据采集
+	*/
+	service.PeriodCollectWorking()
+
+	/*
 		终止进程信号监听
 	*/
 	agentmanager.Topo.SignalMonitoring(dao.Neo4j.Driver)

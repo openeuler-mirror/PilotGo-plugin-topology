@@ -1,6 +1,5 @@
 topo:
   server_addr: "localhost:9991"
-  use: true
   agent_port: "9992"
   graphDB: "neo4j"
   period: 5
@@ -18,6 +17,4 @@ neo4j:
   password: ""
   DB: "neo4j"
 prometheus:
-  use: false
   addr: "http://localhost:9090"
-  period: 5

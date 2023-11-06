@@ -8,9 +8,8 @@ import (
 
 type TopoConf struct {
 	Server_addr string `yaml:"server_addr"`
-	Use   bool   `yaml:"use"`
 	Agent_port  string `yaml:"agent_port"`
-	GraphDB    string `yaml:"graphDB"`
+	GraphDB     string `yaml:"graphDB"`
 	Period      int64  `yaml:"period"`
 }
 
@@ -31,9 +30,7 @@ type Neo4jConf struct {
 }
 
 type PrometheusConf struct {
-	Use    bool   `yaml:"use"`
-	Addr   string `yaml:"addr"`
-	Period int64  `yaml:"period"`
+	Addr string `yaml:"addr"`
 }
 
 type ServerConfig struct {
