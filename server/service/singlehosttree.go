@@ -1,8 +1,6 @@
 package service
 
 import (
-	"fmt"
-
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/dao"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/meta"
 	"github.com/pkg/errors"
@@ -10,7 +8,6 @@ import (
 
 func SingleHostTreeService(uuid string) (*TreeTopoNode, error) {
 	var latest string
-	var cqlOUT string
 	var treerootnode *TreeTopoNode
 	single_nodes := make([]*meta.Node, 0)
 	single_nodes_map := make(map[int64]*meta.Node)
@@ -18,8 +15,7 @@ func SingleHostTreeService(uuid string) (*TreeTopoNode, error) {
 	treenodes_net := make([]*TreeTopoNode, 0)
 	nodes_type_map := make(map[string][]*meta.Node)
 
-	cqlOUT = "match (n:host) return collect(distinct n.unixtime) as times"
-	times, err := dao.Neo4j.General_query(cqlOUT, "times")
+	times, err := dao.Global_GraphDB.Timestamps_query()
 	if err != nil {
 		err = errors.Wrap(err, " **2")
 		return nil, err
@@ -31,8 +27,7 @@ func SingleHostTreeService(uuid string) (*TreeTopoNode, error) {
 		latest = times[len(times)-2]
 	}
 
-	cqlOUT = fmt.Sprintf("match (nodes:`%s`) where nodes.unixtime='%s' return nodes", uuid, latest)
-	single_nodes, err = dao.Neo4j.Node_query(cqlOUT, "nodes")
+	single_nodes, err = dao.Global_GraphDB.SingleHost_node_query(uuid, latest)
 	if err != nil {
 		err = errors.Wrap(err, " **2")
 		return nil, err
