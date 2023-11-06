@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/agentmanager"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/dao"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/handler"
 	service "gitee.com/openeuler/PilotGo-plugin-topology-server/service/background"
 )
@@ -46,4 +47,9 @@ func main() {
 		init web server
 	*/
 	handler.InitWebServer()
+
+	/*
+		终止进程信号监听
+	*/
+	agentmanager.Topo.SignalMonitoring(dao.Neo4j.Driver)
 }
