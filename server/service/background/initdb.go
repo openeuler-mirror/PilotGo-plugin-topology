@@ -13,7 +13,7 @@ import (
 func InitDB() {
 	switch conf.Global_config.Topo.GraphDB {
 	case "neo4j":
-		dao.Neo4j = dao.CreateNeo4j(conf.Global_config.Neo4j.Addr, conf.Global_config.Neo4j.Username, conf.Global_config.Neo4j.Password, conf.Global_config.Neo4j.DB).(*dao.Neo4jclient)
+		dao.Neo4j = dao.CreateNeo4j(conf.Global_config.Neo4j.Addr, conf.Global_config.Neo4j.Username, conf.Global_config.Neo4j.Password, conf.Global_config.Neo4j.DB)
 		dao.Global_GraphDB = dao.Neo4j
 	case "otherDB":
 
