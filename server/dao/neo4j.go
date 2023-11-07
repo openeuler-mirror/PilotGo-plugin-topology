@@ -22,7 +22,7 @@ type Neo4jclient struct {
 	Driver   neo4j.Driver
 }
 
-func CreateNeo4j(url, user, pass, db string) GraphdbIface {
+func CreateNeo4j(url, user, pass, db string) *Neo4jclient {
 	n := &Neo4jclient{
 		addr:     url,
 		username: user,
