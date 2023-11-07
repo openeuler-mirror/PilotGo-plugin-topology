@@ -239,7 +239,7 @@ func (t *Topoclient) SignalMonitoring(driver neo4j.Driver) {
 		switch s {
 		case syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT:
 			driver.Close()
-			fmt.Printf("close connection with neo4j\n")
+			fmt.Printf("close the connection to neo4j\n")
 			os.Exit(-1)
 		default:
 			fmt.Printf("unknown signal: %s\n", s.String())
