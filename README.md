@@ -1,31 +1,51 @@
 # PilotGo-plugin-topology
 
 #### 介绍
-system application architecture detection.
+System application architecture detection.
 
 #### 软件架构
-软件架构说明
+1. 系统环境: 
+- agent: Kylin-Server-V10-SP3、nestos、openEuler-22.03-LTS-SP1
+- server: Kylin-Desktop-V10-SP1、Kylin-Server-V10-SP3、nestos、openEuler-22.03-LTS-SP1、redhat9
+2. 开发工具:
+- golang >= 1.18、vue3、typescript、node.js > 14
+3. 运行依赖组件:
+- pilotgo
+- neo4j
 
-
-#### 安装教程
-
-1.  xxxx
-2.  xxxx
-3.  xxxx
-
-#### 使用说明
-
-1.  xxxx
-2.  xxxx
-3.  xxxx
-
-#### 参与贡献
-
-1.  Fork 本仓库
-2.  新建 Feat_xxx 分支
-3.  提交代码
-4.  新建 Pull Request
-
+#### 安装及使用教程
+1. 拉取仓库代码
+```bash
+$ git clone https://gitee.com/openeuler/PilotGo-plugin-topology.git
+```
+2. 修改配置文件
+```bash
+$ mv config_server.yaml.templete config_server.yaml; vim config_server.yaml
+$ mv config_agent.yaml.templete config_agent.yaml; vim config_agent.yaml
+```
+3. 前端编译
+```bash
+$ cd ./web
+$ yarn install
+$ yarn build
+```
+4. 后端编译
+```bash
+$ cd ./agent
+$ go build -mod=vendor -o topoagent main.go
+$ cd ../server
+$ mv ../web/dist/* handler/
+$ go build -mod=vendor -tags=production toposerver main.go
+```
+5. 运行
+```bash
+在管理节点启动pilotgo及其相关中间件，neo4j数据库；
+$ cd ./server
+$ ./toposerver -conf /config_server.yaml文件路径
+将topoagent、config_agent.yaml部署至业务节点相应目录下；
+$ ./topoagent -conf /config_agent.yaml文件路径
+```
+6. 打开pilotgo web UI页面，添加并启动topology插件，查看拓扑图页面
 
 #### 特技
 
