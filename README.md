@@ -13,6 +13,8 @@ System application architecture detection.
 - pilotgo
 - neo4j
 
+![Alt text](docs/pilotgo-plugin-topo.png)
+
 #### 安装及使用教程
 1. 拉取仓库代码
 ```bash
