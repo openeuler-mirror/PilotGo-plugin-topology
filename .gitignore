@@ -18,5 +18,7 @@ server/handler/assets/
 server/handler/index.html
 web/node_modules
 web/dist/
+web/public/topo.json
+docs/time-series.json
 
 go.work*
