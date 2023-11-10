@@ -22,6 +22,17 @@
         </el-dropdown-menu>
       </template>
     </el-dropdown>
+
+    <el-dropdown>
+      <span class="dropdown">
+        <el-icon><Clock /></el-icon>时间<el-icon class="el-icon--right"><arrow-down /></el-icon>
+      </span>
+      <template #dropdown>
+        <el-dropdown-menu>
+          <el-dropdown-item v-for="time in time_list">{{ time }}</el-dropdown-item>
+        </el-dropdown-menu>
+      </template>
+    </el-dropdown>
   </div>
   <RouterView />
 
@@ -35,6 +46,8 @@ import { topo } from '@/request/api';
 import { More } from '@element-plus/icons-vue';
 
 const node_list = reactive<any>([])
+// ttcode
+const time_list = reactive<any>(["1699595594", "1699595668", "1699595751"])
 const router = useRouter()
 
 onMounted(async () => {
