@@ -4,21 +4,24 @@
     <el-button class="button" @click="switch_single_node">单机拓扑</el-button>
   </div>
   <div id="topo-container" class="container"></div>
-  <el-drawer class="drawer" v-model="drawer" :title="title" direction="rtl" size="40%">
+  <el-drawer class="drawer" v-model="chart_drawer" :title="title" direction="rtl" size="30%">
     <div>
-      <el-button @click="innerDrawer = true">
-        <el-icon class="el-icon--left"><More /></el-icon>
-      </el-button>
-      <el-drawer
-        v-model="innerDrawer"
-        title="I'm inner Drawer"
-        :append-to-body="true"
-         >
+      <el-button class="metricbutton" @click="innerDrawer = true" :icon="More" size="default" circle="true"/>
+        <!-- <el-icon class="el-icon--left"><More /></el-icon> -->
+      <el-drawer v-model="innerDrawer" :with-header="false" :append-to-body="true" size="25%">
         <el-table :data="table_data" stripe style="width: 100%">
-          <el-table-column prop="name" label="属性" width="180" />
+          <el-table-column prop="name" label="属性" />
           <el-table-column prop="value" label="值" />
         </el-table>
       </el-drawer>
+    </div>
+  </el-drawer>
+  <el-drawer class="drawer" v-model="metric_drawer" :title="title" direction="rtl" size="30%">
+    <div>
+      <el-table :data="table_data" stripe style="width: 100%">
+            <el-table-column prop="name" label="属性" />
+            <el-table-column prop="value" label="值" />
+          </el-table>
     </div>
   </el-drawer>
 </template>
@@ -29,17 +32,19 @@ import { ref, reactive, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { topo } from '../request/api';
 import server_logo from "@/assets/icon/server.png";
-import type { More } from '@element-plus/icons-vue';
+import { More } from '@element-plus/icons-vue';
+import topodata from '../../public/topo.json'
 
-let drawer = ref(false)
-const innerDrawer = ref(false)
+let chart_drawer = ref(false)
+let innerDrawer = ref(false)
+let metric_drawer = ref(false)
 let title = ref("")
 let table_data = reactive<any>([])
 
 const router = useRouter()
 
 function handleClose() {
-  drawer.value = false
+  chart_drawer.value = false
 }
 
 function switch_single_node() {
@@ -48,7 +53,8 @@ function switch_single_node() {
 
 onMounted(async () => {
   try {
-    const data = await topo.multi_host_topo();
+    const data = topodata
+    // const data = await topo.multi_host_topo();
     // console.log(data.data);
 
     for (let i = 0; i < data.data.edges.length; i++) {
@@ -134,9 +140,16 @@ function initGraph(data: any) {
 }
 
 function updateDrawer(node: any) {
-  title.value = node.id + "节点属性";
-  drawer.value = drawer.value ? false : true;
+  title.value = node.id;
 
+  // if (node.type === "host") {
+  //     chart_drawer.value = chart_drawer.value ? false : true;
+  // } else {
+  //     metric_drawer.value = metric_drawer.value ? false : true;
+  // }
+
+  chart_drawer.value = chart_drawer.value ? false : true;
+  
   // console.log(node)
   table_data = [];
   let metrics = node.model.metrics;
@@ -172,6 +185,15 @@ function updateDrawer(node: any) {
   padding-left: 10px;
 }
 
+.metricbutton {
+  position: absolute;
+  right: 0;
+  top: 0;
+
+  margin-top: 3px;
+  margin-right: 10px;
+}
+
 .container {
   width: 100%;
   height: 100%;
@@ -181,4 +203,6 @@ function updateDrawer(node: any) {
 .drawer {
   height: 100%;
 }
+
+
 </style>
