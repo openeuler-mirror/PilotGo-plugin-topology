@@ -1,22 +1,14 @@
 <template>
-  <div class="title">
-    <h1 class="h1">单机拓扑图演示页面</h1>
-    <el-dropdown class="dropdown" @command="handleNodeSelected">
-      <span class="el-dropdown-link">
-        选择主机
-        <el-icon class="el-icon--right">
-          <arrow-down />
-        </el-icon>
-      </span>
-      <template #dropdown>
-        <el-dropdown-menu>
-          <el-dropdown-item :command=node v-for="node in node_list">{{ node.id }}</el-dropdown-item>
-        </el-dropdown-menu>
-      </template>
-    </el-dropdown>
-    <el-button class="button" @click="switch_cluster">集群拓扑</el-button>
-  </div>
-
+  <!-- <el-dropdown class="dropdown" placement="bottom" @command="handleNodeSelected">
+    <span class="el-dropdown-link">
+      机器<el-icon class="el-icon--right"><arrow-down /></el-icon>
+    </span>
+    <template #dropdown>
+      <el-dropdown-menu>
+        <el-dropdown-item :command=node v-for="node in node_list">{{ node.id }}</el-dropdown-item>
+      </el-dropdown-menu>
+    </template>
+  </el-dropdown> -->
   <div id="topo-container" class="container"></div>
   <el-drawer class="drawer" v-model="drawer" :title="title" direction="rtl" :before-close="handleClose">
     <el-table :data="table_data" stripe style="width: 100%">
@@ -29,12 +21,13 @@
 <script setup lang="ts">
 import G6 from '@antv/g6';
 import { ref, reactive, onMounted } from "vue";
-import { useRouter } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
 import { topo } from '../request/api';
 import server_logo from "@/assets/icon/server.png";
+import topodata from '../../public/single.json'
 
 const router = useRouter()
-
+const route = useRoute()
 const node_list = reactive<any>([])
 let graph = ref()
 
@@ -51,29 +44,17 @@ function switch_cluster() {
 }
 
 onMounted(async () => {
-  try {
-    updateNodeList()
-  } catch (error) {
-    console.error(error)
-  }
+  handleNodeSelected(route.query.uuid)
+
 })
 
-async function updateNodeList() {
-  const data = await topo.host_list()
-  // console.log(data);
-  for (let key in data.data.agentlist) {
-    node_list.push({
-      id: key,
-    })
-  };
-
-}
-
-async function handleNodeSelected(node: any) {
-  const data = await topo.single_host_tree(node.id);
+async function handleNodeSelected(uuid: any) {
+  // ttcode
+  const data = topodata
+  // const data = await topo.single_host_tree(uuid);
   // console.log(data.data.tree);
 
-  let root = data.data.tree
+  let root: any = data.data.tree
   root.img = server_logo;
   root.type = "image";
   root.size = 40
@@ -172,11 +153,13 @@ function updateDrawer(node: any) {
 }
 
 .dropdown {
-  font-size: 120%;
-  position: absolute;
+  /* font-size: 120%; */
+  position:fixed;
   background-color: white;
-  right: 120px;
-  bottom: 5px;
+  /* right: 120px; */
+  top: 10%;
+
+
 
   margin-bottom: 3px;
   margin-right: 10px;
