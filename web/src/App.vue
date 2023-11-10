@@ -43,6 +43,19 @@
         </el-dropdown-menu>
       </template>
     </el-dropdown>
+
+    <el-dropdown>
+      <span class="dropdown">
+        <el-icon><Setting /></el-icon>设置<el-icon class="el-icon--right"><arrow-down /></el-icon>
+      </span>
+      <template #dropdown>
+        <el-dropdown-menu>
+          <el-dropdown-item>1</el-dropdown-item>
+          <el-dropdown-item>1</el-dropdown-item>
+          <el-dropdown-item>1</el-dropdown-item>
+        </el-dropdown-menu>
+      </template>
+    </el-dropdown>
   </div>
   <RouterView />
 
@@ -53,12 +66,12 @@ import { RouterLink, RouterView } from 'vue-router'
 import { ref, reactive, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { topo } from '@/request/api';
-import { More } from '@element-plus/icons-vue';
 
 const node_list = reactive<any>([])
 // ttcode
 const time_list = reactive<any>(["1699595594", "1699595668", "1699595751"])
 const interval_list = reactive<any>(["5s", "15s", "1m", "5m"])
+
 const router = useRouter()
 
 onMounted(async () => {
