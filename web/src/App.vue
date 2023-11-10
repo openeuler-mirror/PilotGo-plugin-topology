@@ -7,7 +7,6 @@
       <template #dropdown>
         <el-dropdown-menu>
           <el-dropdown-item @click="switch_multi_topo">业务集群网络拓扑</el-dropdown-item>
-          <el-dropdown-item @click="switch_single_topo">单机拓扑</el-dropdown-item>
         </el-dropdown-menu>
       </template>
     </el-dropdown>
@@ -33,6 +32,17 @@
         </el-dropdown-menu>
       </template>
     </el-dropdown>
+
+    <el-dropdown>
+      <span class="dropdown">
+        <el-icon><Aim /></el-icon>时间间隔<el-icon class="el-icon--right"><arrow-down /></el-icon>
+      </span>
+      <template #dropdown>
+        <el-dropdown-menu>
+          <el-dropdown-item v-for="interval in interval_list">{{ interval }}</el-dropdown-item>
+        </el-dropdown-menu>
+      </template>
+    </el-dropdown>
   </div>
   <RouterView />
 
@@ -48,6 +58,7 @@ import { More } from '@element-plus/icons-vue';
 const node_list = reactive<any>([])
 // ttcode
 const time_list = reactive<any>(["1699595594", "1699595668", "1699595751"])
+const interval_list = reactive<any>(["5s", "15s", "1m", "5m"])
 const router = useRouter()
 
 onMounted(async () => {
@@ -108,7 +119,7 @@ header {
   background-color: #cfcaca;
 
   .dropdown {
-    font-size: medium;
+    font-size: small;
     cursor: pointer;
     color:rgb(79, 104, 104);
     display: flex;
