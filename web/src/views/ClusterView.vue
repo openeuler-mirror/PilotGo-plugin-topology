@@ -1,32 +1,10 @@
 <template>
-  <div class="top_area">
-    <!-- <h1 class="h1">业务集群网络拓扑</h1> -->
-    <!-- <el-button class="switch_button" @click="switch_single_node" :icon="Menu">拓扑</el-button> -->
-    <el-dropdown>
-    <span class="el-dropdown-link">
-      <el-icon><Menu /></el-icon>
-      拓扑
-      <el-icon class="el-icon--right">
-        <arrow-down />
-      </el-icon>
-    </span>
-    <template #dropdown>
-      <el-dropdown-menu>
-        <el-dropdown-item>Action 1</el-dropdown-item>
-        <el-dropdown-item>Action 2</el-dropdown-item>
-        <el-dropdown-item>Action 3</el-dropdown-item>
-        <el-dropdown-item disabled>Action 4</el-dropdown-item>
-        <el-dropdown-item divided>Action 5</el-dropdown-item>
-      </el-dropdown-menu>
-    </template>
-  </el-dropdown>
-  </div>
   <div id="topo-container" class="container"></div>
   <el-drawer class="drawer" v-model="chart_drawer" :title="title" direction="rtl" size="30%">
     <div>
-      <el-button class="metric_button" @click="innerDrawer = true" :icon="More" size="default" circle="true"/>
+      <el-button class="metric_button" @click="metric_drawer_inner = true" :icon="More" size="default" circle="true"/>
         <!-- <el-icon class="el-icon--left"><More /></el-icon> -->
-      <el-drawer v-model="innerDrawer" :with-header="false" :append-to-body="true" size="25%">
+      <el-drawer v-model="metric_drawer_inner" :with-header="false" :append-to-body="true" size="25%">
         <el-table :data="table_data" stripe style="width: 100%">
           <el-table-column prop="name" label="属性" />
           <el-table-column prop="value" label="值" />
@@ -51,10 +29,10 @@ import { useRouter } from "vue-router";
 import { topo } from '../request/api';
 import server_logo from "@/assets/icon/server.png";
 import { More, Menu } from '@element-plus/icons-vue';
-import topodata from '../../public/topo.json'
+import topodata from '../../public/cluster.json'
 
 let chart_drawer = ref(false)
-let innerDrawer = ref(false)
+let metric_drawer_inner = ref(false)
 let metric_drawer = ref(false)
 let title = ref("")
 let table_data = reactive<any>([])
@@ -65,12 +43,9 @@ function handleClose() {
   chart_drawer.value = false
 }
 
-function switch_single_node() {
-  router.push("/node")
-}
-
 onMounted(async () => {
   try {
+    // ttcode
     const data = topodata
     // const data = await topo.multi_host_topo();
     // console.log(data.data);
@@ -182,28 +157,6 @@ function updateDrawer(node: any) {
 </script>
 
 <style scoped>
-.top_area {
-  width: 100%;
-  height: 5%;
-  position: relative;
-  background-color: #cfcaca;
-
-  .h1 {
-    width: 100%;
-    text-align: center;
-  }
-
-  .switch_button {
-    font-size: small;
-    position: absolute;
-    background-color: #cfcaca;
-    left: 0;
-    border-style: hidden;
-
-    /* margin-left: 5px; */
-    /* padding-left: 10px; */
-  }
-}
 
 .container {
   width: 100%;
@@ -223,8 +176,5 @@ function updateDrawer(node: any) {
     }
   }
 }
-
-
-
 
 </style>
