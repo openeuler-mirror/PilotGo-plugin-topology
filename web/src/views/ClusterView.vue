@@ -1,12 +1,30 @@
 <template>
-  <div class="title">
-    <h1 class="h1">集群拓扑图演示页面</h1>
-    <el-button class="button" @click="switch_single_node">单机拓扑</el-button>
+  <div class="top_area">
+    <!-- <h1 class="h1">业务集群网络拓扑</h1> -->
+    <!-- <el-button class="switch_button" @click="switch_single_node" :icon="Menu">拓扑</el-button> -->
+    <el-dropdown>
+    <span class="el-dropdown-link">
+      <el-icon><Menu /></el-icon>
+      拓扑
+      <el-icon class="el-icon--right">
+        <arrow-down />
+      </el-icon>
+    </span>
+    <template #dropdown>
+      <el-dropdown-menu>
+        <el-dropdown-item>Action 1</el-dropdown-item>
+        <el-dropdown-item>Action 2</el-dropdown-item>
+        <el-dropdown-item>Action 3</el-dropdown-item>
+        <el-dropdown-item disabled>Action 4</el-dropdown-item>
+        <el-dropdown-item divided>Action 5</el-dropdown-item>
+      </el-dropdown-menu>
+    </template>
+  </el-dropdown>
   </div>
   <div id="topo-container" class="container"></div>
   <el-drawer class="drawer" v-model="chart_drawer" :title="title" direction="rtl" size="30%">
     <div>
-      <el-button class="metricbutton" @click="innerDrawer = true" :icon="More" size="default" circle="true"/>
+      <el-button class="metric_button" @click="innerDrawer = true" :icon="More" size="default" circle="true"/>
         <!-- <el-icon class="el-icon--left"><More /></el-icon> -->
       <el-drawer v-model="innerDrawer" :with-header="false" :append-to-body="true" size="25%">
         <el-table :data="table_data" stripe style="width: 100%">
@@ -32,7 +50,7 @@ import { ref, reactive, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { topo } from '../request/api';
 import server_logo from "@/assets/icon/server.png";
-import { More } from '@element-plus/icons-vue';
+import { More, Menu } from '@element-plus/icons-vue';
 import topodata from '../../public/topo.json'
 
 let chart_drawer = ref(false)
@@ -164,45 +182,49 @@ function updateDrawer(node: any) {
 </script>
 
 <style scoped>
-.title {
-  position: relative;
-}
-
-.h1 {
+.top_area {
   width: 100%;
-  text-align: center;
-}
+  height: 5%;
+  position: relative;
+  background-color: #cfcaca;
 
-.button {
-  font-size: 120%;
-  position: absolute;
-  background-color: white;
-  right: 0;
-  bottom: 0;
+  .h1 {
+    width: 100%;
+    text-align: center;
+  }
 
-  margin-bottom: 3px;
-  margin-right: 10px;
-  padding-left: 10px;
-}
+  .switch_button {
+    font-size: small;
+    position: absolute;
+    background-color: #cfcaca;
+    left: 0;
+    border-style: hidden;
 
-.metricbutton {
-  position: absolute;
-  right: 0;
-  top: 0;
-
-  margin-top: 3px;
-  margin-right: 10px;
+    /* margin-left: 5px; */
+    /* padding-left: 10px; */
+  }
 }
 
 .container {
   width: 100%;
   height: 100%;
   background-color: white;
+
+  .drawer {
+    height: 100%;
+
+    .metric_button {
+      position: absolute;
+      right: 0;
+      top: 0;
+
+      margin-top: 3px;
+      margin-right: 10px;
+    }
+  }
 }
 
-.drawer {
-  height: 100%;
-}
+
 
 
 </style>
