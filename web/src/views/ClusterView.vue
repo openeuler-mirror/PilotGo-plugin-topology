@@ -4,11 +4,22 @@
     <el-button class="button" @click="switch_single_node">单机拓扑</el-button>
   </div>
   <div id="topo-container" class="container"></div>
-  <el-drawer class="drawer" v-model="drawer" :title="title" direction="rtl" :before-close="handleClose">
-    <el-table :data="table_data" stripe style="width: 100%">
-      <el-table-column prop="name" label="属性" width="180" />
-      <el-table-column prop="value" label="值" />
-    </el-table>
+  <el-drawer class="drawer" v-model="drawer" :title="title" direction="rtl" size="40%">
+    <div>
+      <el-button @click="innerDrawer = true">
+        <el-icon class="el-icon--left"><More /></el-icon>
+      </el-button>
+      <el-drawer
+        v-model="innerDrawer"
+        title="I'm inner Drawer"
+        :append-to-body="true"
+         >
+        <el-table :data="table_data" stripe style="width: 100%">
+          <el-table-column prop="name" label="属性" width="180" />
+          <el-table-column prop="value" label="值" />
+        </el-table>
+      </el-drawer>
+    </div>
   </el-drawer>
 </template>
 
@@ -18,8 +29,10 @@ import { ref, reactive, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { topo } from '../request/api';
 import server_logo from "@/assets/icon/server.png";
+import type { More } from '@element-plus/icons-vue';
 
 let drawer = ref(false)
+const innerDrawer = ref(false)
 let title = ref("")
 let table_data = reactive<any>([])
 
@@ -39,7 +52,7 @@ onMounted(async () => {
     // console.log(data.data);
 
     for (let i = 0; i < data.data.edges.length; i++) {
-      let edge = data.data.edges[i];
+      let edge: any = data.data.edges[i];
       if (edge.Type === "belong") {
         edge.style = {
           stroke: "red",
@@ -51,7 +64,7 @@ onMounted(async () => {
     };
 
     for (let i = 0; i < data.data.nodes.length; i++) {
-      let node = data.data.nodes[i];
+      let node: any = data.data.nodes[i];
       node.nodeStrength = -30;
       if (node.type === "host") {
         node.img = server_logo;
