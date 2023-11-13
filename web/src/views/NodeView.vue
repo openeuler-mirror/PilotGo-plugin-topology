@@ -1,16 +1,6 @@
 <template>
-  <!-- <el-dropdown class="dropdown" placement="bottom" @command="handleNodeSelected">
-    <span class="el-dropdown-link">
-      机器<el-icon class="el-icon--right"><arrow-down /></el-icon>
-    </span>
-    <template #dropdown>
-      <el-dropdown-menu>
-        <el-dropdown-item :command=node v-for="node in node_list">{{ node.id }}</el-dropdown-item>
-      </el-dropdown-menu>
-    </template>
-  </el-dropdown> -->
   <div id="topo-container" class="container"></div>
-  <el-drawer class="drawer" v-model="drawer" :title="title" direction="rtl" :before-close="handleClose">
+  <el-drawer class="drawer" v-model="drawer" :title="title" direction="rtl" :before-close="handleClose" size="30%">
     <el-table :data="table_data" stripe style="width: 100%">
       <el-table-column prop="name" label="属性" width="180" />
       <el-table-column prop="value" label="值" />
@@ -50,8 +40,9 @@ onMounted(async () => {
 
 async function handleNodeSelected(uuid: any) {
   // ttcode
-  const data = topodata
-  // const data = await topo.single_host_tree(uuid);
+  // const data = topodata
+
+  const data = await topo.single_host_tree(uuid);
   // console.log(data.data.tree);
 
   let root: any = data.data.tree
