@@ -1,8 +1,9 @@
 <template>
   <div id="topo-container" class="container"></div>
-  <el-drawer class="drawer" v-model="chart_drawer" :title="title" direction="rtl" size="30%">
+  <el-drawer class="drawer" v-model="chart_drawer" :with-header="false" direction="rtl" size="30%">
+    <div class="drawer_head"></div>
     <div>
-      <el-button class="metric_button" @click="metric_drawer_inner = true" :icon="More" size="default" circle="true"/>
+      <el-button class="metric_button" @click="metric_drawer_inner = true" :icon="More" size="small" circle="true"/>
         <!-- <el-icon class="el-icon--left"><More /></el-icon> -->
       <el-drawer v-model="metric_drawer_inner" :with-header="false" :append-to-body="true" size="25%">
         <el-table :data="table_data" stripe style="width: 100%">
@@ -10,14 +11,6 @@
           <el-table-column prop="value" label="值" />
         </el-table>
       </el-drawer>
-    </div>
-  </el-drawer>
-  <el-drawer class="drawer" v-model="metric_drawer" :title="title" direction="rtl" size="30%">
-    <div>
-      <el-table :data="table_data" stripe style="width: 100%">
-            <el-table-column prop="name" label="属性" />
-            <el-table-column prop="value" label="值" />
-          </el-table>
     </div>
   </el-drawer>
 </template>
@@ -46,8 +39,9 @@ function handleClose() {
 onMounted(async () => {
   try {
     // ttcode
-    const data = topodata
-    // const data = await topo.multi_host_topo();
+    // const data = topodata
+
+    const data = await topo.multi_host_topo();
     // console.log(data.data);
 
     for (let i = 0; i < data.data.edges.length; i++) {
@@ -162,19 +156,27 @@ function updateDrawer(node: any) {
   width: 100%;
   height: 100%;
   background-color: white;
+}
 
-  .drawer {
+.drawer {
     height: 100%;
+  }
 
-    .metric_button {
+.drawer_head {
+      width: 100%;
+      height: 20%;
+
+      border-bottom: 1px solid rgb(181, 177, 177);
+    }
+
+.metric_button {
       position: absolute;
       right: 0;
-      top: 0;
+      top: 0; 
 
-      margin-top: 3px;
+      margin-top: 170px;
       margin-right: 10px;
     }
-  }
-}
+
 
 </style>
