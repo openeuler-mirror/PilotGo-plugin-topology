@@ -26,7 +26,6 @@ import topodata from '../../public/cluster.json'
 
 let chart_drawer = ref(false)
 let metric_drawer_inner = ref(false)
-let metric_drawer = ref(false)
 let title = ref("")
 let table_data = reactive<any>([])
 
@@ -85,9 +84,15 @@ function initGraph(data: any) {
     width: document.getElementById("topo-container")!.clientWidth,
     height: document.getElementById("topo-container")!.clientHeight,
     layout: {
-      type: 'force',
-      preventOverlap: true,
-      linkDistance: 100,
+      // type: 'force',
+      // preventOverlap: true,
+      // linkDistance: 100,
+
+      type: 'gForce',
+      gravity: 0.1,
+      edgeStrength: 50,
+      nodeStrength: 100,
+
     },
     modes: {
       default: ['drag-canvas', 'zoom-canvas', "click-select", "drag-node"],
