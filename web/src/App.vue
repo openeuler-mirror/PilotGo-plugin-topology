@@ -68,7 +68,6 @@ import { useRouter } from "vue-router";
 import { topo } from '@/request/api';
 
 const node_list = reactive<any>([])
-// ttcode
 const time_list = reactive<any>(["1699595594", "1699595668", "1699595751"])
 const interval_list = reactive<any>(["5s", "15s", "1m", "5m"])
 
@@ -80,18 +79,20 @@ onMounted(async () => {
   } catch (error) {
     console.error(error)
   }
+
+  router.push("/cluster")
 })
 
 async function updateNodeList() {
   //ttcode
-  const data = {
-		"code":  0,
-		"error": null,
-		"data": 
-			{"agentlist": {"070cb0b4-c415-4b6a-843b-efc51cff6b76": "10.44.55.66:9992"}}
-    }
+  // const data = {
+	// 	"code":  0,
+	// 	"error": null,
+	// 	"data": 
+	// 		{"agentlist": {"070cb0b4-c415-4b6a-843b-efc51cff6b76": "10.44.55.66:9992"}}
+  //   }
 	
-  // const data = await topo.host_list()
+  const data = await topo.host_list()
   // console.log(data);
   for (let key in data.data.agentlist) {
     node_list.push({
@@ -130,16 +131,17 @@ header {
   height: 5%;
   position: relative;
   background-color: #cfcaca;
+}
 
-  .dropdown {
+.dropdown {
     font-size: small;
     cursor: pointer;
     color:rgb(79, 104, 104);
     display: flex;
+    outline-style: none;
 
     align-items: center;
-    margin-left: 5px;
+    margin-left: 20px;
     margin-top: 10px;
   }
-}
 </style>
