@@ -2,7 +2,7 @@
   <div id="topo-container" class="container"></div>
   <el-drawer class="drawer" v-model="chart_drawer" :with-header="false" direction="rtl" size="30%">
     <div class="drawer_head"></div>
-    <div>
+    <div class="drawer_inner_div">
       <el-button class="metric_button" @click="metric_drawer_inner = true" :icon="More" size="small" circle="true"/>
         <!-- <el-icon class="el-icon--left"><More /></el-icon> -->
       <el-drawer v-model="metric_drawer_inner" :with-header="false" :append-to-body="true" size="25%">
@@ -164,23 +164,27 @@ function updateDrawer(node: any) {
 }
 
 .drawer {
+    position: relative;
     height: 100%;
   }
 
 .drawer_head {
-      width: 100%;
-      height: 20%;
+    width: 100%;
+    height: 20%;
 
-      border-bottom: 1px solid rgb(181, 177, 177);
-    }
+    border-bottom: 1px solid rgb(181, 177, 177);
+  }
+
+.drawer_inner_div {
+  position: relative;
+}
 
 .metric_button {
       position: absolute;
       right: 0;
       top: 0; 
 
-      margin-top: 170px;
-      margin-right: 10px;
+      margin-top: 5px;
     }
 
 
