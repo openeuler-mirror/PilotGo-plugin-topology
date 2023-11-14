@@ -3,7 +3,7 @@ import request from './request';
 export const topo = {
   async multi_host_topo() {
     try {
-      const response = await request.get('/multi_host');
+      const response = await request.get('/plugin/topology/api/multi_host');
       return response.data;
     } catch (error) {
       throw error;
@@ -11,7 +11,7 @@ export const topo = {
   },
   async single_host_topo(node:string) {
     try {
-      const response = await request.get('/single_host/'+node);
+      const response = await request.get('/plugin/topology/api/single_host/'+node);
       return response.data;
     } catch (error) {
       throw error;
@@ -20,7 +20,7 @@ export const topo = {
 
   async single_host_tree(node:string) {
     try {
-      const response = await request.get('/single_host_tree/'+node);
+      const response = await request.get('/plugin/topology/api/single_host_tree/'+node);
       return response.data;
     } catch (error) {
       throw error;
@@ -29,7 +29,7 @@ export const topo = {
 
   async host_list() {
     try {
-      const response = await request.get('/agentlist');
+      const response = await request.get('/plugin/topology/api/agentlist');
       return response.data;
     } catch (error) {
       throw error;
