@@ -1,61 +1,63 @@
 <template>
-  <div class="top_area">
-    <el-dropdown>
-      <span class="dropdown">
-        <el-icon><Menu /></el-icon>业务<el-icon class="el-icon--right"><arrow-down /></el-icon>
-      </span>
-      <template #dropdown>
-        <el-dropdown-menu>
-          <el-dropdown-item @click="switch_multi_topo">全局网络拓扑</el-dropdown-item>
-        </el-dropdown-menu>
-      </template>
-    </el-dropdown>
+  <div class="top_area_div">
+    <div class="top_area_inner_div">
+      <el-dropdown>
+        <span class="dropdown">
+          <el-icon><Menu /></el-icon>业务<el-icon class="el-icon--right"><arrow-down /></el-icon>
+        </span>
+        <template #dropdown>
+          <el-dropdown-menu>
+            <el-dropdown-item @click="switch_multi_topo">全局网络拓扑</el-dropdown-item>
+          </el-dropdown-menu>
+        </template>
+      </el-dropdown>
 
-    <el-dropdown>
-      <span class="dropdown">
-        <el-icon><Monitor /></el-icon>机器<el-icon class="el-icon--right"><arrow-down /></el-icon>
-      </span>
-      <template #dropdown>
-        <el-dropdown-menu>
-          <el-dropdown-item @click="switch_single_topo(node)" v-for="node in node_list">{{ node.id }}</el-dropdown-item>
-        </el-dropdown-menu>
-      </template>
-    </el-dropdown>
+      <el-dropdown>
+        <span class="dropdown">
+          <el-icon><Monitor /></el-icon>机器<el-icon class="el-icon--right"><arrow-down /></el-icon>
+        </span>
+        <template #dropdown>
+          <el-dropdown-menu>
+            <el-dropdown-item @click="switch_single_topo(node)" v-for="node in node_list">{{ node.id }}</el-dropdown-item>
+          </el-dropdown-menu>
+        </template>
+      </el-dropdown>
 
-    <el-dropdown>
-      <span class="dropdown">
-        <el-icon><Clock /></el-icon>时间<el-icon class="el-icon--right"><arrow-down /></el-icon>
-      </span>
-      <template #dropdown>
-        <el-dropdown-menu>
-          <el-dropdown-item v-for="time in time_list">{{ time }}</el-dropdown-item>
-        </el-dropdown-menu>
-      </template>
-    </el-dropdown>
+      <el-dropdown>
+        <span class="dropdown">
+          <el-icon><Clock /></el-icon>时间<el-icon class="el-icon--right"><arrow-down /></el-icon>
+        </span>
+        <template #dropdown>
+          <el-dropdown-menu>
+            <el-dropdown-item v-for="time in time_list">{{ time }}</el-dropdown-item>
+          </el-dropdown-menu>
+        </template>
+      </el-dropdown>
 
-    <el-dropdown>
-      <span class="dropdown">
-        <el-icon><Aim /></el-icon>时间间隔<el-icon class="el-icon--right"><arrow-down /></el-icon>
-      </span>
-      <template #dropdown>
-        <el-dropdown-menu>
-          <el-dropdown-item v-for="interval in interval_list">{{ interval }}</el-dropdown-item>
-        </el-dropdown-menu>
-      </template>
-    </el-dropdown>
+      <el-dropdown>
+        <span class="dropdown">
+          <el-icon><Aim /></el-icon>时间间隔<el-icon class="el-icon--right"><arrow-down /></el-icon>
+        </span>
+        <template #dropdown>
+          <el-dropdown-menu>
+            <el-dropdown-item v-for="interval in interval_list">{{ interval }}</el-dropdown-item>
+          </el-dropdown-menu>
+        </template>
+      </el-dropdown>
 
-    <el-dropdown>
-      <span class="dropdown">
-        <el-icon><Setting /></el-icon>设置<el-icon class="el-icon--right"><arrow-down /></el-icon>
-      </span>
-      <template #dropdown>
-        <el-dropdown-menu>
-          <el-dropdown-item>编辑业务</el-dropdown-item>
-          <el-dropdown-item>1</el-dropdown-item>
-          <el-dropdown-item>1</el-dropdown-item>
-        </el-dropdown-menu>
-      </template>
-    </el-dropdown>
+      <el-dropdown>
+        <span class="dropdown">
+          <el-icon><Setting /></el-icon>设置<el-icon class="el-icon--right"><arrow-down /></el-icon>
+        </span>
+        <template #dropdown>
+          <el-dropdown-menu>
+            <el-dropdown-item>编辑业务</el-dropdown-item>
+            <el-dropdown-item>1</el-dropdown-item>
+            <el-dropdown-item>1</el-dropdown-item>
+          </el-dropdown-menu>
+        </template>
+      </el-dropdown>
+    </div>
   </div>
   <RouterView />
 
@@ -90,11 +92,11 @@ onMounted(async () => {
 async function updateNodeList() {
   //ttcode
   // const data = {
-		// 	"code":  0,
-		// 	"error": null,
-		// 	"data": 
-			// 		{"agentlist": {"070cb0b4-c415-4b6a-843b-efc51cff6b76": "10.44.55.66:9992"}}
-    //   }
+			// 	"code":  0,
+			// 	"error": null,
+			// 	"data": 
+					// 		{"agentlist": {"070cb0b4-c415-4b6a-843b-efc51cff6b76": "10.44.55.66:9992"}}
+      //   }
 	
   const data = await topo.host_list()
   // console.log(data);
@@ -111,7 +113,6 @@ function switch_multi_topo() {
 }
 
 function switch_single_topo(node: any) {
-  // router.push("/node")
   router.push({
     path: "/node",
     query: {
@@ -130,22 +131,35 @@ header {
   padding-right: calc(var(--section-gap) / 2);
 }
 
-.top_area {
+.top_area_div {
   width: 100%;
   height: 5%;
   position: relative;
+  display: flex;
+  justify-content:center;
   background-color: #cfcaca;
 }
 
+.top_area_inner_div {
+  display: flex;
+  justify-content: space-between;
+}
+
+.top_area_inner_div > div {
+  margin-right: 20px;
+}
+
+.top_area_inner_div > div:last-child {
+  margin-right: 0;
+}
+
 .dropdown {
-    font-size: small;
+    font-size: medium;
     cursor: pointer;
     color:rgb(79, 104, 104);
-    display: flex;
+    display:flex;
     outline-style: none;
 
     align-items: center;
-    margin-left: 20px;
-    margin-top: 10px;
   }
 </style>
