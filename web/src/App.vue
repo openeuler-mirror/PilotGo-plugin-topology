@@ -30,8 +30,6 @@
         <template #dropdown>
           <el-dropdown-menu>
             <el-dropdown-item>编辑业务</el-dropdown-item>
-            <el-dropdown-item>1</el-dropdown-item>
-            <el-dropdown-item>1</el-dropdown-item>
           </el-dropdown-menu>
         </template>
       </el-dropdown>
@@ -41,7 +39,7 @@
             <el-icon><Setting /></el-icon>时间<el-icon class="el-icon--right"></el-icon>
         </span>
         <el-date-picker v-model="dateRange" type="datetimerange" :shortcuts="pickerOptions" range-separator="to"
-          start-placeholder="开始日期" end-placeholder="结束日期" @change="changeDate">
+          start-placeholder="开始日期" end-placeholder="结束日期" @change="changeDate" size="small">
         </el-date-picker>
       </div>
 
@@ -71,7 +69,7 @@ import { pickerOptions } from '@/utils/datePicker';
 
 const node_list = reactive<any>([])
 const time_list = reactive<any>(["1699595594", "1699595668", "1699595751"])
-const interval_list = reactive<any>(["5s", "15s", "1m", "5m"])
+const interval_list = reactive<any>(["关闭", "5s", "10s", "15s", "1m", "5m"])
 
 let dateRange = ref([new Date() as any - 2 * 60 * 60 * 1000, new Date() as any - 0])
 const startTime = ref(0);
