@@ -1,21 +1,26 @@
 <template>
   <div id="topo-container" class="container"></div>
-  <el-drawer class="drawer" v-model="chart_drawer" :with-header="false" direction="rtl" size="30%">
-    <div class="drawer_head_div"></div>
-
+  <el-drawer class="drawer" v-model="chart_drawer" :with-header="false" direction="rtl" size="30%" :before-close="handleClose">
+    <div class="drawer_head_div">
+    </div>
     <div class="drawer_body_div">
-      <div :style="{ 'position': 'relative', 'display': 'flex', 'flex-direction': 'column', 'align-items': 'center' }">
-        <div class="drag">
-          <span class="drag-title">{{ layout[0].title }}</span>
-        </div>
-        <div class="noDrag">
-          <MyEcharts :query="layout[0].query" :startTime="startTime"
-            :endTime="endTime" style="width:100%;height:100%;">
-          </MyEcharts>
-          <!-- <TempEcharts style="width:100%;height:100%;">
-          </TempEcharts> -->
-        </div>
-      </div>
+      <grid-layout :col-num="3" :is-draggable="grid.draggable" :is-resizable="grid.resizable" :layout.sync="layout"
+      :row-height="100" :use-css-transforms="true" :vertical-compact="true">
+        <template v-for="(item, indexVar) in layout">
+          <grid-item :key="indexVar" :h="item.h" :i="item.i" :static="item.static" :w="item.w" :x="item.x" :y="item.y"
+            :min-w="2" :min-h="2" @resize="SizeAutoChange(item.i, item.query.isChart)" @resized="SizeAutoChange"
+            drag-allow-from=".drag" drag-ignore-from=".noDrag" v-if="item.display">
+            <div class="drag">
+              <span class="drag-title">{{ item.title }}</span>
+            </div>
+            <div class="noDrag">
+              <MyEcharts :query="item.query" :startTime="startTime"
+                :endTime="endTime" style="width:100%;height:100%;">
+              </MyEcharts>
+            </div>
+          </grid-item>
+        </template>
+      </grid-layout>
     </div>
 
     <div class="drawer_inner_div">
@@ -33,7 +38,7 @@
         start-placeholder="开始日期" end-placeholder="结束日期" @change="changeDate" size="small"
         :style="{ 'width': '290px', 'height': '34px', 'margin-right': '50px' }">
       </el-date-picker>
-      <el-button-group :style="{ 'margin-right': '10px' }">
+      <el-button-group :style="{ 'margin-right': '18px' }">
         <!-- 指标数据 -->
         <el-button class="drawer_button" @click="metric_drawer_inner = true" :icon="More" size="default" circle="false" />
         <!-- 选择要显示的图表 -->
@@ -57,12 +62,13 @@ import topodata from '@/assets/cluster.json'
 import { useLayoutStore } from '@/stores/charts';
 import MyEcharts from '@/views/MyEcharts.vue';
 import { pickerOptions } from '@/utils/datePicker';
-import TempEcharts from './TempEcharts.vue'
 
 let chart_drawer = ref(false)
 let metric_drawer_inner = ref(false)
 let chart_drawer_inner = ref(false)
 let config_drawer_inner = ref(false)
+
+const chart = ref([] as any);
 
 let table_data = reactive<any>([])
 let dateRange = ref([new Date() as any - 2 * 60 * 60 * 1000, new Date() as any - 0])
@@ -76,6 +82,12 @@ const layoutStore = useLayoutStore();
 let layout = reactive(layoutStore.layout_option);
 
 const router = useRouter()
+
+const grid = reactive({
+  draggable: true,
+  resizable: true,
+  responsive: true,
+});
 
 function handleClose() {
   chart_drawer.value = false
@@ -208,6 +220,12 @@ const changeDate = (value: number[]) => {
   }
 }
 
+// echarts大小随grid改变
+const SizeAutoChange = (i: string, isChart?: boolean) => {
+  if (isChart) {
+    chart.value[i].resize();
+  }
+}
 </script>
 
 <style scoped>
@@ -232,14 +250,14 @@ const changeDate = (value: number[]) => {
   }
 
 .drawer_body_div {
-  width: 80%;
-  height: 20%;
+  width: 100%;
+  height: 80%;
 
-  display: absolute;
+  display: relative;
 }
 
 .drawer_inner_div {
-  position: relative;
+  position: absolute;
 }
 
 .drawer_top_div {
@@ -263,39 +281,25 @@ const changeDate = (value: number[]) => {
   display: flex;
   align-items: center;
   justify-content: center;
+}
 
-  &-title {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    user-select: none;
-    width: 88%;
-    height: 100%;
-    color: #303133;
-    font-size: 12px;
-    font-weight: bold;
+.drag-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  width: 88%;
+  height: 100%;
+  color: #303133;
+  font-size: 12px;
+  font-weight: bold;
+}
 
-    &:hover {
-      cursor: move;
+.drag:hover {
+      background: rgba(253,
+          186,
+          74, .6)
     }
-  }
-
-  &-more {
-    width: 12%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    user-select: none;
-    cursor: pointer;
-  }
-
-  &:hover {
-    background: rgba(253,
-        186,
-        74, .6)
-  }
-}  
 
 .noDrag {
   width: 100%;
@@ -304,11 +308,76 @@ const changeDate = (value: number[]) => {
   display: flex;
   justify-content: center;
   align-items: center;
-  &-text {
+} 
+
+.noDrag-text {
     font-weight: bold;
     font-size: 20px;
     color: #67e0e3;
     user-select: none;
   }
-} 
+
+  .vue-grid-layout {
+  width: 100%;
+  height: 100%;
+  margin-top: 5px;
+  background: #f1ecec;
+
+  .vue-grid-item {
+    box-sizing: border-box;
+    background-color: #fff;
+    border-radius: 4px;
+    box-shadow: 0 1px 5px rgba(45, 47, 51, 0.1);
+  }
+
+  .vue-grid-item .resizing {
+    opacity: 0.9;
+  }
+
+  .vue-grid-item .static {
+    background: #cce;
+  }
+
+  .vue-grid-item .text {
+    font-size: 24px;
+    text-align: center;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    margin: auto;
+    height: 100%;
+    width: 100%;
+  }
+
+  .vue-grid-item .no-drag {
+    height: 100%;
+    width: 100%;
+  }
+
+  .vue-grid-item .minMax {
+    font-size: 12px;
+  }
+
+  .vue-grid-item .add {
+    cursor: pointer;
+  }
+
+  .vue-draggable-handle {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    top: 0;
+    left: 0;
+    /* background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10'><circle cx='5' cy='5' r='5' fill='#999999'/></svg>") no-repeat; */
+    background-color: aqua;
+    background-position: bottom right;
+    padding: 0 8px 8px 0;
+    background-repeat: no-repeat;
+    background-origin: content-box;
+    box-sizing: border-box;
+    cursor: pointer;
+  }
+}
 </style>
