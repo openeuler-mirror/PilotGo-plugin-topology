@@ -27,18 +27,20 @@
       </el-drawer>
     </div>
 
-    <div class="drawer_top_div" :style="{ 'margin-top': '10px', 'margin-right': '10px' }">
+    <div class="drawer_top_div" :style="{ 'margin-top': '10px' }">
       <!-- 时间范围选择 -->
       <el-date-picker  v-model="dateRange" type="datetimerange" :shortcuts="pickerOptions" range-separator="to"
         start-placeholder="开始日期" end-placeholder="结束日期" @change="changeDate" size="small"
-        :style="{ 'width': '290px', 'height': '34px', 'margin-right': '10px' }">
+        :style="{ 'width': '290px', 'height': '34px', 'margin-right': '50px' }">
       </el-date-picker>
-      <!-- 指标数据 -->
-      <el-button class="drawer_button" @click="metric_drawer_inner = true" :icon="More" size="default" circle="true" />
-      <!-- 选择要显示的图表 -->
-      <el-button class="drawer_button" @click="chart_drawer_inner = true" :icon="Platform" size="default" circle="true" />
-      <!-- 加载本地的图表配置文件 -->
-      <el-button class="drawer_button" @click="chart_drawer_inner = true" :icon="Files" size="default" circle="true" />
+      <el-button-group :style="{ 'margin-right': '10px' }">
+        <!-- 指标数据 -->
+        <el-button class="drawer_button" @click="metric_drawer_inner = true" :icon="More" size="default" circle="false" />
+        <!-- 选择要显示的图表 -->
+        <el-button class="drawer_button" @click="chart_drawer_inner = true" :icon="Platform" size="default" circle="false" />
+        <!-- 加载本地的图表配置文件 -->
+        <el-button class="drawer_button" @click="config_drawer_inner = true" :icon="Files" size="default" circle="false" />
+      </el-button-group>
     </div>
 
   </el-drawer>
@@ -60,6 +62,8 @@ import TempEcharts from './TempEcharts.vue'
 let chart_drawer = ref(false)
 let metric_drawer_inner = ref(false)
 let chart_drawer_inner = ref(false)
+let config_drawer_inner = ref(false)
+
 let table_data = reactive<any>([])
 let dateRange = ref([new Date() as any - 2 * 60 * 60 * 1000, new Date() as any - 0])
 
