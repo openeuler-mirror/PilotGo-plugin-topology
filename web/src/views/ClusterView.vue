@@ -6,7 +6,7 @@
     </div>
     <div class="drawer_body_div">
       <grid-layout :col-num="3" :is-draggable="grid.draggable" :is-resizable="grid.resizable" :layout.sync="layout"
-      :row-height="100" :use-css-transforms="true" :vertical-compact="true">
+      :row-height="100" :use-css-transforms="true" :vertical-compact="true" :responsive="true">
         <template v-for="(item, indexVar) in layout">
           <grid-item :key="indexVar" :h="item.h" :i="item.i" :static="item.static" :w="item.w" :x="item.x" :y="item.y"
             :min-w="2" :min-h="2" @resize="SizeAutoChange(item.i, item.query.isChart)" @resized="SizeAutoChange"
@@ -26,11 +26,16 @@
 
     <!-- 嵌套抽屉组件 -->
     <div class="nested_metric_drawer_div">
-      <el-drawer v-model="metric_drawer_inner" :with-header="false" :append-to-body="true" size="25%">
+      <el-drawer v-model="nested_metric_drawer" :with-header="false" :append-to-body="true" size="25%">
         <el-table :data="table_data" stripe style="width: 100%">
           <el-table-column prop="name" label="属性" />
           <el-table-column prop="value" label="值" />
         </el-table>
+      </el-drawer>
+    </div>
+    <div class="nested_selectchart_drawer_div">
+      <el-drawer v-model="nested_selectchart_drawer" :with-header="false" :append-to-body="true" size="15%">
+        <el-checkbox v-for="item in layout" v-model="item.display" :label="item.title" size="large"/>
       </el-drawer>
     </div>
 
@@ -42,9 +47,9 @@
       </el-date-picker>
       <el-button-group :style="{ 'margin-right': '18px' }">
         <!-- 指标数据 -->
-        <el-button class="drawer_button" @click="metric_drawer_inner = true" :icon="More" size="default" circle="false" />
+        <el-button class="drawer_button" @click="nested_metric_drawer = true" :icon="More" size="default" circle="false" />
         <!-- 选择要显示的图表 -->
-        <el-button class="drawer_button" @click="chart_drawer_inner = true" :icon="Platform" size="default" circle="false" />
+        <el-button class="drawer_button" @click="nested_selectchart_drawer = true" :icon="Platform" size="default" circle="false" />
         <!-- 加载本地的图表配置文件 -->
         <el-button class="drawer_button" @click="config_drawer_inner = true" :icon="Files" size="default" circle="false" />
         <!-- 保存图标显示配置 -->
@@ -58,7 +63,6 @@
 <script setup lang="ts">
 import G6 from '@antv/g6';
 import { ref, reactive, onMounted } from "vue";
-import { useRouter } from "vue-router";
 import { topo } from '../request/api';
 import server_logo from "@/assets/icon/server.png";
 import { More, Platform, Files, Collection } from '@element-plus/icons-vue';
@@ -68,10 +72,9 @@ import MyEcharts from '@/views/MyEcharts.vue';
 import { pickerOptions } from '@/utils/datePicker';
 
 let chart_drawer = ref(false)
-let metric_drawer_inner = ref(false)
-let chart_drawer_inner = ref(false)
+let nested_metric_drawer = ref(false)
+let nested_selectchart_drawer = ref(false)
 let config_drawer_inner = ref(false)
-
 const chart = ref([] as any);
 
 let table_data = reactive<any>([])
@@ -85,13 +88,16 @@ endTime.value = (new Date() as any) / 1000;
 const layoutStore = useLayoutStore();
 let layout = reactive(layoutStore.layout_option);
 
-const router = useRouter()
-
 const grid = reactive({
   draggable: true,
   resizable: true,
   responsive: true,
 });
+
+const checked1 = ref(false)
+const checked2 = ref(false)
+const checked3 = ref(false)
+const checked4 = ref(false)
 
 function handleClose() {
   chart_drawer.value = false
