@@ -65,20 +65,14 @@ import { RouterLink, RouterView } from 'vue-router'
 import { ref, reactive, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { topo } from '@/request/api';
-import { useLayoutStore } from '@/stores/charts';
-import { pickerOptions } from '@/utils/datePicker';
 
 const node_list = reactive<any>([])
 const interval_list = reactive<any>(["关闭", "5s", "10s", "15s", "1m", "5m"])
 
-let dateRange = ref([new Date() as any - 2 * 60 * 60 * 1000, new Date() as any - 0])
 const startTime = ref(0);
 const endTime = ref(0);
 startTime.value = (new Date() as any) / 1000 - 60 * 60 * 2;
 endTime.value = (new Date() as any) / 1000;
-
-const layoutStore = useLayoutStore();
-let layout = reactive(layoutStore.layout_option);
 
 const router = useRouter()
 
@@ -95,11 +89,11 @@ onMounted(async () => {
 async function updateNodeList() {
   //ttcode
   // const data = {
-					// 	"code":  0,
-					// 	"error": null,
-					// 	"data": 
-									// 		{"agentlist": {"070cb0b4-c415-4b6a-843b-efc51cff6b76": "10.44.55.66:9992"}}
-          //   }
+						// 	"code":  0,
+						// 	"error": null,
+						// 	"data": 
+											// 		{"agentlist": {"070cb0b4-c415-4b6a-843b-efc51cff6b76": "10.44.55.66:9992"}}
+            //   }
 	
   const data = await topo.host_list()
 // console.log(data);
