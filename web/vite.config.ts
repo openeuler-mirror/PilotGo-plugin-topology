@@ -21,6 +21,12 @@ export default defineConfig({
         target: 'http://192.168.1.74:9991',
         changeOrigin:true,
         // rewrite: (path)=> path.replace("/^\/api/", ""),
+      },
+      "/plugin/prometheus/api": {
+        // target: 'http://192.168.241.129:9991',
+        target: 'http://172.30.23.123:8090',
+        changeOrigin:true,
+        // rewrite: (path)=> path.replace("/^\/api/", ""),
       }
     }
   }
