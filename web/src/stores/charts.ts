@@ -7,7 +7,7 @@ export const useLayoutStore = defineStore('layoutOption', {
       layout_option: [
         {
           x: 0, y: 0, w: 1, h: 1, i: '0',
-          static: false, display: true, title: 'CPU总使用率',
+          static: false, display: false, title: 'CPU总使用率',
           query: {
             sqls: [{ sql: '100 - (avg(irate(node_cpu_seconds_total{instance="{macIp}",mode="idle"}[5m])) * 100)' }],
             type: 'gauge', range: false, isChart: true, interval: 5,
@@ -21,7 +21,7 @@ export const useLayoutStore = defineStore('layoutOption', {
         },
         {
           x: 1, y: 0, w: 1, h: 1, i: '1',
-          static: false, display: true, title: '内存使用率',
+          static: false, display: false, title: '内存使用率',
           query: {
             sqls: [{ sql: '(1 - (node_memory_MemAvailable_bytes{instance="{macIp}"} / (node_memory_MemTotal_bytes{instance="{macIp}"})))* 100' }],
             type: 'gauge', range: false, isChart: true, interval: 5,
@@ -35,7 +35,7 @@ export const useLayoutStore = defineStore('layoutOption', {
         },
         {
           x: 0, y: 1, w: 3, h: 2, i: '2',
-          static: false, display: true, title: '系统平均负载',
+          static: false, display: false, title: '系统平均负载',
           query: {
             type: 'line', range: true, isChart: true, interval: 5,
             target: 'value_series', unit: '', float: 2, min: 0, max: null,
@@ -62,8 +62,8 @@ export const useLayoutStore = defineStore('layoutOption', {
           }
         },
         {
-          x: 0, y: 2, w: 3, h: 2, i: '12',
-          static: false, display: true, title: '内存信息',
+          x: 0, y: 2, w: 3, h: 2, i: '3',
+          static: false, display: false, title: '内存信息',
           query: {
             type: 'line', range: true, isChart: true,
             target: 'byte2GB_series', unit: 'GiB', float: 2, min: 0, max: null,
