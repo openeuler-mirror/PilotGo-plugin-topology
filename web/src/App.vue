@@ -1,6 +1,75 @@
 <template>
   <header>
-    <el-dropdown>
+    <el-tabs v-model="activename" @tab-click="handleClick" class="tabs">
+      <el-tab-pane  label="业务" name="first">
+        <el-dropdown :style="{ 'position': 'fixed', 'margin-top': '-10px', 'margin-left': '5px' }">
+          <span class="dropdown">
+            <el-icon class="el-icon--right"><arrow-down /></el-icon>
+          </span>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item @click="switch_multi_topo">全局网络拓扑</el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
+      </el-tab-pane>
+
+      <el-tab-pane label="机器" name="second">
+        <el-dropdown :style="{ 'position': 'fixed', 'margin-top': '-10px', 'margin-left': '81px' }">
+          <span class="dropdown">
+            <el-icon class="el-icon--right" ><arrow-down /></el-icon>
+          </span>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item @click="switch_single_topo(node)" v-for="node in node_list">{{ node.id }}</el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
+      </el-tab-pane>
+      
+
+      <el-tab-pane label="设置" name="third">
+        <el-dropdown :style="{ 'position': 'fixed', 'margin-top': '-10px', 'margin-left': '158px' }">
+          <span class="dropdown">
+            <el-icon class="el-icon--right"><arrow-down /></el-icon>
+          </span>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item>编辑业务</el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
+      </el-tab-pane>
+
+      <el-tab-pane label="时间间隔" name="fourth">
+        <el-dropdown :style="{ 'position': 'fixed', 'margin-top': '-10px', 'margin-left': '250px' }">
+          <span class="dropdown">
+            <el-icon class="el-icon--right"><arrow-down /></el-icon>
+          </span>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item v-for="interval in interval_list">{{ interval }}</el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
+      </el-tab-pane>
+
+      <el-tab-pane label="模式" name="fifth">
+        <el-dropdown :style="{ 'position': 'fixed', 'margin-top': '-10px', 'margin-left': '346px' }">
+          <span class="dropdown">
+            <el-icon class="el-icon--right"><arrow-down /></el-icon>
+          </span>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item >亮色</el-dropdown-item>
+              <el-dropdown-item >黑暗</el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
+      </el-tab-pane>
+  </el-tabs>
+
+    <!-- <el-dropdown>
       <span class="dropdown">
         <el-icon><Menu /></el-icon>业务<el-icon class="el-icon--right"><arrow-down /></el-icon>
       </span>
@@ -54,7 +123,7 @@
           <el-dropdown-item >黑暗</el-dropdown-item>
         </el-dropdown-menu>
       </template>
-    </el-dropdown>
+    </el-dropdown> -->
 </header>
   <RouterView/>
 
@@ -65,7 +134,9 @@ import { RouterLink, RouterView } from 'vue-router'
 import { ref, reactive, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { topo } from '@/request/api';
+import { type TabsPaneContext } from 'element-plus'
 
+const activename = ref('first')
 const node_list = reactive<any>([])
 const interval_list = reactive<any>(["关闭", "5s", "10s", "15s", "1m", "5m"])
 
@@ -89,11 +160,11 @@ onMounted(async () => {
 async function updateNodeList() {
   //ttcode
   // const data = {
-						// 	"code":  0,
-						// 	"error": null,
-						// 	"data": 
-											// 		{"agentlist": {"070cb0b4-c415-4b6a-843b-efc51cff6b76": "10.44.55.66:9992"}}
-            //   }
+							// 	"code":  0,
+							// 	"error": null,
+							// 	"data": 
+													// 		{"agentlist": {"070cb0b4-c415-4b6a-843b-efc51cff6b76": "10.44.55.66:9992"}}
+              //   }
 	
   const data = await topo.host_list()
 // console.log(data);
@@ -118,9 +189,13 @@ function switch_single_topo(node: any) {
   })
 }
 
+const handleClick = (tab: TabsPaneContext, event: Event) => {
+  console.log(tab, event)
+}
+
 </script>
 
-<style scoped>
+<style >
 header {
   /* line-height: 1.5;
   max-height: 100vh;
@@ -133,6 +208,7 @@ header {
   display: flex;
   justify-content: center;
   background-color: #cfcaca;
+  
 }
 
 header > div {
@@ -153,4 +229,23 @@ header > div:last-child {
   align-items: center;
   }
 
+.tabs {
+  position: relative;
+  height: calc(100% - 123px);
+  padding: 9px;
+  color: #c71e48;
+  /* font-size: large;
+  font-weight: 600; */
+}
+
+.el-tabs__item{
+  font-size: 18px;
+  /* margin-top: -10px; */
+  color: rgb(96, 92, 92);
+
+}
+
+.el-tabs__item.is-active {
+  color: rgb(6, 150, 176);
+}
 </style>
