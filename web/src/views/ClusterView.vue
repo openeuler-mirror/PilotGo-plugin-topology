@@ -34,7 +34,7 @@
       </el-drawer>
     </div>
     <div class="nested_selectchart_drawer_div">
-      <el-drawer v-model="nested_selectchart_drawer" :with-header="false" :append-to-body="true" size="15%">
+      <el-drawer v-model="nested_selectchart_drawer" :with-header="false" :append-to-body="true" size="12%">
         <el-checkbox v-for="item in layout" v-model="item.display" :label="item.title" size="large"/>
       </el-drawer>
     </div>
@@ -70,6 +70,7 @@ import topodata from '@/assets/cluster.json'
 import { useLayoutStore } from '@/stores/charts';
 import MyEcharts from '@/views/MyEcharts.vue';
 import { pickerOptions } from '@/utils/datePicker';
+import { useMacStore } from '@/stores/mac';
 
 let chart_drawer = ref(false)
 let nested_metric_drawer = ref(false)
@@ -93,11 +94,6 @@ const grid = reactive({
   resizable: true,
   responsive: true,
 });
-
-const checked1 = ref(false)
-const checked2 = ref(false)
-const checked3 = ref(false)
-const checked4 = ref(false)
 
 function handleClose() {
   chart_drawer.value = false
@@ -178,6 +174,8 @@ function initGraph(data: any) {
       let node = (e.target as any)._cfg
       console.log("click node:", node.id);
 
+      useMacStore().setMacIp(node.id.split("_")[2])
+      console.log(useMacStore().newIp)
       updateDrawer(node)
     } else {
       console.log("node unselected")
