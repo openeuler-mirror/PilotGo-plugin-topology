@@ -1,5 +1,6 @@
 <template>
   <div id="topo-container" class="container"></div>
+  <!-- 外层抽屉组件 -->
   <el-drawer class="drawer" v-model="chart_drawer" :with-header="false" direction="rtl" size="30%" :before-close="handleClose">
     <div class="drawer_head_div">
     </div>
@@ -23,7 +24,8 @@
       </grid-layout>
     </div>
 
-    <div class="drawer_inner_div">
+    <!-- 嵌套抽屉组件 -->
+    <div class="nested_metric_drawer_div">
       <el-drawer v-model="metric_drawer_inner" :with-header="false" :append-to-body="true" size="25%">
         <el-table :data="table_data" stripe style="width: 100%">
           <el-table-column prop="name" label="属性" />
@@ -36,7 +38,7 @@
       <!-- 时间范围选择 -->
       <el-date-picker  v-model="dateRange" type="datetimerange" :shortcuts="pickerOptions" range-separator="to"
         start-placeholder="开始日期" end-placeholder="结束日期" @change="changeDate" size="small"
-        :style="{ 'width': '290px', 'height': '34px', 'margin-right': '50px' }">
+        :style="{ 'width': '290px', 'height': '34px', 'margin-right': '20px' }">
       </el-date-picker>
       <el-button-group :style="{ 'margin-right': '18px' }">
         <!-- 指标数据 -->
@@ -45,6 +47,8 @@
         <el-button class="drawer_button" @click="chart_drawer_inner = true" :icon="Platform" size="default" circle="false" />
         <!-- 加载本地的图表配置文件 -->
         <el-button class="drawer_button" @click="config_drawer_inner = true" :icon="Files" size="default" circle="false" />
+        <!-- 保存图标显示配置 -->
+        <el-button class="drawer_button" @click="config_drawer_inner = true" :icon="Collection" size="default" circle="false" />
       </el-button-group>
     </div>
 
@@ -57,7 +61,7 @@ import { ref, reactive, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { topo } from '../request/api';
 import server_logo from "@/assets/icon/server.png";
-import { More, Platform, Files } from '@element-plus/icons-vue';
+import { More, Platform, Files, Collection } from '@element-plus/icons-vue';
 import topodata from '@/assets/cluster.json'
 import { useLayoutStore } from '@/stores/charts';
 import MyEcharts from '@/views/MyEcharts.vue';
@@ -97,9 +101,8 @@ onMounted(async () => {
   try {
     // ttcode
     // const data = topodata
-
     const data = await topo.multi_host_topo();
-    // console.log(data.data);
+
 
     for (let i = 0; i < data.data.edges.length; i++) {
       let edge: any = data.data.edges[i];
@@ -256,14 +259,14 @@ const SizeAutoChange = (i: string, isChart?: boolean) => {
   display: relative;
 }
 
-.drawer_inner_div {
+.nested_metric_drawer_div {
   position: absolute;
 }
 
 .drawer_top_div {
   position: absolute;
   right: 0;
-  top: 0; 
+  top: 0;
   display: flex;
   justify-content: space-between;
 }
