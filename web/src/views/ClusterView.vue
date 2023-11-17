@@ -1,7 +1,7 @@
 <template>
   <div id="topo-container" class="container"></div>
   <!-- 外层抽屉组件 -->
-  <el-drawer class="drawer" v-model="chart_drawer" :with-header="false" direction="rtl" size="30%" :before-close="handleClose">
+  <el-drawer class="drawer" v-model="chart_drawer" :with-header="false" direction="rtl" size="480px" :before-close="handleClose">
     <div class="drawer_head_div">
     </div>
     <div class="drawer_body_div">
@@ -26,7 +26,7 @@
 
     <!-- 嵌套抽屉组件 -->
     <div class="nested_metric_drawer_div">
-      <el-drawer v-model="nested_metric_drawer" :with-header="false" :append-to-body="true" size="25%">
+      <el-drawer v-model="nested_metric_drawer" :with-header="false" :append-to-body="true" size="350px">
         <el-table :data="table_data" stripe style="width: 100%">
           <el-table-column prop="name" label="属性" />
           <el-table-column prop="value" label="值" />
@@ -34,18 +34,18 @@
       </el-drawer>
     </div>
     <div class="nested_selectchart_drawer_div">
-      <el-drawer v-model="nested_selectchart_drawer" :with-header="false" :append-to-body="true" size="12%">
+      <el-drawer v-model="nested_selectchart_drawer" :with-header="false" :append-to-body="true" size="190px">
         <el-checkbox v-for="item in layout" v-model="item.display" :label="item.title" size="large"/>
       </el-drawer>
     </div>
 
     <div class="drawer_top_div" :style="{ 'margin-top': '10px' }">
       <!-- 时间范围选择 -->
-      <el-date-picker  v-model="dateRange" type="datetimerange" :shortcuts="pickerOptions" range-separator="to"
+      <el-date-picker  v-model="dateRange" type="datetimerange" :shortcuts="pickerOptions" range-separator="至"
         start-placeholder="开始日期" end-placeholder="结束日期" @change="changeDate" size="small"
-        :style="{ 'width': '290px', 'height': '34px', 'margin-right': '20px' }">
+        :style="{ 'width': '290px', 'height': '34px', 'margin-right': '15px' }">
       </el-date-picker>
-      <el-button-group :style="{ 'margin-right': '18px' }">
+      <el-button-group :style="{ 'margin-right': '22px' }">
         <!-- 指标数据 -->
         <el-button class="drawer_button" @click="nested_metric_drawer = true" :icon="More" size="default" circle="false" />
         <!-- 选择要显示的图表 -->
@@ -246,8 +246,9 @@ const SizeAutoChange = (i: string, isChart?: boolean) => {
 .drawer {
     position: relative;
     height: 100%;
+    padding: 10px;
   }
-
+  
 .drawer_head_div {
     width: 100%;
     height: 20%;
