@@ -43,7 +43,7 @@
       <!-- 时间范围选择 -->
       <el-date-picker  v-model="dateRange" type="datetimerange" :shortcuts="pickerOptions" range-separator="至"
         start-placeholder="开始日期" end-placeholder="结束日期" @change="changeDate" size="small"
-        :style="{ 'width': '290px', 'height': '34px', 'margin-right': '15px' }">
+        :style="{ 'width': '285px', 'height': '30px', 'margin-right': '8px', 'border-radius': '10px', 'border': '1px groove rgb(223, 210, 210)' }">
       </el-date-picker>
       <el-button-group :style="{ 'margin-right': '22px' }">
         <!-- 指标数据 -->
@@ -251,15 +251,19 @@ const SizeAutoChange = (i: string, isChart?: boolean) => {
   
 .drawer_head_div {
     width: 100%;
-    height: 20%;
+    height: 200px;
+    margin-top: 35px;
 
     display: absolute;
     border-bottom: 1px solid rgb(181, 177, 177);
+
+    /* border: 1px groove rgb(195, 184, 184);
+    border-radius: 10px; */
   }
 
 .drawer_body_div {
   width: 100%;
-  height: 80%;
+  /* height: 80%; */
 
   display: relative;
 }
