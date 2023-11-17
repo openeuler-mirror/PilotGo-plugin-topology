@@ -60,7 +60,7 @@ func (d *DataCollector) GetCollectDataFromTopoAgent(agent *agentmanager.Agent_m)
 
 	resp, err := httputils.Get(url, nil)
 	if err != nil {
-		return errors.Errorf("%v, %s, %s **2", resp.StatusCode, url, err.Error())
+		return errors.Errorf("%s, %s **2", url, err.Error())
 	}
 
 	if statuscode := resp.StatusCode; statuscode != 200 {
