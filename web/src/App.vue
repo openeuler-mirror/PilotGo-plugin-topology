@@ -2,7 +2,7 @@
   <header>
     <el-tabs v-model="activename" @tab-click="handleClick" class="tabs">
       <el-tab-pane  label="业务" name="first">
-        <el-dropdown :style="{ 'position': 'fixed', 'margin-top': '-10px', 'margin-left': '5px' }">
+        <el-dropdown :style="{ 'position': 'fixed', 'margin-top': '0px', 'margin-left': '5px' }">
           <span class="dropdown">
             <el-icon class="el-icon--right"><arrow-down /></el-icon>
           </span>
@@ -15,7 +15,7 @@
       </el-tab-pane>
 
       <el-tab-pane label="机器" name="second">
-        <el-dropdown :style="{ 'position': 'fixed', 'margin-top': '-10px', 'margin-left': '81px' }">
+        <el-dropdown :style="{ 'position': 'fixed', 'margin-top': '0px', 'margin-left': '81px' }">
           <span class="dropdown">
             <el-icon class="el-icon--right" ><arrow-down /></el-icon>
           </span>
@@ -29,7 +29,7 @@
       
 
       <el-tab-pane label="设置" name="third">
-        <el-dropdown :style="{ 'position': 'fixed', 'margin-top': '-10px', 'margin-left': '158px' }">
+        <el-dropdown :style="{ 'position': 'fixed', 'margin-top': '0px', 'margin-left': '158px' }">
           <span class="dropdown">
             <el-icon class="el-icon--right"><arrow-down /></el-icon>
           </span>
@@ -42,7 +42,7 @@
       </el-tab-pane>
 
       <el-tab-pane label="时间间隔" name="fourth">
-        <el-dropdown :style="{ 'position': 'fixed', 'margin-top': '-10px', 'margin-left': '250px' }">
+        <el-dropdown :style="{ 'position': 'fixed', 'margin-top': '0px', 'margin-left': '250px' }">
           <span class="dropdown">
             <el-icon class="el-icon--right"><arrow-down /></el-icon>
           </span>
@@ -55,7 +55,7 @@
       </el-tab-pane>
 
       <el-tab-pane label="模式" name="fifth">
-        <el-dropdown :style="{ 'position': 'fixed', 'margin-top': '-10px', 'margin-left': '346px' }">
+        <el-dropdown :style="{ 'position': 'fixed', 'margin-top': '0px', 'margin-left': '346px' }">
           <span class="dropdown">
             <el-icon class="el-icon--right"><arrow-down /></el-icon>
           </span>
@@ -160,11 +160,11 @@ onMounted(async () => {
 async function updateNodeList() {
   //ttcode
   // const data = {
-							// 	"code":  0,
-							// 	"error": null,
-							// 	"data": 
-													// 		{"agentlist": {"070cb0b4-c415-4b6a-843b-efc51cff6b76": "10.44.55.66:9992"}}
-              //   }
+		// 	"code":  0,
+		// 	"error": null,
+		// 	"data": 
+			// 		{"agentlist": {"070cb0b4-c415-4b6a-843b-efc51cff6b76": "10.44.55.66:9992"}}
+    //   }
 	
   const data = await topo.host_list()
 // console.log(data);
@@ -195,7 +195,7 @@ const handleClick = (tab: TabsPaneContext, event: Event) => {
 
 </script>
 
-<style >
+<style>
 header {
   /* line-height: 1.5;
   max-height: 100vh;
@@ -203,7 +203,7 @@ header {
   padding-right: calc(var(--section-gap) / 2); */
 
   width: 100%;
-  height: 5%;
+  /* height: 5%; */
   position: relative;
   display: flex;
   justify-content: center;
@@ -231,11 +231,16 @@ header > div:last-child {
 
 .tabs {
   position: relative;
-  height: calc(100% - 123px);
-  padding: 9px;
+  /* height: calc(100% - 123px); */
+  height: 100%;
+  /* padding: 50px; */
   color: #c71e48;
   /* font-size: large;
   font-weight: 600; */
+
+}
+.el-tabs__header {
+  margin: 0px;
 }
 
 .el-tabs__item{
