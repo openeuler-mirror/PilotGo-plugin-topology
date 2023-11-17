@@ -33,11 +33,11 @@ type Topoclient struct {
 }
 
 func (t *Topoclient) InitMachineList() {
-	url := Topo.Sdkmethod.Server + "/api/v1/pluginapi/machine_list"
+	url := "http://" + Topo.Sdkmethod.Server() + "/api/v1/pluginapi/machine_list"
 
 	resp, err := httputils.Get(url, nil)
 	if err != nil {
-		err = errors.Errorf("%s **fatal**2", err.Error()) // err top
+		err = errors.Errorf("%s (url: %s) **fatal**2", err.Error(), url) // err top
 		t.ErrCh <- err
 		t.Errmu.Lock()
 		t.ErrCond.Wait()
@@ -82,7 +82,7 @@ func (t *Topoclient) InitMachineList() {
 }
 
 func (t *Topoclient) UpdateMachineList() {
-	url := Topo.Sdkmethod.Server + "/api/v1/pluginapi/machine_list"
+	url := "http://" + Topo.Sdkmethod.Server() + "/api/v1/pluginapi/machine_list"
 
 	resp, err := httputils.Get(url, nil)
 	if err != nil {
@@ -162,7 +162,7 @@ func (t *Topoclient) InitPluginClient() {
 	var errcondmu sync.Mutex
 	PluginInfo.Url = "http://" + conf.Config().Topo.Server_addr + "/plugin/topology"
 	PluginClient := client.DefaultClient(PluginInfo)
-	PluginClient.Server = "http://" + conf.Config().PilotGo.Addr
+	// PluginClient.Server = "http://" + conf.Config().PilotGo.Addr
 
 	Topo = &Topoclient{
 		Sdkmethod: PluginClient,
