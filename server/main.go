@@ -28,6 +28,11 @@ func main() {
 	agentmanager.Topo.InitErrorControl(agentmanager.Topo.ErrCh, agentmanager.Topo.Errmu, agentmanager.Topo.ErrCond)
 
 	/*
+		init web server
+	*/
+	handler.InitWebServer()
+
+	/*
 		init logger
 	*/
 	agentmanager.Topo.InitLogger()
@@ -42,11 +47,6 @@ func main() {
 		init database
 	*/
 	service.InitDB()
-
-	/*
-		init web server
-	*/
-	handler.InitWebServer()
 
 	/*
 		topo插件自身数据采集模块周期性数据采集
