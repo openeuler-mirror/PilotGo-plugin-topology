@@ -6,6 +6,7 @@ package handler
 import (
 	"embed"
 	"io/fs"
+	"mime"
 	"net/http"
 	"strings"
 
@@ -25,6 +26,7 @@ func StaticRouter(router *gin.Engine) {
 		return
 	}
 
+	mime.AddExtensionType(".js", "application/javascript")
 	static := router.Group("/plugin/topology")
 	{
 		static.StaticFS("/assets", http.FS(sf))
