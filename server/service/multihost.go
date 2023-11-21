@@ -107,6 +107,8 @@ func MultiHostService() ([]*meta.Node, []*meta.Edge, error) {
 						Dir:  "direct",
 					}
 
+					net_process_host_edge.Tags = append(net_process_host_edge.Tags, meta.EDGE_BELONG)
+					
 					// TODO: multi_edges_map未包含新创建的边, multi_edges中新创建的边没有DBID、SrcID、DstID
 					// multi_edges_map[net_process__host_edge.ID] = net_process__host_edge
 					multi_edges = append(multi_edges, net_process_host_edge)
