@@ -1,5 +1,5 @@
 <template>
-  <div class="cont">
+  <div :style="{ 'width': '100%', 'height': '100%' }">
     <div v-show="isChart" ref="chartDom" :style="{ 'width': '100%', 'height': '100%' }"></div>
   </div>
 </template>
@@ -407,18 +407,19 @@ defineExpose({
 </script>
   
 <style scoped>
-.cont {
+.echart {
   width: 100%;
   height: 100%;
 }
 
-.text, .table {
-    width: 100%;
-    height: 100%;
-  }
-
+.table {
+  width: 100%;
+  height: 100%;
+}
 
 .text {
+    width: 100%;
+    height: 100%;
     display: flex;
     justify-content: center;
     align-items: center;

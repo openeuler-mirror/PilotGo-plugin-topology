@@ -3,12 +3,16 @@
   <!-- 外层抽屉组件 -->
   <el-drawer class="drawer" v-model="chart_drawer" :with-header="false" direction="rtl" size="480px" :before-close="handleClose">
     <div class="drawer_head_div">
+      <div v-for="(tag, i) in tags" :style="{ 'display': 'flex', 'margin-bottom': '5px' }">
+        <span class="tag" :style="{ 'background-color': tags_color[i] }">{{ tag }}</span>
+      </div>
     </div>
+
     <div class="drawer_body_div">
       <grid-layout :col-num="3" :is-draggable="grid.draggable" :is-resizable="grid.resizable" :layout.sync="layout"
       :row-height="100" :use-css-transforms="true" :vertical-compact="true" :responsive="true">
-        <template v-for="(item, indexVar) in layout">
-          <grid-item :key="indexVar" :h="item.h" :i="item.i" :static="item.static" :w="item.w" :x="item.x" :y="item.y"
+        <template v-for="(item, i) in layout">
+          <grid-item :key="i" :h="item.h" :i="item.i" :static="item.static" :w="item.w" :x="item.x" :y="item.y"
             :min-w="2" :min-h="2" @resize="SizeAutoChange(item.i, item.query.isChart)" @resized="SizeAutoChange"
             drag-allow-from=".drag" drag-ignore-from=".noDrag" v-if="item.display">
             <div class="drag">
@@ -66,11 +70,12 @@ import { ref, reactive, onMounted } from "vue";
 import { topo } from '../request/api';
 import server_logo from "@/assets/icon/server.png";
 import { More, Platform, Files, Collection } from '@element-plus/icons-vue';
-import topodata from '@/assets/cluster.json'
+import topodata from '@/assets/cluster_tags.json'
 import { useLayoutStore } from '@/stores/charts';
 import MyEcharts from '@/views/MyEcharts.vue';
 import { pickerOptions } from '@/utils/datePicker';
 import { useMacStore } from '@/stores/mac';
+import { keysOf } from 'element-plus/es/utils/objects.mjs';
 
 let chart_drawer = ref(false)
 let nested_metric_drawer = ref(false)
@@ -95,6 +100,18 @@ const grid = reactive({
   responsive: true,
 });
 
+let tags: string[] = reactive([])
+const tags_color: string[] = [
+  'rgb(86, 148, 128)',
+  'rgb(218, 113, 148)',
+  'rgb(255, 196, 84)',
+  'rgb(76, 142, 218)',
+  'rgb(236, 181, 201)',
+  'rgb(141, 204, 147)',
+  'rgb(217, 200, 174)',
+  'rgb(241, 102, 103)'
+]
+
 function handleClose() {
   chart_drawer.value = false
 }
@@ -102,8 +119,8 @@ function handleClose() {
 onMounted(async () => {
   try {
     // ttcode
-    // const data = topodata
-    const data = await topo.multi_host_topo();
+    const data = topodata
+    // const data = await topo.multi_host_topo();
 
 
     for (let i = 0; i < data.data.edges.length; i++) {
@@ -205,7 +222,6 @@ function updateDrawer(node: any) {
 
   chart_drawer.value = chart_drawer.value ? false : true;
 
-  // console.log(node)
   table_data = [];
   let metrics = node.model.metrics;
   for (let key in metrics) {
@@ -213,6 +229,11 @@ function updateDrawer(node: any) {
       name: key,
       value: metrics[key],
     })
+  };
+
+  tags = [];
+  for (let i in node.model.tags) {
+    tags.push(node.model.tags[i])
   };
 }
 
@@ -260,6 +281,16 @@ const SizeAutoChange = (i: string, isChart?: boolean) => {
     /* border: 1px groove rgb(195, 184, 184);
     border-radius: 10px; */
   }
+
+.tag {
+  font-size: 14px;
+  font-weight: bold;
+  border-spacing: 5px;
+  border-radius: 8px;
+  padding: 4px;
+
+  color: #ffffff;
+}
 
 .drawer_body_div {
   width: 100%;

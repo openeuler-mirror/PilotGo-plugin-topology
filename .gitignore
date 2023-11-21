@@ -18,8 +18,7 @@ server/handler/assets/
 server/handler/index.html
 web/node_modules
 web/dist/
-web/src/assets/cluster.json
-web/src/assets/single.json
+web/src/assets/*.json
 docs/time-series.json
 
 go.work*
