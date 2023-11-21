@@ -2,11 +2,11 @@
   <div id="topo-container" class="container"></div>
   <!-- 外层抽屉组件 -->
   <el-drawer class="drawer" v-model="chart_drawer" :with-header="false" direction="rtl" size="480px" :before-close="handleClose">
-    <div class="drawer_head_div">
+    <el-scrollbar class="drawer_head_div">
       <div v-for="(tag, i) in tags" :style="{ 'display': 'flex', 'margin-bottom': '5px' }">
         <span class="tag" :style="{ 'background-color': tags_color[i] }">{{ tag }}</span>
       </div>
-    </div>
+    </el-scrollbar>
 
     <div class="drawer_body_div">
       <grid-layout :col-num="3" :is-draggable="grid.draggable" :is-resizable="grid.resizable" :layout.sync="layout"
@@ -119,8 +119,8 @@ function handleClose() {
 onMounted(async () => {
   try {
     // ttcode
-    const data = topodata
-    // const data = await topo.multi_host_topo();
+    // const data = topodata
+    const data = await topo.multi_host_topo();
 
 
     for (let i = 0; i < data.data.edges.length; i++) {
