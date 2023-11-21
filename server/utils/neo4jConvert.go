@@ -18,6 +18,7 @@ func Neo4jnodeToToponode(neo4jnode neo4j.Node) *meta.Node {
 		ID:       neo4jnode.Props["nid"].(string),
 		Name:     neo4jnode.Props["name"].(string),
 		Unixtime: neo4jnode.Props["unixtime"].(string),
+		Tags:     neo4jnode.Labels,
 		Metrics:  metrics,
 	}
 
@@ -55,6 +56,9 @@ func Neo4jrelaToToporela(neo4jrela neo4j.Relationship) *meta.Edge {
 		metrics[k] = v.(string)
 	}
 
+	tags := []string{}
+	tags = append(tags, neo4jrela.Type)
+
 	toporela := &meta.Edge{
 		DBID:     neo4jrela.Id,
 		SrcID:    neo4jrela.StartId,
@@ -65,6 +69,7 @@ func Neo4jrelaToToporela(neo4jrela neo4j.Relationship) *meta.Edge {
 		Type:     neo4jrela.Type,
 		Dir:      neo4jrela.Props["dir"].(string),
 		Unixtime: neo4jrela.Props["unixtime"].(string),
+		Tags:     tags,
 		Metrics:  metrics,
 	}
 
