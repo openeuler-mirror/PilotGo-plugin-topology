@@ -25,6 +25,7 @@ type Edge struct {
 	Dst      string            `json:"target"`
 	Dir      string            `json:"dir"`
 	Unixtime string            `json:"unixtime"`
+	Tags     []string          `json:"tags"`
 	Metrics  map[string]string `json:"metrics"`
 }
 
