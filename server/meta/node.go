@@ -22,6 +22,7 @@ type Node struct {
 	Type     string            `json:"type"`
 	UUID     string            `json:"uuid"`
 	Unixtime string            `json:"unixtime"`
+	Tags     []string          `json:"tags"`
 	Metrics  map[string]string `json:"metrics"`
 }
 

@@ -34,9 +34,6 @@ func DefaultClient(desc *PluginInfo) *Client {
 	global_client = &Client{
 		PluginInfo: desc,
 
-		// ttcode
-		server:           "10.41.121.1:8888",
-		
 		eventChan:        make(chan *common.EventMessage, 20),
 		eventCallbackMap: make(map[int]EventCallback),
 
