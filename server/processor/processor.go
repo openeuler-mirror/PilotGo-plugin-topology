@@ -100,33 +100,39 @@ func (d *DataProcesser) Process_data() (*meta.Nodes, *meta.Edges, []error, []err
 
 func (d *DataProcesser) Create_node_entities(agent *agentmanager.Agent_m, nodes *meta.Nodes) error {
 	host_node := &meta.Node{
-		ID:      fmt.Sprintf("%s_%s_%s", agent.UUID, meta.NODE_HOST, agent.IP),
-		Name:    agent.UUID,
-		Type:    meta.NODE_HOST,
-		UUID:    agent.UUID,
-		Metrics: *utils.HostToMap(agent.Host_2, &agent.AddrInterfaceMap_2),
+		ID:         fmt.Sprintf("%s_%s_%s", agent.UUID, meta.NODE_HOST, agent.IP),
+		Name:       agent.UUID,
+		Type:       meta.NODE_HOST,
+		UUID:       agent.UUID,
+		LayoutAttr: "a",
+		ComboId:    agent.UUID,
+		Metrics:    *utils.HostToMap(agent.Host_2, &agent.AddrInterfaceMap_2),
 	}
 
 	nodes.Add(host_node)
 
 	for _, process := range agent.Processes_2 {
 		proc_node := &meta.Node{
-			ID:      fmt.Sprintf("%s_%s_%d", agent.UUID, meta.NODE_PROCESS, process.Pid),
-			Name:    process.ExeName,
-			Type:    meta.NODE_PROCESS,
-			UUID:    agent.UUID,
-			Metrics: *utils.ProcessToMap(process),
+			ID:         fmt.Sprintf("%s_%s_%d", agent.UUID, meta.NODE_PROCESS, process.Pid),
+			Name:       process.ExeName,
+			Type:       meta.NODE_PROCESS,
+			UUID:       agent.UUID,
+			LayoutAttr: "b",
+			ComboId:    agent.UUID,
+			Metrics:    *utils.ProcessToMap(process),
 		}
 
 		nodes.Add(proc_node)
 
 		for _, thread := range process.Threads {
 			thre_node := &meta.Node{
-				ID:      fmt.Sprintf("%s_%s_%d", agent.UUID, meta.NODE_THREAD, thread.Tid),
-				Name:    strconv.Itoa(int(thread.Tid)),
-				Type:    meta.NODE_THREAD,
-				UUID:    agent.UUID,
-				Metrics: *utils.ThreadToMap(&thread),
+				ID:         fmt.Sprintf("%s_%s_%d", agent.UUID, meta.NODE_THREAD, thread.Tid),
+				Name:       strconv.Itoa(int(thread.Tid)),
+				Type:       meta.NODE_THREAD,
+				UUID:       agent.UUID,
+				LayoutAttr: "c",
+				ComboId:    agent.UUID,
+				Metrics:    *utils.ThreadToMap(&thread),
 			}
 
 			nodes.Add(thre_node)
@@ -148,11 +154,13 @@ func (d *DataProcesser) Create_node_entities(agent *agentmanager.Agent_m, nodes 
 	// 临时定义不含网络流量metric的网络节点
 	for _, net := range agent.Netconnections_2 {
 		net_node := &meta.Node{
-			ID:      fmt.Sprintf("%s_%s_%d:%s", agent.UUID, meta.NODE_NET, net.Pid, strings.Split(net.Laddr, ":")[1]),
-			Name:    net.Laddr,
-			Type:    meta.NODE_NET,
-			UUID:    agent.UUID,
-			Metrics: *utils.NetToMap(net),
+			ID:         fmt.Sprintf("%s_%s_%d:%s", agent.UUID, meta.NODE_NET, net.Pid, strings.Split(net.Laddr, ":")[1]),
+			Name:       net.Laddr,
+			Type:       meta.NODE_NET,
+			UUID:       agent.UUID,
+			LayoutAttr: "d",
+			ComboId:    agent.UUID,
+			Metrics:    *utils.NetToMap(net),
 		}
 
 		nodes.Add(net_node)
@@ -160,11 +168,13 @@ func (d *DataProcesser) Create_node_entities(agent *agentmanager.Agent_m, nodes 
 
 	for _, disk := range agent.Disks_2 {
 		disk_node := &meta.Node{
-			ID:      fmt.Sprintf("%s_%s_%s", agent.UUID, meta.NODE_RESOURCE, disk.Partition.Device),
-			Name:    disk.Partition.Device,
-			Type:    meta.NODE_RESOURCE,
-			UUID:    agent.UUID,
-			Metrics: *utils.DiskToMap(disk),
+			ID:         fmt.Sprintf("%s_%s_%s", agent.UUID, meta.NODE_RESOURCE, disk.Partition.Device),
+			Name:       disk.Partition.Device,
+			Type:       meta.NODE_RESOURCE,
+			UUID:       agent.UUID,
+			LayoutAttr: "e",
+			ComboId:    agent.UUID,
+			Metrics:    *utils.DiskToMap(disk),
 		}
 
 		nodes.Add(disk_node)
@@ -172,11 +182,13 @@ func (d *DataProcesser) Create_node_entities(agent *agentmanager.Agent_m, nodes 
 
 	for _, cpu := range agent.Cpus_2 {
 		cpu_node := &meta.Node{
-			ID:      fmt.Sprintf("%s_%s_%s", agent.UUID, meta.NODE_RESOURCE, "CPU"+strconv.Itoa(int(cpu.Info.CPU))),
-			Name:    "CPU" + strconv.Itoa(int(cpu.Info.CPU)),
-			Type:    meta.NODE_RESOURCE,
-			UUID:    agent.UUID,
-			Metrics: *utils.CpuToMap(cpu),
+			ID:         fmt.Sprintf("%s_%s_%s", agent.UUID, meta.NODE_RESOURCE, "CPU"+strconv.Itoa(int(cpu.Info.CPU))),
+			Name:       "CPU" + strconv.Itoa(int(cpu.Info.CPU)),
+			Type:       meta.NODE_RESOURCE,
+			UUID:       agent.UUID,
+			LayoutAttr: "e",
+			ComboId:    agent.UUID,
+			Metrics:    *utils.CpuToMap(cpu),
 		}
 
 		nodes.Add(cpu_node)
@@ -184,11 +196,13 @@ func (d *DataProcesser) Create_node_entities(agent *agentmanager.Agent_m, nodes 
 
 	for _, ifaceio := range agent.NetIOcounters_2 {
 		iface_node := &meta.Node{
-			ID:      fmt.Sprintf("%s_%s_%s", agent.UUID, meta.NODE_RESOURCE, "NC"+ifaceio.Name),
-			Name:    "NC" + ifaceio.Name,
-			Type:    meta.NODE_RESOURCE,
-			UUID:    agent.UUID,
-			Metrics: *utils.InterfaceToMap(ifaceio),
+			ID:         fmt.Sprintf("%s_%s_%s", agent.UUID, meta.NODE_RESOURCE, "NC"+ifaceio.Name),
+			Name:       "NC" + ifaceio.Name,
+			Type:       meta.NODE_RESOURCE,
+			UUID:       agent.UUID,
+			LayoutAttr: "e",
+			ComboId:    agent.UUID,
+			Metrics:    *utils.InterfaceToMap(ifaceio),
 		}
 
 		nodes.Add(iface_node)
