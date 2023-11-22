@@ -18,7 +18,7 @@ type Edges struct {
 type Edge struct {
 	DBID     int64             `json:"dbid"`
 	ID       string            `json:"id"`
-	Type     string            `json:"type"`
+	Type     string            `json:"Type"`
 	SrcID    int64             `json:"sourceid"`
 	DstID    int64             `json:"targetid"`
 	Src      string            `json:"source"`
