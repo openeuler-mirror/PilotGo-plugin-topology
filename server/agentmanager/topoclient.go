@@ -34,16 +34,24 @@ type Topoclient struct {
 }
 
 func (t *Topoclient) InitMachineList() {
+	i := 0
+	loop := []string{`*.....`, `.*....`, `..*...`, `...*..`, `....*.`, `.....*`}
 	for {
 		if Topo.Sdkmethod.Server() != "" {
 			break
 		}
-
-		logger.Debug("waiting for handshake with pilotgo server...")
-		time.Sleep(2 * time.Second)
+		fmt.Printf("\r Waiting for handshake with pilotgo server%s", loop[i])
+		if i < 5 {
+			i++
+		} else {
+			i = 0
+		}
+		time.Sleep(1 * time.Second)
 	}
 
-	url := "http://" + Topo.Sdkmethod.Server() + "/api/v1/pluginapi/machine_list"
+	// ttcode
+	url := "http://" + conf.Config().PilotGo.Addr + "/api/v1/pluginapi/machine_list"
+	// url := "http://" + Topo.Sdkmethod.Server() + "/api/v1/pluginapi/machine_list"
 
 	resp, err := httputils.Get(url, nil)
 	if err != nil {
@@ -92,7 +100,9 @@ func (t *Topoclient) InitMachineList() {
 }
 
 func (t *Topoclient) UpdateMachineList() {
-	url := "http://" + Topo.Sdkmethod.Server() + "/api/v1/pluginapi/machine_list"
+	// ttcode
+	url := "http://" + conf.Config().PilotGo.Addr + "/api/v1/pluginapi/machine_list"
+	// url := "http://" + Topo.Sdkmethod.Server() + "/api/v1/pluginapi/machine_list"
 
 	resp, err := httputils.Get(url, nil)
 	if err != nil {
