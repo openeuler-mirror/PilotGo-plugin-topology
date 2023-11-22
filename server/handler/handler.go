@@ -78,6 +78,19 @@ func SingleHostTreeHandle(ctx *gin.Context) {
 		return
 	}
 
+	// ttcode 导出图数据用于前端调试
+	// logfile, _ := os.OpenFile("/root/single.json", os.O_WRONLY|os.O_CREATE, 0666)
+	// encoder := json.NewEncoder(logfile)
+	// encoder.SetIndent("", " ")
+	// encoder.Encode(gin.H{
+	// 	"code":  0,
+	// 	"error": nil,
+	// 	"data": map[string]interface{}{
+	// 		"tree": nodes,
+	// 	},
+	// })
+	// os.Exit(1)
+
 	ctx.JSON(http.StatusOK, gin.H{
 		"code":  0,
 		"error": nil,
@@ -90,7 +103,7 @@ func SingleHostTreeHandle(ctx *gin.Context) {
 func MultiHostHandle(ctx *gin.Context) {
 	agentmanager.Topo.UpdateMachineList()
 
-	nodes, edges, err := service.MultiHostService()
+	nodes, edges, combos, err := service.MultiHostService()
 	if err != nil {
 		err = errors.Wrap(err, " **warn**2") // err top
 		agentmanager.Topo.ErrCh <- err
@@ -115,12 +128,28 @@ func MultiHostHandle(ctx *gin.Context) {
 		return
 	}
 
+	// ttcode 导出图数据用于前端调试
+	// logfile, _ := os.OpenFile("/root/cluster.json", os.O_WRONLY|os.O_CREATE, 0666)
+	// encoder := json.NewEncoder(logfile)
+	// encoder.SetIndent("", " ")
+	// encoder.Encode(gin.H{
+	// 	"code":  0,
+	// 	"error": nil,
+	// 	"data": map[string]interface{}{
+	// 		"nodes":  nodes,
+	// 		"edges":  edges,
+	// 		"combos": combos,
+	// 	},
+	// })
+	// os.Exit(1)
+
 	ctx.JSON(http.StatusOK, gin.H{
 		"code":  0,
 		"error": nil,
 		"data": map[string]interface{}{
-			"nodes": nodes,
-			"edges": edges,
+			"nodes":  nodes,
+			"edges":  edges,
+			"combos": combos,
 		},
 	})
 }
