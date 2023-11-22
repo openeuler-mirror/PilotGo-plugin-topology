@@ -14,12 +14,14 @@ func Neo4jnodeToToponode(neo4jnode neo4j.Node) *meta.Node {
 	}
 
 	toponode := &meta.Node{
-		DBID:     neo4jnode.Id,
-		ID:       neo4jnode.Props["nid"].(string),
-		Name:     neo4jnode.Props["name"].(string),
-		Unixtime: neo4jnode.Props["unixtime"].(string),
-		Tags:     neo4jnode.Labels,
-		Metrics:  metrics,
+		DBID:       neo4jnode.Id,
+		ID:         neo4jnode.Props["nid"].(string),
+		Name:       neo4jnode.Props["name"].(string),
+		Unixtime:   neo4jnode.Props["unixtime"].(string),
+		Tags:       neo4jnode.Labels,
+		LayoutAttr: neo4jnode.Props["layoutattr"].(string),
+		ComboId:    neo4jnode.Props["comboid"].(string),
+		Metrics:    metrics,
 	}
 
 	switch neo4jnode.Labels[0] {
