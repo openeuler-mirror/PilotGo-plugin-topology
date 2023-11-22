@@ -53,11 +53,11 @@ func (n *Neo4jclient) Node_create(unixtime string, node *meta.Node) error {
 	var cqlIN string
 
 	if len(node.Metrics) == 0 {
-		cqlIN = fmt.Sprintf("create (node:`%s` {unixtime:'%s', nid:'%s', name:'%s'} set node:`%s`)",
-			node.Type, unixtime, node.ID, node.Name, node.UUID)
+		cqlIN = fmt.Sprintf("create (node:`%s` {unixtime:'%s', nid:'%s', name:'%s', layoutattr:'%s', comboid:'%s'} set node:`%s`)",
+			node.Type, unixtime, node.ID, node.Name, node.LayoutAttr, node.ComboId, node.UUID)
 	} else {
-		cqlIN = fmt.Sprintf("create (node:`%s` {unixtime:'%s', nid:'%s', name:'%s'}) set node:`%s`, node += $metrics",
-			node.Type, unixtime, node.ID, node.Name, node.UUID)
+		cqlIN = fmt.Sprintf("create (node:`%s` {unixtime:'%s', nid:'%s', name:'%s', layoutattr:'%s', comboid:'%s'}) set node:`%s`, node += $metrics",
+			node.Type, unixtime, node.ID, node.Name, node.LayoutAttr, node.ComboId, node.UUID)
 	}
 
 	params := map[string]interface{}{
