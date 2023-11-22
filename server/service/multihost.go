@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func MultiHostService() ([]*meta.Node, []*meta.Edge, error) {
+func MultiHostService() ([]*meta.Node, []*meta.Edge, []map[string]string, error) {
 	var latest string
 	nodes := make([]*meta.Node, 0)
 	nodes_map := make(map[int64]*meta.Node)
@@ -19,11 +19,12 @@ func MultiHostService() ([]*meta.Node, []*meta.Edge, error) {
 	multi_nodes := make([]*meta.Node, 0)
 	multi_edges_map := make(map[int64]*meta.Edge)
 	multi_edges := make([]*meta.Edge, 0)
+	combos := make([]map[string]string, 0)
 
 	times, err := dao.Global_GraphDB.Timestamps_query()
 	if err != nil {
 		err = errors.Wrap(err, " **2")
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	if len(times) < 2 {
@@ -35,7 +36,7 @@ func MultiHostService() ([]*meta.Node, []*meta.Edge, error) {
 	nodes, err = dao.Global_GraphDB.MultiHost_node_query(latest)
 	if err != nil {
 		err = errors.Wrap(err, " **2")
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	for _, _node := range nodes {
@@ -45,7 +46,7 @@ func MultiHostService() ([]*meta.Node, []*meta.Edge, error) {
 	edges, err = dao.Global_GraphDB.MultiHost_relation_query(latest)
 	if err != nil {
 		err = errors.Wrap(err, " **2")
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	for _, _edge := range edges {
@@ -61,6 +62,11 @@ func MultiHostService() ([]*meta.Node, []*meta.Edge, error) {
 			}
 
 			hostids = append(hostids, node.DBID)
+
+			combos = append(combos, map[string]string{
+				"id":    node.UUID,
+				"label": node.UUID,
+			})
 		}
 	}
 
@@ -108,7 +114,7 @@ func MultiHostService() ([]*meta.Node, []*meta.Edge, error) {
 					}
 
 					net_process_host_edge.Tags = append(net_process_host_edge.Tags, meta.EDGE_BELONG)
-					
+
 					// TODO: multi_edges_map未包含新创建的边, multi_edges中新创建的边没有DBID、SrcID、DstID
 					// multi_edges_map[net_process__host_edge.ID] = net_process__host_edge
 					multi_edges = append(multi_edges, net_process_host_edge)
@@ -119,5 +125,5 @@ func MultiHostService() ([]*meta.Node, []*meta.Edge, error) {
 		}
 	}
 
-	return multi_nodes, multi_edges, nil
+	return multi_nodes, multi_edges, combos, nil
 }
