@@ -68,63 +68,8 @@
         </el-dropdown>
       </el-tab-pane>
   </el-tabs>
-
-    <!-- <el-dropdown>
-      <span class="dropdown">
-        <el-icon><Menu /></el-icon>业务<el-icon class="el-icon--right"><arrow-down /></el-icon>
-      </span>
-      <template #dropdown>
-        <el-dropdown-menu>
-          <el-dropdown-item @click="switch_multi_topo">全局网络拓扑</el-dropdown-item>
-        </el-dropdown-menu>
-      </template>
-    </el-dropdown>
-
-    <el-dropdown>
-      <span class="dropdown">
-        <el-icon><Monitor /></el-icon>机器<el-icon class="el-icon--right"><arrow-down /></el-icon>
-      </span>
-      <template #dropdown>
-        <el-dropdown-menu>
-          <el-dropdown-item @click="switch_single_topo(node)" v-for="node in node_list">{{ node.id }}</el-dropdown-item>
-        </el-dropdown-menu>
-      </template>
-    </el-dropdown>
-
-    <el-dropdown>
-      <span class="dropdown">
-        <el-icon><Setting /></el-icon>设置<el-icon class="el-icon--right"><arrow-down /></el-icon>
-      </span>
-      <template #dropdown>
-        <el-dropdown-menu>
-          <el-dropdown-item>编辑业务</el-dropdown-item>
-        </el-dropdown-menu>
-      </template>
-    </el-dropdown>
-
-    <el-dropdown>
-      <span class="dropdown">
-        <el-icon><Aim /></el-icon>时间间隔<el-icon class="el-icon--right"><arrow-down /></el-icon>
-      </span>
-      <template #dropdown>
-        <el-dropdown-menu>
-          <el-dropdown-item v-for="interval in interval_list">{{ interval }}</el-dropdown-item>
-        </el-dropdown-menu>
-      </template>
-    </el-dropdown>
-
-    <el-dropdown>
-      <span class="dropdown">
-        <el-icon><MagicStick /></el-icon>模式<el-icon class="el-icon--right"><arrow-down /></el-icon>
-      </span>
-      <template #dropdown>
-        <el-dropdown-menu>
-          <el-dropdown-item >亮色</el-dropdown-item>
-          <el-dropdown-item >黑暗</el-dropdown-item>
-        </el-dropdown-menu>
-      </template>
-    </el-dropdown> -->
 </header>
+
   <RouterView/>
 
 </template>
