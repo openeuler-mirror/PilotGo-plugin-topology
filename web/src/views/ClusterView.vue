@@ -1,117 +1,29 @@
 <template>
   <div id="topo-container" class="container"></div>
-  <!-- 外层抽屉组件 -->
-  <el-drawer class="drawer" v-model="chart_drawer" :with-header="false" direction="rtl" size="480px" :before-close="handleClose">
-    <el-scrollbar class="drawer_head_div">
-      <div v-for="(tag, i) in tags" :style="{ 'display': 'flex', 'margin-bottom': '5px' }">
-        <span class="tag" :style="{ 'background-color': tags_color[i] }">{{ tag }}</span>
-      </div>
-    </el-scrollbar>
 
-    <div class="drawer_body_div">
-      <grid-layout :col-num="3" :is-draggable="grid.draggable" :is-resizable="grid.resizable" :layout.sync="layout"
-      :row-height="100" :use-css-transforms="true" :vertical-compact="true" :responsive="true">
-        <template v-for="(item, i) in layout">
-          <grid-item :key="i" :h="item.h" :i="item.i" :static="item.static" :w="item.w" :x="item.x" :y="item.y"
-            :min-w="2" :min-h="2" @resize="SizeAutoChange(item.i, item.query.isChart)" @resized="SizeAutoChange"
-            drag-allow-from=".drag" drag-ignore-from=".noDrag" v-if="item.display">
-            <div class="drag">
-              <span class="drag-title">{{ item.title }}</span>
-            </div>
-            <div class="noDrag">
-              <MyEcharts :query="item.query" :startTime="startTime"
-                :endTime="endTime" :style="{ 'width': '100%', 'height': '100%'}">
-              </MyEcharts>
-            </div>
-          </grid-item>
-        </template>
-      </grid-layout>
-    </div>
+  <HostDrawer :host_drawer="drawer_display['host']" :node="node" @update-statu="closeDrawer('host')"/>
 
-    <!-- 嵌套抽屉组件 -->
-    <div class="nested_metric_drawer_div">
-      <el-drawer v-model="nested_metric_drawer" :with-header="false" :append-to-body="true" size="350px">
-        <el-table :data="table_data" stripe style="width: 100%">
-          <el-table-column prop="name" label="属性" />
-          <el-table-column prop="value" label="值" />
-        </el-table>
-      </el-drawer>
-    </div>
-    <div class="nested_selectchart_drawer_div">
-      <el-drawer v-model="nested_selectchart_drawer" :with-header="false" :append-to-body="true" size="190px">
-        <el-checkbox v-for="item in layout" v-model="item.display" :label="item.title" size="large"/>
-      </el-drawer>
-    </div>
-
-    <div class="drawer_top_div" :style="{ 'margin-top': '10px' }">
-      <!-- 时间范围选择 -->
-      <el-date-picker  v-model="dateRange" type="datetimerange" :shortcuts="pickerOptions" range-separator="至"
-        start-placeholder="开始日期" end-placeholder="结束日期" @change="changeDate" size="small"
-        :style="{ 'width': '285px', 'height': '30px', 'margin-right': '8px', 'border-radius': '10px', 'border': '1px groove rgb(223, 210, 210)' }">
-      </el-date-picker>
-      <!-- 按钮组 -->
-      <el-button-group :style="{ 'margin-right': '22px' }">
-        <!-- 指标数据 -->
-        <el-button class="drawer_button" @click="nested_metric_drawer = true" :icon="More" size="default" circle="false" />
-        <!-- 选择要显示的图表 -->
-        <el-button class="drawer_button" @click="nested_selectchart_drawer = true" :icon="Platform" size="default" circle="false" />
-        <!-- 加载本地的图表配置文件 -->
-        <el-button class="drawer_button" @click="config_drawer_inner = true" :icon="Files" size="default" circle="false" />
-        <!-- 保存图标显示配置 -->
-        <el-button class="drawer_button" @click="config_drawer_inner = true" :icon="Collection" size="default" circle="false" />
-      </el-button-group>
-    </div>
-
-  </el-drawer>
 </template>
 
 <script setup lang="ts">
-import G6 from '@antv/g6';
+import G6, { Graph } from '@antv/g6';
 import { ref, reactive, onMounted } from "vue";
 import { topo } from '../request/api';
 import server_logo from "@/assets/icon/server.png";
-import { More, Platform, Files, Collection } from '@element-plus/icons-vue';
 import topodata from '@/assets/cluster-2.json'
-import { useLayoutStore } from '@/stores/charts';
-import MyEcharts from '@/views/MyEcharts.vue';
-import { pickerOptions } from '@/utils/datePicker';
 import { useMacStore } from '@/stores/mac';
-import { keysOf } from 'element-plus/es/utils/objects.mjs';
+import HostDrawer from '@/views/HostDrawer.vue'
 
-let chart_drawer = ref(false)
-let nested_metric_drawer = ref(false)
-let nested_selectchart_drawer = ref(false)
-let config_drawer_inner = ref(false)
-const chart = ref([] as any);
+let graph: Graph
+let node: any
 
-let table_data = reactive<any>([])
-let dateRange = ref([new Date() as any - 2 * 60 * 60 * 1000, new Date() as any - 0])
-
-const startTime = ref(0);
-const endTime = ref(0);
-startTime.value = (new Date() as any) / 1000 - 60 * 60 * 2;
-endTime.value = (new Date() as any) / 1000;
-
-const layoutStore = useLayoutStore();
-let layout = reactive(layoutStore.layout_option);
-
-const grid = reactive({
-  draggable: true,
-  resizable: true,
-  responsive: true,
-});
-
-let tags: string[] = reactive([])
-const tags_color: string[] = [
-  'rgb(86, 148, 128)',
-  'rgb(218, 113, 148)',
-  'rgb(255, 196, 84)',
-  'rgb(76, 142, 218)',
-  'rgb(236, 181, 201)',
-  'rgb(141, 204, 147)',
-  'rgb(217, 200, 174)',
-  'rgb(241, 102, 103)'
-];
+let drawer_display = reactive({
+  "host": false,
+  'process': false,
+  'thread': false,
+  'net': false,
+  'resource': false
+})
 
 const subjectColors = [
   '#5F95FF', // blue
@@ -135,15 +47,11 @@ const colorSets = G6.Util.getColorSetsBySubjectColors(
   disableColor,
 );
 
-function handleClose() {
-  chart_drawer.value = false
-}
-
 onMounted(async () => {
   try {
     // ttcode
-    // const data = topodata
-    const data = await topo.multi_host_topo();
+    const data = topodata
+    // const data = await topo.multi_host_topo();
 
 
     for (let i = 0; i < data.data.edges.length; i++) {
@@ -193,7 +101,7 @@ onMounted(async () => {
 })
 
 function initGraph(data: any) {
-  let graph = new G6.Graph({
+  graph = new G6.Graph({
     container: "topo-container",
     width: document.getElementById("topo-container")!.clientWidth,
     height: document.getElementById("topo-container")!.clientHeight,
@@ -203,57 +111,6 @@ function initGraph(data: any) {
     minZoom: 0.00000001,
     layout: {
       pipes: [
-        // {
-        //   type: 'comboCombined',
-        //   spacing: 1,
-        //   comboPadding: 10,
-        //   preventComboOverlap: true,
-        //   innerLayout: new G6.Layout['radial']({
-        //     focusNode: '54bcecd3-ea5f-497e-9ccb-3bb1aa9c0864_host_10.10.10.20',
-        //     unitRadius: 50,
-        //     maxIteration: 500,
-        //     linkDistance: 10,
-        //     preventOverlap: true,
-        //     nodeSize: 30,
-        //     sortBy: 'layoutattr',
-        //     sortStrength: 5,
-        //     nodesFilter: (node: any) => node.uuid === '54bcecd3-ea5f-497e-9ccb-3bb1aa9c0864',
-        //   })
-        // },
-        // {
-        //   type: 'comboCombined',
-        //   spacing: 1,
-        //   comboPadding: 20,
-        //   preventComboOverlap: true,
-        //   innerLayout: new G6.Layout['radial']({
-        //     focusNode: '070cb0b4-c415-4b6a-843b-efc51cff6b76_host_10.10.10.60',
-        //     unitRadius: 50,
-        //     maxIteration: 500,
-        //     linkDistance: 100,
-        //     preventOverlap: true,
-        //     nodeSize: 30,
-        //     sortBy: 'layoutattr',
-        //     sortStrength: 50,
-        //     nodesFilter: (node: any) => node.uuid === '070cb0b4-c415-4b6a-843b-efc51cff6b76',
-        //   })
-        // },
-        // {
-        //     type: 'comboCombined',
-        //     spacing: 1,
-        //     comboPadding: 20,
-        //     preventComboOverlap: true,
-        //     innerLayout: new G6.Layout['radial']({
-        //       focusNode: '7d0740a7-5ee6-41a9-846b-d52890d690d5_host_10.10.10.111',
-        //       unitRadius: 150,
-        //       maxIteration: 500,
-        //       linkDistance: 100,
-        //       preventOverlap: true,
-        //       nodeSize: 30,
-        //       sortBy: 'layoutattr',
-        //       sortStrength: 50,
-        //       nodesFilter: (node: any) => node.uuid === '7d0740a7-5ee6-41a9-846b-d52890d690d5',
-        //     })
-        // },
         {
           type: 'radial',
           center: [ 0, 0 ],
@@ -293,11 +150,7 @@ function initGraph(data: any) {
           sortStrength: 50,
           nodesFilter: (node: any) => node.uuid === '7d0740a7-5ee6-41a9-846b-d52890d690d5',
         },
-
       ],
-  
-
-    
     },
     modes: {
       default: ['drag-canvas', 'zoom-canvas', "click-select", "drag-node", 'drag-combo', 'collapse-expand-combo'],
@@ -313,15 +166,20 @@ function initGraph(data: any) {
   });
   graph.on("nodeselectchange", (e) => {
     if (e.select) {
-      let node = (e.target as any)._cfg
+      node = (e.target as any)._cfg
       console.log("click node:", node.id);
 
-      useMacStore().setMacIp(node.id.split("_")[2])
-      console.log(useMacStore().newIp)
-      updateDrawer(node)
+      switch (node.model.Type) {
+        case 'host':
+          useMacStore().setMacIp(node.id.split("_")[2]);
+          drawer_display['host'] = true
+          break;
+      }
+
     } else {
       console.log("node unselected")
     }
+
     return false
   });
   graph.on('node:dragstart', (e) => {
@@ -345,49 +203,27 @@ function refreshDragedNodePosition(e: any) {
   model.fy = e.y;
 }
 
-function updateDrawer(node: any) {
-  // if (node.type === "host") {
-  //     chart_drawer.value = chart_drawer.value ? false : true;
-  // } else {
-  //     metric_drawer.value = metric_drawer.value ? false : true;
-  // }
+function closeDrawer(nodetype: string) {
 
-  chart_drawer.value = chart_drawer.value ? false : true;
-
-  table_data = [];
-  let metrics = node.model.metrics;
-  for (let key in metrics) {
-    table_data.push({
-      name: key,
-      value: metrics[key],
-    })
-  };
-
-  tags = [];
-  for (let i in node.model.tags) {
-    tags.push(node.model.tags[i])
-  };
-
-  console.log(node)
-}
-
-// 选择展示时间范围
-const changeDate = (value: number[]) => {
-  if (value) {
-    startTime.value = (new Date(value[0]) as any) / 1000;
-    endTime.value = (new Date(value[1]) as any) / 1000;
-  } else {
-    startTime.value = (new Date() as any) / 1000 - 60 * 60 * 2;
-    endTime.value = (new Date() as any) / 1000;
+  switch (nodetype) {
+    case 'host':
+      drawer_display['host'] = false
+      break;
+    case 'process':
+      drawer_display['process'] = false
+      break;
+    case 'thread':
+      drawer_display['thread'] = false
+      break;
+    case 'net':
+      drawer_display['net'] = false
+      break;
+    case 'resource':
+      drawer_display['resource'] = false
+      break;
   }
 }
 
-// echarts大小随grid改变
-const SizeAutoChange = (i: string, isChart?: boolean) => {
-  if (isChart) {
-    chart.value[i].resize();
-  }
-}
 </script>
 
 <style scoped>
