@@ -8,7 +8,7 @@
           </span>
           <template #dropdown>
             <el-dropdown-menu>
-              <el-dropdown-item @click="switch_multi_topo">全局网络拓扑</el-dropdown-item>
+              <el-dropdown-item @click="switchMultiTopo">全局网络拓扑</el-dropdown-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>
@@ -21,7 +21,7 @@
           </span>
           <template #dropdown>
             <el-dropdown-menu>
-              <el-dropdown-item @click="switch_single_topo(node)" v-for="node in node_list">{{ node.id }}</el-dropdown-item>
+              <el-dropdown-item @click="switchSingleTopo(node)" v-for="node in node_list">{{ node.id }}</el-dropdown-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>
@@ -54,23 +54,38 @@
         </el-dropdown>
       </el-tab-pane>
 
-      <el-tab-pane label="模式" name="fifth">
-        <el-dropdown :style="{ 'position': 'fixed', 'margin-top': '0px', 'margin-left': '346px' }">
+      <el-tab-pane :label="interactive_mode" name="fifth">
+        <el-dropdown :style="{ 'position': 'fixed', 'margin-top': '0px', 'margin-left': '380px' }">
           <span class="dropdown">
             <el-icon class="el-icon--right"><arrow-down /></el-icon>
           </span>
           <template #dropdown>
             <el-dropdown-menu>
-              <el-dropdown-item >亮色</el-dropdown-item>
-              <el-dropdown-item >黑暗</el-dropdown-item>
+              <el-dropdown-item @click="changeInteractiveMode('default')">全局交互模式</el-dropdown-item>
+              <el-dropdown-item @click="changeInteractiveMode('localmode')">单机交互模式</el-dropdown-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>
       </el-tab-pane>
+
+      <el-tab-pane :label="appearance_mode" name="sixth">
+        <el-dropdown :style="{ 'position': 'fixed', 'margin-top': '0px', 'margin-left': '493px' }">
+          <span class="dropdown">
+            <el-icon class="el-icon--right"><arrow-down /></el-icon>
+          </span>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item @click="changeAppearenceMode('亮色')">亮色外观模式</el-dropdown-item>
+              <el-dropdown-item @click="changeAppearenceMode('暗色')">暗色外观模式</el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
+      </el-tab-pane>
+
   </el-tabs>
 </header>
 
-  <RouterView/>
+  <RouterView :graph_mode="graph_mode"/>
 
 </template>
 
@@ -81,6 +96,9 @@ import { useRouter } from "vue-router";
 import { topo } from '@/request/api';
 import { type TabsPaneContext } from 'element-plus'
 
+const interactive_mode = ref('全局交互模式')
+const appearance_mode = ref('亮色')
+const graph_mode = ref('default')
 const activename = ref('first')
 const node_list = reactive<any>([])
 const interval_list = reactive<any>(["关闭", "5s", "10s", "15s", "1m", "5m"])
@@ -105,11 +123,11 @@ onMounted(async () => {
 async function updateNodeList() {
   //ttcode
   // const data = {
-		// 	"code":  0,
-		// 	"error": null,
-		// 	"data": 
-			// 		{"agentlist": {"070cb0b4-c415-4b6a-843b-efc51cff6b76": "10.44.55.66:9992"}}
-    //   }
+			// 	"code":  0,
+			// 	"error": null,
+			// 	"data": 
+					// 		{"agentlist": {"070cb0b4-c415-4b6a-843b-efc51cff6b76": "10.44.55.66:9992"}}
+      //   }
 	
   const data = await topo.host_list()
 // console.log(data);
@@ -121,11 +139,11 @@ async function updateNodeList() {
 
 }
 
-function switch_multi_topo() {
+function switchMultiTopo() {
   router.push("/cluster")
 }
 
-function switch_single_topo(node: any) {
+function switchSingleTopo(node: any) {
   router.push({
     path: "/node",
     query: {
@@ -136,6 +154,23 @@ function switch_single_topo(node: any) {
 
 const handleClick = (tab: TabsPaneContext, event: Event) => {
   console.log(tab, event)
+}
+
+function changeInteractiveMode(mode: string) {
+  graph_mode.value = mode
+
+  switch (mode) {
+    case 'default':
+      interactive_mode.value = '全局交互模式'
+      break;
+    case 'localmode':
+      interactive_mode.value = '单机交互模式'
+      break;
+  }
+}
+
+function changeAppearenceMode(mode: string) {
+  appearance_mode.value = mode
 }
 
 </script>
