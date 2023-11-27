@@ -2,20 +2,30 @@
   <div id="topo-container" class="container"></div>
 
   <HostDrawer :host_drawer="drawer_display['host']" :node="node" @update-statu="closeDrawer('host')"/>
-
+  
 </template>
 
 <script setup lang="ts">
 import G6, { Graph } from '@antv/g6';
-import { ref, reactive, onMounted } from "vue";
+import { ref, reactive, onMounted, watch } from "vue";
 import { topo } from '../request/api';
 import server_logo from "@/assets/icon/server.png";
 import topodata from '@/assets/cluster-2.json'
 import { useMacStore } from '@/stores/mac';
 import HostDrawer from '@/views/HostDrawer.vue'
+import ProcessDrawer from '@/views/ProcessDrawer.vue'
+
+const props = defineProps({
+  graph_mode: {
+    type: String,
+    default: 'default',
+    requires: true,
+  },
+})
 
 let graph: Graph
 let node: any
+let data: any
 
 let drawer_display = reactive({
   "host": false,
@@ -50,8 +60,8 @@ const colorSets = G6.Util.getColorSetsBySubjectColors(
 onMounted(async () => {
   try {
     // ttcode
-    const data = topodata
-    // const data = await topo.multi_host_topo();
+    // data = topodata
+    const data = await topo.multi_host_topo();
 
 
     for (let i = 0; i < data.data.edges.length; i++) {
@@ -95,6 +105,12 @@ onMounted(async () => {
     })
 
     initGraph(data.data);
+    graph.setMode(props.graph_mode);
+
+    data.data.combos.forEach((combo: any, i: any) => {
+      graph.collapseCombo(combo['id']);
+    })
+
   } catch (error) {
     console.error(error)
   }
@@ -111,6 +127,18 @@ function initGraph(data: any) {
     minZoom: 0.00000001,
     layout: {
       pipes: [
+        {
+          type: 'comboCombined',
+          outerLayout: new G6.Layout['gForce']({
+            gravity: 1,
+            factor: 2,
+            preventOverlap: true,
+            linkDistance: (edge: any, source: any, target: any) => {
+              const nodeSize = ((source.size?.[0] || 30) + (target.size?.[0] || 30)) / 2;
+              return Math.min(nodeSize * 1.5, 700);
+            }
+          }),
+        },
         {
           type: 'radial',
           center: [ 0, 0 ],
@@ -153,7 +181,8 @@ function initGraph(data: any) {
       ],
     },
     modes: {
-      default: ['drag-canvas', 'zoom-canvas', "click-select", "drag-node", 'drag-combo', 'collapse-expand-combo'],
+      localmode: ['drag-canvas', 'zoom-canvas', "drag-node", 'lasso-select', 'brush-select', "click-select"],
+      default: ['drag-canvas', 'drag-combo', 'zoom-canvas', 'collapse-expand-combo']
     },
   });
   graph.node(function (node) {
@@ -168,13 +197,12 @@ function initGraph(data: any) {
     if (e.select) {
       node = (e.target as any)._cfg
       console.log("click node:", node.id);
-
       switch (node.model.Type) {
         case 'host':
           useMacStore().setMacIp(node.id.split("_")[2]);
           drawer_display['host'] = true
           break;
-      }
+              }
 
     } else {
       console.log("node unselected")
@@ -208,6 +236,9 @@ function closeDrawer(nodetype: string) {
   switch (nodetype) {
     case 'host':
       drawer_display['host'] = false
+      graph.findAllByState('node', 'selected').forEach(( item: any, i: any ) => {
+        graph.setItemState(item, 'selected', false)
+      })
       break;
     case 'process':
       drawer_display['process'] = false
@@ -223,6 +254,13 @@ function closeDrawer(nodetype: string) {
       break;
   }
 }
+
+watch(() => props.graph_mode, (new_data) => {
+  graph.setMode(new_data)
+
+}, {
+  deep: true
+})
 
 </script>
 
