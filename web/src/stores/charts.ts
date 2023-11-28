@@ -94,6 +94,25 @@ export const useLayoutStore = defineStore('layoutOption', {
           }
         },
       ],
+      process_layout_option: [
+        {
+          x: 0, y: 0, w: 3, h: 2, i: '0',
+          static: false, display: false, title: '***chart',
+          query: {
+            type: 'line', range: true, isChart: true,
+            target: 'byte2GB_series', unit: 'GiB', float: 2, min: 0, max: null,
+            sqls: [
+              {
+                sql: 'node_memory_MemTotal_bytes{instance="{macIp}"}',
+                start: startTime,
+                end: endTime,
+                step: 15,
+                series_name: '总内存',
+              },
+            ]
+          }
+        },
+      ],
     };
   },
   /* persist: {
