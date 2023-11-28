@@ -6,7 +6,7 @@
   <div id="topo-container" class="container"></div>
 
   <HostDrawer :host_drawer="drawer_display['host']" :node="node" @update-statu="closeDrawer('host')"/>
-  <ProcessDrawer :process_drawer="drawer_display['process']" :node="node" @update-state="closeDrawer('process')"/>
+  <ProcessDrawer :process_drawer="drawer_display['process']" :node="node" @update-statu="closeDrawer('process')"/>
   
 </template>
 
