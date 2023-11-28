@@ -3,10 +3,10 @@
      <el-button class="expand-collapse-button" round size="large" @click="globalExpandAndCollapse">{{ global_combos }}</el-button> 
   </div>
 
-
   <div id="topo-container" class="container"></div>
 
   <HostDrawer :host_drawer="drawer_display['host']" :node="node" @update-statu="closeDrawer('host')"/>
+  <ProcessDrawer :process_drawer="drawer_display['process']" :node="node" @update-state="closeDrawer('process')"/>
   
 </template>
 
@@ -66,8 +66,8 @@ const colorSets = G6.Util.getColorSetsBySubjectColors(
 onMounted(async () => {
   try {
     // ttcode
-    // data = topodata
-    const data = await topo.multi_host_topo();
+    data = topodata
+    // const data = await topo.multi_host_topo();
 
 
     for (let i = 0; i < data.data.edges.length; i++) {
@@ -209,7 +209,10 @@ function initGraph(data: any) {
           useMacStore().setMacIp(node.id.split("_")[2]);
           drawer_display['host'] = true
           break;
-              }
+        case 'process':
+          drawer_display['process'] = true
+          break;
+      }
 
     } else {
       console.log("node unselected")
@@ -241,7 +244,6 @@ function refreshDragedNodePosition(e: any) {
 }
 
 function closeDrawer(nodetype: string) {
-
   switch (nodetype) {
     case 'host':
       drawer_display['host'] = false
@@ -251,6 +253,9 @@ function closeDrawer(nodetype: string) {
       break;
     case 'process':
       drawer_display['process'] = false
+      graph.findAllByState('node', 'selected').forEach(( item: any, i: any ) => {
+        graph.setItemState(item, 'selected', false)
+      })
       break;
     case 'thread':
       drawer_display['thread'] = false
