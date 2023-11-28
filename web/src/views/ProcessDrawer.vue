@@ -87,16 +87,6 @@ const props = defineProps({
         default: {},
         requried: true,
     },
-    // tags: {
-    //     type: Array,
-    //     default: [],
-    //     required: true,
-    // },
-    // table_data: {
-    //     type: Array,
-    //     default: [],
-    //     required: true,
-    // }
 })
 
 const emit = defineEmits(['update-statu'])
