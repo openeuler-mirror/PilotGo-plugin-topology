@@ -1,4 +1,9 @@
 <template>
+  <div class="expand-collapse-button-container">
+     <el-button class="expand-collapse-button" round size="large" @click="globalExpandAndCollapse">{{ global_combos }}</el-button> 
+  </div>
+
+
   <div id="topo-container" class="container"></div>
 
   <HostDrawer :host_drawer="drawer_display['host']" :node="node" @update-statu="closeDrawer('host')"/>
@@ -23,6 +28,7 @@ const props = defineProps({
   },
 })
 
+const global_combos = ref('collapse')
 let graph: Graph
 let node: any
 let data: any
@@ -141,7 +147,7 @@ function initGraph(data: any) {
         },
         {
           type: 'radial',
-          center: [ 0, 0 ],
+          // center: [ 0, 0 ],
           focusNode: '54bcecd3-ea5f-497e-9ccb-3bb1aa9c0864_host_10.10.10.20',
           unitRadius: 150,
           maxIteration: 300,
@@ -154,7 +160,7 @@ function initGraph(data: any) {
         },
         {
           type: 'radial',
-          center: [ -800, 600],
+          // center: [ -800, 600],
           focusNode: '070cb0b4-c415-4b6a-843b-efc51cff6b76_host_10.10.10.60',
           unitRadius: 150,
           maxIteration: 300,
@@ -167,7 +173,7 @@ function initGraph(data: any) {
         },
         {
           type: 'radial',
-          center: [700, 500],
+          // center: [700, 500],
           focusNode: '7d0740a7-5ee6-41a9-846b-d52890d690d5_host_10.10.10.111',
           unitRadius: 150,
           maxIteration: 300,
@@ -181,8 +187,9 @@ function initGraph(data: any) {
       ],
     },
     modes: {
+      default: ['drag-canvas', 'drag-combo', 'zoom-canvas', 'collapse-expand-combo'],
       localmode: ['drag-canvas', 'zoom-canvas', "drag-node", 'lasso-select', 'brush-select', "click-select"],
-      default: ['drag-canvas', 'drag-combo', 'zoom-canvas', 'collapse-expand-combo']
+      mixmode: ['drag-canvas', 'zoom-canvas', 'drag-combo', 'collapse-expand-combo', "drag-node", "click-select"]
     },
   });
   graph.node(function (node) {
@@ -214,6 +221,7 @@ function initGraph(data: any) {
     // graph.layout();
     refreshDragedNodePosition(e);
   });
+
   graph.data(data);
   graph.render();
 
@@ -223,6 +231,7 @@ function initGraph(data: any) {
       document.getElementById("topo-container")!.clientHeight)
     graph.fitCenter()
   }
+
 }
 
 function refreshDragedNodePosition(e: any) {
@@ -255,9 +264,24 @@ function closeDrawer(nodetype: string) {
   }
 }
 
+function globalExpandAndCollapse() {
+  global_combos.value = global_combos.value === 'collapse' ? 'expand' : 'collapse'
+  
+  if (global_combos.value === 'collapse' ) {
+    data.data.combos.forEach((combo: any, i: any) => {
+      graph.collapseCombo(combo['id']);
+    })
+    graph.updateCombos();
+  } else {
+    data.data.combos.forEach((combo: any, i: any) => {
+      graph.expandCombo(combo['id']);
+    })
+    graph.updateCombos();
+  }
+}
+
 watch(() => props.graph_mode, (new_data) => {
   graph.setMode(new_data)
-
 }, {
   deep: true
 })
@@ -432,4 +456,18 @@ watch(() => props.graph_mode, (new_data) => {
   box-sizing: border-box;
   cursor: pointer;
 }
+
+.expand-collapse-button-container {
+  display: flex;
+  justify-content: center;
+  /* align-items: center; */
+}
+
+.expand-collapse-button {
+  position: absolute;
+  bottom: 0;
+  margin-bottom: 100px;
+  background-color: #67e0e3;
+}
+
 </style>
