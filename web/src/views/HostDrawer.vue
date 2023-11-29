@@ -88,16 +88,6 @@ const props = defineProps({
         default: {},
         requried: true,
     },
-    // tags: {
-    //     type: Array,
-    //     default: [],
-    //     required: true,
-    // },
-    // table_data: {
-    //     type: Array,
-    //     default: [],
-    //     required: true,
-    // }
 })
 
 const emit = defineEmits(['update-statu'])
@@ -134,14 +124,10 @@ const tags_color: string[] = [
 ];
 
 onMounted(() => {
-    host_drawer.value = props.host_drawer as any;
+    host_drawer.value = props.host_drawer;
     node = props.node
     
 })
-
-// onUnmounted(() => {
-//     emit('update-statu')
-// })
 
 watch(() => props.host_drawer, (new_data) => {
     host_drawer.value = new_data as any;
