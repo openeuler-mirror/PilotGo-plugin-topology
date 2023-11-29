@@ -14,7 +14,7 @@ import { ref, reactive, onMounted } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { topo } from '../request/api';
 import server_logo from "@/assets/icon/server.png";
-import topodata from '../../public/single.json'
+import topodata from '@/assets/single.json'
 
 const router = useRouter()
 const route = useRoute()
@@ -40,9 +40,9 @@ onMounted(async () => {
 
 async function handleNodeSelected(uuid: any) {
   // ttcode
-  // const data = topodata
+  const data = topodata
 
-  const data = await topo.single_host_tree(uuid);
+  // const data = await topo.single_host_tree(uuid);
   // console.log(data.data.tree);
 
   let root: any = data.data.tree
