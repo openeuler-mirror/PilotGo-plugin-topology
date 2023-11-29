@@ -98,7 +98,7 @@ import { type TabsPaneContext } from 'element-plus'
 
 const interactive_mode = ref('全局交互模式')
 const appearance_mode = ref('亮色')
-const graph_mode = ref('default')
+const graph_mode = ref('mixmode')
 const activename = ref('first')
 const node_list = reactive<any>([])
 const interval_list = reactive<any>(["关闭", "5s", "10s", "15s", "1m", "5m"])
@@ -122,15 +122,14 @@ onMounted(async () => {
 
 async function updateNodeList() {
   //ttcode
-  // const data = {
-			// 	"code":  0,
-			// 	"error": null,
-			// 	"data": 
-					// 		{"agentlist": {"070cb0b4-c415-4b6a-843b-efc51cff6b76": "10.44.55.66:9992"}}
-      //   }
-	
-  const data = await topo.host_list()
-// console.log(data);
+  const data = {
+				"code":  0,
+				"error": null,
+				"data": 
+							{"agentlist": {"070cb0b4-c415-4b6a-843b-efc51cff6b76": "10.44.55.66:9992"}}
+        }
+  // const data = await topo.host_list()
+
   for (let key in data.data.agentlist) {
     node_list.push({
       id: key,
