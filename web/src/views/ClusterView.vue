@@ -7,6 +7,7 @@
 
   <HostDrawer :host_drawer="drawer_display['host']" :node="node" @update-statu="closeDrawer('host')"/>
   <ProcessDrawer :process_drawer="drawer_display['process']" :node="node" @update-statu="closeDrawer('process')"/>
+  <NetDrawer :net_drawer="drawer_display['net']" :node="node" @update-statu="closeDrawer('net')"/>
   
 </template>
 
@@ -19,6 +20,7 @@ import topodata from '@/assets/cluster-2.json'
 import { useMacStore } from '@/stores/mac';
 import HostDrawer from '@/views/HostDrawer.vue'
 import ProcessDrawer from '@/views/ProcessDrawer.vue'
+import NetDrawer from '@/views/NetDrawer.vue'
 
 const props = defineProps({
   graph_mode: {
@@ -147,7 +149,7 @@ function initGraph(data: any) {
         },
         {
           type: 'radial',
-          // center: [ 0, 0 ],
+          center: [ 0, 0 ],
           focusNode: '54bcecd3-ea5f-497e-9ccb-3bb1aa9c0864_host_10.10.10.20',
           unitRadius: 150,
           maxIteration: 300,
@@ -160,7 +162,7 @@ function initGraph(data: any) {
         },
         {
           type: 'radial',
-          // center: [ -800, 600],
+          center: [ 800, 0 ],
           focusNode: '070cb0b4-c415-4b6a-843b-efc51cff6b76_host_10.10.10.60',
           unitRadius: 150,
           maxIteration: 300,
@@ -173,7 +175,7 @@ function initGraph(data: any) {
         },
         {
           type: 'radial',
-          // center: [700, 500],
+          center: [ -800, 0 ],
           focusNode: '7d0740a7-5ee6-41a9-846b-d52890d690d5_host_10.10.10.111',
           unitRadius: 150,
           maxIteration: 300,
@@ -211,6 +213,9 @@ function initGraph(data: any) {
           break;
         case 'process':
           drawer_display['process'] = true
+          break;
+        case 'net':
+          drawer_display['net'] = true
           break;
       }
 
@@ -262,6 +267,9 @@ function closeDrawer(nodetype: string) {
       break;
     case 'net':
       drawer_display['net'] = false
+      graph.findAllByState('node', 'selected').forEach(( item: any, i: any ) => {
+        graph.setItemState(item, 'selected', false)
+      })
       break;
     case 'resource':
       drawer_display['resource'] = false
