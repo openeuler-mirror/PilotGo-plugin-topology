@@ -16,7 +16,7 @@ import (
 func InitWebServer() {
 	go func() {
 		engine := gin.Default()
-		engine.Use(TimeoutMiddleware())
+		// engine.Use(TimeoutMiddleware())
 		agentmanager.Topo.Sdkmethod.RegisterHandlers(engine)
 		InitRouter(engine)
 		StaticRouter(engine)
