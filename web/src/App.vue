@@ -48,7 +48,7 @@
           </span>
           <template #dropdown>
             <el-dropdown-menu>
-              <el-dropdown-item v-for="interval in interval_list">{{ interval }}</el-dropdown-item>
+              <el-dropdown-item @click="changeTimeInterval(interval)" v-for="interval in interval_list">{{ interval }}</el-dropdown-item> 
             </el-dropdown-menu>
           </template>
         </el-dropdown>
@@ -85,7 +85,7 @@
   </el-tabs>
 </header>
 
-  <RouterView :graph_mode="graph_mode"/>
+  <RouterView :graph_mode="graph_mode" :time_interval="time_interval"/>
 
 </template>
 
@@ -101,7 +101,8 @@ const appearance_mode = ref('亮色')
 const graph_mode = ref('mixmode')
 const activename = ref('first')
 const node_list = reactive<any>([])
-const interval_list = reactive<any>(["关闭", "5s", "10s", "15s", "1m", "5m"])
+const time_interval = ref('关闭')
+const interval_list = reactive(["关闭", "5s", "10s", "15s", "1m", "5m"])
 
 const startTime = ref(0);
 const endTime = ref(0);
@@ -112,7 +113,7 @@ const router = useRouter()
 
 onMounted(async () => {
   try {
-    updateNodeList()
+    updateHostList()
   } catch (error) {
     console.error(error)
   }
@@ -120,7 +121,7 @@ onMounted(async () => {
   router.push("/cluster")
 })
 
-async function updateNodeList() {
+async function updateHostList() {
   //ttcode
   const data = {
 				"code":  0,
@@ -172,6 +173,9 @@ function changeAppearenceMode(mode: string) {
   appearance_mode.value = mode
 }
 
+function changeTimeInterval(interval: string) {
+  time_interval.value = interval
+}
 </script>
 
 <style>
