@@ -49,9 +49,7 @@ func (t *Topoclient) InitMachineList() {
 		time.Sleep(1 * time.Second)
 	}
 
-	// ttcode
-	url := "http://" + conf.Config().PilotGo.Addr + "/api/v1/pluginapi/machine_list"
-	// url := "http://" + Topo.Sdkmethod.Server() + "/api/v1/pluginapi/machine_list"
+	url := "http://" + Topo.Sdkmethod.Server() + "/api/v1/pluginapi/machine_list"
 
 	resp, err := httputils.Get(url, nil)
 	if err != nil {
@@ -100,9 +98,7 @@ func (t *Topoclient) InitMachineList() {
 }
 
 func (t *Topoclient) UpdateMachineList() {
-	// ttcode
-	url := "http://" + conf.Config().PilotGo.Addr + "/api/v1/pluginapi/machine_list"
-	// url := "http://" + Topo.Sdkmethod.Server() + "/api/v1/pluginapi/machine_list"
+	url := "http://" + Topo.Sdkmethod.Server() + "/api/v1/pluginapi/machine_list"
 
 	resp, err := httputils.Get(url, nil)
 	if err != nil {
