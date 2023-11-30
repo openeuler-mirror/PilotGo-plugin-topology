@@ -28,7 +28,7 @@ const props = defineProps({
     default: 'default',
     requires: true,
   },
-})
+  })
 
 const global_combos = ref('collapse')
 let graph: Graph
@@ -130,7 +130,7 @@ function initGraph(data: any) {
     width: document.getElementById("topo-container")!.clientWidth,
     height: document.getElementById("topo-container")!.clientHeight,
     fitView: true,
-    fitViewPadding: 50,
+    fitViewPadding: 200,
     animate: true,
     minZoom: 0.00000001,
     layout: {
@@ -309,166 +309,6 @@ watch(() => props.graph_mode, (new_data) => {
   background-color: white;
 }
 
-.drawer {
-    position: relative;
-    height: 100%;
-    padding: 10px;
-  }
-  
-.drawer_head_div {
-    width: 100%;
-    height: 200px;
-    margin-top: 35px;
-
-    display: absolute;
-    border-bottom: 1px solid rgb(181, 177, 177);
-
-    /* border: 1px groove rgb(195, 184, 184);
-    border-radius: 10px; */
-  }
-
-.tag {
-  font-size: 14px;
-  font-weight: bold;
-  border-spacing: 5px;
-  border-radius: 8px;
-  padding: 4px;
-
-  color: #ffffff;
-}
-
-.drawer_body_div {
-  width: 100%;
-  /* height: 80%; */
-
-  display: relative;
-}
-
-.nested_metric_drawer_div {
-  position: absolute;
-}
-
-.drawer_top_div {
-  position: absolute;
-  right: 0;
-  top: 0;
-  display: flex;
-  justify-content: space-between;
-}
-
-.drawer_button {
-  background-color: #cfcaca;
-}
-
-.drag {
-  --title_height: 24px;
-  width: 100%;
-  height: var(--title_height);
-  border-radius: 4px 4px 0 0;
-  position: absolute;
-  z-index: 9999;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.drag-title {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  user-select: none;
-  width: 88%;
-  height: 100%;
-  color: #303133;
-  font-size: 12px;
-  font-weight: bold;
-}
-
-.drag:hover {
-      background: rgba(253,
-          186,
-          74, .6)
-    }
-
-.noDrag {
-  --title_height: 24px;
-  width: 100%;
-  height: calc(100% - var(--title_height));
-  margin-top: var(--title_height);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-} 
-
-.noDrag-text {
-    font-weight: bold;
-    font-size: 20px;
-    color: #67e0e3;
-    user-select: none;
-  }
-
-.vue-grid-layout {
-  width: 100%;
-  height: 100%;
-  margin-top: 5px;
-  background: #f1ecec;
-}
-.vue-grid-item {
-  box-sizing: border-box;
-  background-color: #ffffff;
-  border-radius: 4px;
-  box-shadow: 0 1px 5px rgba(45, 47, 51, 0.1);
-}
-
-.vue-grid-item .resizing {
-  opacity: 0.9;
-}
-
-.vue-grid-item .static {
-  background: #cce;
-}
-
-.vue-grid-item .text {
-  font-size: 24px;
-  text-align: center;
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  margin: auto;
-  height: 100%;
-  width: 100%;
-}
-
-.vue-grid-item .no-drag {
-  height: 100%;
-  width: 100%;
-}
-
-.vue-grid-item .minMax {
-  font-size: 12px;
-}
-
-.vue-grid-item .add {
-  cursor: pointer;
-}
-
-.vue-draggable-handle {
-  position: absolute;
-  width: 20px;
-  height: 20px;
-  top: 0;
-  left: 0;
-  /* background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10'><circle cx='5' cy='5' r='5' fill='#999999'/></svg>") no-repeat; */
-  background-color: aqua;
-  background-position: bottom right;
-  padding: 0 8px 8px 0;
-  background-repeat: no-repeat;
-  background-origin: content-box;
-  box-sizing: border-box;
-  cursor: pointer;
-}
 
 .expand-collapse-button-container {
   display: flex;
@@ -480,7 +320,7 @@ watch(() => props.graph_mode, (new_data) => {
   position: absolute;
   bottom: 0;
   margin-bottom: 100px;
-  background-color: #67e0e3;
+  background-color: #67e1e3ce;
 }
 
 </style>
