@@ -22,8 +22,8 @@ $ git clone https://gitee.com/openeuler/PilotGo-plugin-topology.git
 ```
 2. 修改配置文件
 ```bash
-$ mv config_server.yaml.templete config_server.yaml; vim config_server.yaml
-$ mv config_agent.yaml.templete config_agent.yaml; vim config_agent.yaml
+$ mv topo_server.yaml.templete topo_server.yaml; vim topo_server.yaml
+$ mv topo_agent.yaml.templete topo_agent.yaml; vim topo_agent.yaml
 ```
 3. 前端编译
 ```bash
@@ -43,9 +43,9 @@ $ go build -mod=vendor -tags=production toposerver main.go
 ```bash
 在管理节点启动pilotgo及其相关中间件，neo4j数据库；
 $ cd ./server
-$ ./toposerver -conf /config_server.yaml文件路径
-将topoagent、config_agent.yaml部署至业务节点相应目录下；
-$ ./topoagent -conf /config_agent.yaml文件路径
+$ ./toposerver -conf /topo_server.yaml文件路径
+将topoagent、topo_agent.yaml部署至业务节点相应目录下；
+$ ./topoagent -conf /topo_agent.yaml文件路径
 ```
 6. 打开pilotgo web UI页面，添加并启动topology插件，查看拓扑图页面
 
