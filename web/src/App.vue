@@ -85,6 +85,19 @@
   </el-tabs>
 </header>
 
+<div class="box_card_div">
+  <el-card class="box-card" shadow="never">
+    <!-- <div>{{ '业务: ' + current_topo }}</div>
+    <div>{{ '时间间隔: ' + time_interval }}</div> -->
+    <div class="regional_table">
+    <el-table :data="cart_table" style="width: 100%" :show-header="false" size="small" :row-style="{height: '0px'}">
+      <el-table-column prop="name" label="name" width="70" />
+      <el-table-column prop="content" label="content" width="100" />
+    </el-table>
+    </div>
+  </el-card>
+</div>
+
 <RouterView :graph_mode="graph_mode" :time_interval="time_interval"/>
 
 </template>
@@ -100,9 +113,21 @@ const interactive_mode = ref('全局交互模式')
 const appearance_mode = ref('亮色')
 const graph_mode = ref('mixmode')
 const activename = ref('first')
+let agent_list = reactive<any>({})
 const node_list = reactive<any>([])
 const time_interval = ref('关闭')
+const current_topo = ref('全局网络拓扑')
 const interval_list = reactive(["关闭", "5s", "10s", "15s", "1m", "5m"])
+const cart_table = reactive([
+  {
+    'name': '业务',
+    'content': current_topo
+  },
+  {
+    'name': '时间间隔',
+    'content': time_interval
+  }
+])
 
 const startTime = ref(0);
 const endTime = ref(0);
@@ -131,7 +156,8 @@ async function updateHostList() {
         }
   // const data = await topo.host_list()
   
-  for (let key in data.data.agentlist) {
+  agent_list = data.data.agentlist
+  for (let key in agent_list) {
     node_list.push({
       id: key,
     })
@@ -140,11 +166,13 @@ async function updateHostList() {
 }
 
 function switchMultiTopo() {
-    router.push("/cluster")
+  current_topo.value = '全局网络拓扑'
+  router.push("/cluster")
 }
 
 function switchSingleTopo(node: any) {
-    router.push({
+  current_topo.value = agent_list[node.id].split(':')[0]
+  router.push({
     path: "/node",
     query: {
       uuid: node.id
