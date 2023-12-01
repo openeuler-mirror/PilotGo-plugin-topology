@@ -4,8 +4,8 @@
 src-openeuler/
 
 # configuration files
-config_server.yaml
-config_agent.yaml
+topo_server.yaml
+topo_agent.yaml
 
 # binary files
 build
