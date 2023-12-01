@@ -18,7 +18,7 @@ func InitDB() {
 	case "otherDB":
 
 	default:
-		err := errors.Errorf("unknown database in config_server.yaml: %s **fatal**4", conf.Global_config.Topo.GraphDB) // err top
+		err := errors.Errorf("unknown database in topo_server.yaml: %s **fatal**4", conf.Global_config.Topo.GraphDB) // err top
 		agentmanager.Topo.ErrCh <- err
 		agentmanager.Topo.Errmu.Lock()
 		agentmanager.Topo.ErrCond.Wait()

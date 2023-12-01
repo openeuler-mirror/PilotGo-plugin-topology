@@ -26,7 +26,7 @@ type ServerConfig struct {
 	Logopts *logger.LogOpts `yaml:"log"`
 }
 
-const config_type = "config_agent.yaml"
+const config_type = "topo_agent.yaml"
 
 var Config_dir string
 
