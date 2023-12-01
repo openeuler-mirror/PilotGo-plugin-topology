@@ -104,7 +104,7 @@
 
 <script setup lang="ts">
 import { RouterLink, RouterView } from 'vue-router'
-import { ref, reactive, onMounted } from "vue";
+import { ref, reactive, onMounted, watch } from "vue";
 import { useRouter } from "vue-router";
 import { topo } from '@/request/api';
 import { type TabsPaneContext } from 'element-plus'
@@ -112,12 +112,17 @@ import { type TabsPaneContext } from 'element-plus'
 const interactive_mode = ref('全局交互模式')
 const appearance_mode = ref('亮色')
 const graph_mode = ref('mixmode')
+const current_topo = ref('全局网络拓扑')
 const activename = ref('first')
+
 let agent_list = reactive<any>({})
 const node_list = reactive<any>([])
+
 const time_interval = ref('关闭')
-const current_topo = ref('全局网络拓扑')
+let time_interval_num: number = 0
+let timer: number = 0
 const interval_list = reactive(["关闭", "5s", "10s", "15s", "1m", "5m"])
+
 const cart_table = reactive([
   {
     'name': '业务',
@@ -146,6 +151,7 @@ onMounted(async () => {
   router.push("/cluster")
 })
 
+
 async function updateHostList() {
   //ttcode
   const data = {
@@ -164,6 +170,42 @@ async function updateHostList() {
   };
 
 }
+
+watch(() => time_interval.value, (newdata) => {
+  switch (newdata) {
+    case '关闭':
+      clearInterval(timer)
+      break;
+    default:
+      switch (newdata) {
+        case '5s':
+          time_interval_num = 5000
+          break;
+        case '10s':
+          time_interval_num = 10000
+          break;
+        case '15s':
+          time_interval_num = 15000
+          break;
+        case '1m':
+          time_interval_num = 60000
+          break;
+        case '5m':
+          time_interval_num = 300000
+          break;
+      }
+
+      try {
+        if (timer != 0) {
+          clearInterval(timer)
+        }
+        timer = setInterval(updateHostList, time_interval_num)
+        updateHostList()
+      } catch (error) {
+        console.error(error)
+      }
+  }
+})
 
 function switchMultiTopo() {
   current_topo.value = '全局网络拓扑'
@@ -204,6 +246,7 @@ function changeAppearenceMode(mode: string) {
 function changeTimeInterval(interval: string) {
   time_interval.value = interval
 }
+
 </script>
 
 <style scoped>
