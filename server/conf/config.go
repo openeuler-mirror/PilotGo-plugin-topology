@@ -42,7 +42,7 @@ type ServerConfig struct {
 	Prometheus *PrometheusConf `yaml:"prometheus"`
 }
 
-const config_type = "config_server.yaml"
+const config_type = "topo_server.yaml"
 
 var Config_dir string
 
