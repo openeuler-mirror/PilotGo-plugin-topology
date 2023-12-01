@@ -1,8 +1,8 @@
 <template>
   <header>
     <el-tabs v-model="activename" @tab-click="handleClick" class="tabs">
-      <el-tab-pane  label="业务" name="first">
-        <el-dropdown :style="{ 'position': 'fixed', 'margin-top': '0px', 'margin-left': '5px' }">
+      <el-tab-pane  label="业务" name="first" >
+        <el-dropdown :style="{ 'position': 'fixed', 'margin-top': '-12px', 'margin-left': '1px' }">
           <span class="dropdown">
             <el-icon class="el-icon--right"><arrow-down /></el-icon>
           </span>
@@ -15,7 +15,7 @@
       </el-tab-pane>
 
       <el-tab-pane label="机器" name="second">
-        <el-dropdown :style="{ 'position': 'fixed', 'margin-top': '0px', 'margin-left': '81px' }">
+        <el-dropdown :style="{ 'position': 'fixed', 'margin-top': '-12px', 'margin-left': '70px' }">
           <span class="dropdown">
             <el-icon class="el-icon--right" ><arrow-down /></el-icon>
           </span>
@@ -29,7 +29,7 @@
       
 
       <el-tab-pane label="设置" name="third">
-        <el-dropdown :style="{ 'position': 'fixed', 'margin-top': '0px', 'margin-left': '158px' }">
+        <el-dropdown :style="{ 'position': 'fixed', 'margin-top': '-12px', 'margin-left': '138px' }">
           <span class="dropdown">
             <el-icon class="el-icon--right"><arrow-down /></el-icon>
           </span>
@@ -42,7 +42,7 @@
       </el-tab-pane>
 
       <el-tab-pane label="时间间隔" name="fourth">
-        <el-dropdown :style="{ 'position': 'fixed', 'margin-top': '0px', 'margin-left': '250px' }">
+        <el-dropdown :style="{ 'position': 'fixed', 'margin-top': '-12px', 'margin-left': '220px' }">
           <span class="dropdown">
             <el-icon class="el-icon--right"><arrow-down /></el-icon>
           </span>
@@ -55,7 +55,7 @@
       </el-tab-pane>
 
       <el-tab-pane :label="interactive_mode" name="fifth">
-        <el-dropdown :style="{ 'position': 'fixed', 'margin-top': '0px', 'margin-left': '380px' }">
+        <el-dropdown :style="{ 'position': 'fixed', 'margin-top': '-12px', 'margin-left': '330px' }">
           <span class="dropdown">
             <el-icon class="el-icon--right"><arrow-down /></el-icon>
           </span>
@@ -69,7 +69,7 @@
       </el-tab-pane>
 
       <el-tab-pane :label="appearance_mode" name="sixth">
-        <el-dropdown :style="{ 'position': 'fixed', 'margin-top': '0px', 'margin-left': '493px' }">
+        <el-dropdown :style="{ 'position': 'fixed', 'margin-top': '-12px', 'margin-left': '426px' }">
           <span class="dropdown">
             <el-icon class="el-icon--right"><arrow-down /></el-icon>
           </span>
@@ -85,7 +85,7 @@
   </el-tabs>
 </header>
 
-  <RouterView :graph_mode="graph_mode" :time_interval="time_interval"/>
+<RouterView :graph_mode="graph_mode" :time_interval="time_interval"/>
 
 </template>
 
@@ -130,7 +130,7 @@ async function updateHostList() {
 							{"agentlist": {"070cb0b4-c415-4b6a-843b-efc51cff6b76": "10.44.55.66:9992"}}
         }
   // const data = await topo.host_list()
-
+  
   for (let key in data.data.agentlist) {
     node_list.push({
       id: key,
@@ -140,11 +140,11 @@ async function updateHostList() {
 }
 
 function switchMultiTopo() {
-  router.push("/cluster")
+    router.push("/cluster")
 }
 
 function switchSingleTopo(node: any) {
-  router.push({
+    router.push({
     path: "/node",
     query: {
       uuid: node.id
@@ -178,7 +178,7 @@ function changeTimeInterval(interval: string) {
 }
 </script>
 
-<style>
+<style scoped>
 header {
   /* line-height: 1.5;
   max-height: 100vh;
@@ -187,7 +187,8 @@ header {
 
   width: 100%;
   /* height: 5%; */
-  position: relative;
+  position: fixed;
+  height: 38px;
   display: flex;
   justify-content: center;
   background-color: #cfcaca;
