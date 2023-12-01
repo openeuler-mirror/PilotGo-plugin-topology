@@ -265,4 +265,35 @@ header > div:last-child {
 .el-tabs__item.is-active {
   color: rgb(6, 150, 176);
 }
+
+.box_card_div {
+  position: fixed;
+  top: 0;
+  left: 0;
+  margin-top: 40px;
+  height: 150px;
+  width: 180px;
+}
+
+.box-card {
+  position: absolute;
+  height: 100%;
+  width: 100%;
+  background-color: rgba(207, 210, 21, 0.1);
+  font-size: 14px;
+}
+
+.el-card /deep/ .el-card__body {
+  padding: 5px !important;
+}
+
+.regional_table /deep/ .el-table, .regional_table /deep/ .el-table__expanded-cell {
+  background-color: transparent;
+  color: #606266;
+}
+
+.regional_table /deep/ .el-table th, .regional_table /deep/ .el-table tr, .regional_table /deep/ .el-table td {
+  background-color: transparent !important;
+  color: #606266;
+}
 </style>
