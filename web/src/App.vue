@@ -15,7 +15,7 @@
       </el-tab-pane>
 
       <el-tab-pane label="机器" name="second">
-        <el-dropdown :style="{ 'position': 'fixed', 'margin-top': '-12px', 'margin-left': '70px' }">
+        <el-dropdown :style="{ 'position': 'fixed', 'margin-top': '-12px', 'margin-left': '69px' }">
           <span class="dropdown">
             <el-icon class="el-icon--right" ><arrow-down /></el-icon>
           </span>
@@ -29,7 +29,7 @@
       
 
       <el-tab-pane label="设置" name="third">
-        <el-dropdown :style="{ 'position': 'fixed', 'margin-top': '-12px', 'margin-left': '138px' }">
+        <el-dropdown :style="{ 'position': 'fixed', 'margin-top': '-12px', 'margin-left': '137px' }">
           <span class="dropdown">
             <el-icon class="el-icon--right"><arrow-down /></el-icon>
           </span>
@@ -54,8 +54,8 @@
         </el-dropdown>
       </el-tab-pane>
 
-      <el-tab-pane :label="interactive_mode" name="fifth">
-        <el-dropdown :style="{ 'position': 'fixed', 'margin-top': '-12px', 'margin-left': '330px' }">
+      <el-tab-pane label="交互模式" name="fifth">
+        <el-dropdown :style="{ 'position': 'fixed', 'margin-top': '-12px', 'margin-left': '315px' }">
           <span class="dropdown">
             <el-icon class="el-icon--right"><arrow-down /></el-icon>
           </span>
@@ -69,7 +69,7 @@
       </el-tab-pane>
 
       <el-tab-pane :label="appearance_mode" name="sixth">
-        <el-dropdown :style="{ 'position': 'fixed', 'margin-top': '-12px', 'margin-left': '426px' }">
+        <el-dropdown :style="{ 'position': 'fixed', 'margin-top': '-12px', 'margin-left': '397px' }">
           <span class="dropdown">
             <el-icon class="el-icon--right"><arrow-down /></el-icon>
           </span>
@@ -87,13 +87,11 @@
 
 <div class="box_card_div">
   <el-card class="box-card" shadow="never">
-    <!-- <div>{{ '业务: ' + current_topo }}</div>
-    <div>{{ '时间间隔: ' + time_interval }}</div> -->
     <div class="regional_table">
-    <el-table :data="cart_table" style="width: 100%" :show-header="false" size="small" :row-style="{height: '0px'}">
-      <el-table-column prop="name" label="name" width="70" />
-      <el-table-column prop="content" label="content" width="100" />
-    </el-table>
+      <el-table :data="cart_table" style="width: 100%" :show-header="false" size="small" :row-style="{height: '0px'}">
+        <el-table-column prop="name" label="name" width="70" />
+        <el-table-column prop="content" label="content" width="100" />
+      </el-table>
     </div>
   </el-card>
 </div>
@@ -131,6 +129,10 @@ const cart_table = reactive([
   {
     'name': '时间间隔',
     'content': time_interval
+  },
+  {
+    'name': '交互模式',
+    'content': interactive_mode
   }
 ])
 
@@ -200,7 +202,7 @@ watch(() => time_interval.value, (newdata) => {
           clearInterval(timer)
         }
         timer = setInterval(updateHostList, time_interval_num)
-        updateHostList()
+        console.log('timer: ', timer)
       } catch (error) {
         console.error(error)
       }
