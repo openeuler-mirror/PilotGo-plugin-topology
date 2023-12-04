@@ -253,13 +253,7 @@ function changeTimeInterval(interval: string) {
 
 <style scoped>
 header {
-  /* line-height: 1.5;
-  max-height: 100vh;
-  place-items: center;
-  padding-right: calc(var(--section-gap) / 2); */
-
   width: 100%;
-  /* height: 5%; */
   position: fixed;
   height: 38px;
   display: flex;
@@ -288,21 +282,16 @@ header > div:last-child {
 
 .tabs {
   position: relative;
-  /* height: calc(100% - 123px); */
   height: 100%;
-  /* padding: 50px; */
   color: #c71e48;
-  /* font-size: large;
-  font-weight: 600; */
-
 }
+
 .el-tabs__header {
   margin: 0px;
 }
 
 .el-tabs__item{
   font-size: 18px;
-  /* margin-top: -10px; */
   color: rgb(96, 92, 92);
 
 }
