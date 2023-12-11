@@ -215,7 +215,7 @@ function switchMultiTopo() {
   router.push("/cluster")
 }
 
-function switchSingleTopo(node: any) {
+function switchSingleTopo(node: string) {
   current_topo.value = agent_list[node].split(':')[0]
   router.push({
     path: "/node",
