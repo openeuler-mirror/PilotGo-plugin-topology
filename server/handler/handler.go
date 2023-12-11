@@ -155,7 +155,7 @@ func MultiHostHandle(ctx *gin.Context) {
 }
 
 func AgentListHandle(ctx *gin.Context) {
-	// agentmanager.Topo.UpdateMachineList()
+	agentmanager.Topo.UpdateMachineList()
 
 	agentmap := make(map[string]string)
 	agentmanager.Topo.AgentMap.Range(func(key, value interface{}) bool {
