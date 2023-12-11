@@ -21,7 +21,7 @@
           </span>
           <template #dropdown>
             <el-dropdown-menu>
-              <el-dropdown-item @click="switchSingleTopo(node)" v-for="node in node_list">{{ node.id }}</el-dropdown-item>
+              <el-dropdown-item @click="switchSingleTopo(node)" v-for="node in node_list">{{ node }}</el-dropdown-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>
@@ -114,7 +114,7 @@ const current_topo = ref('全局网络拓扑')
 const activename = ref('first')
 
 let agent_list = reactive<any>({})
-const node_list = reactive<any>([])
+let node_list = ref<string[]>([])
 
 const time_interval = ref('关闭')
 let time_interval_num: number = 0
@@ -156,21 +156,22 @@ onMounted(async () => {
 
 async function updateHostList() {
   //ttcode
-  const data = {
-				"code":  0,
-				"error": null,
-				"data": 
-							{"agentlist": {"070cb0b4-c415-4b6a-843b-efc51cff6b76": "10.44.55.66:9992"}}
-        }
-  // const data = await topo.host_list()
+  // const data = {
+	// 			"code":  0,
+	// 			"error": null,
+	// 			"data": 
+	// 						{"agentlist": {"070cb0b4-c415-4b6a-843b-efc51cff6b76": "10.44.55.66:9992"}}
+  //       }
+  const data = await topo.host_list()
   
+  let temp_node_list: string[] = []
+
   agent_list = data.data.agentlist
   for (let key in agent_list) {
-    node_list.push({
-      id: key,
-    })
+    temp_node_list.push(key)
   };
 
+  node_list.value = temp_node_list
 }
 
 watch(() => time_interval.value, (newdata) => {
@@ -215,11 +216,11 @@ function switchMultiTopo() {
 }
 
 function switchSingleTopo(node: any) {
-  current_topo.value = agent_list[node.id].split(':')[0]
+  current_topo.value = agent_list[node].split(':')[0]
   router.push({
     path: "/node",
     query: {
-      uuid: node.id
+      uuid: node
     }
   })
 }

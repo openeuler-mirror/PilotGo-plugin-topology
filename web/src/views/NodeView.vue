@@ -40,10 +40,8 @@ onMounted(async () => {
 
 async function handleNodeSelected(uuid: any) {
   // ttcode
-  const data = topodata
-
-  // const data = await topo.single_host_tree(uuid);
-  // console.log(data.data.tree);
+  // const data = topodata
+  const data = await topo.single_host_tree(uuid);
 
   let root: any = data.data.tree
   root.img = server_logo;

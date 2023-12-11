@@ -26,8 +26,13 @@ const props = defineProps({
   graph_mode: {
     type: String,
     default: 'default',
-    requires: true,
+    requires: true
   },
+  time_interval: {
+    type: String,
+    default: '关闭',
+    requires: true
+  }
   })
 
 const global_combos = ref('collapse')
@@ -68,8 +73,8 @@ const colorSets = G6.Util.getColorSetsBySubjectColors(
 onMounted(async () => {
   try {
     // ttcode
-    data = topodata
-    // const data = await topo.multi_host_topo();
+    // data = topodata
+    const data = await topo.multi_host_topo();
 
 
     for (let i = 0; i < data.data.edges.length; i++) {
@@ -162,7 +167,7 @@ function initGraph(data: any) {
         },
         {
           type: 'radial',
-          center: [ 800, 0 ],
+          center: [ 1100, 300 ],
           focusNode: '070cb0b4-c415-4b6a-843b-efc51cff6b76_host_10.10.10.60',
           unitRadius: 150,
           maxIteration: 300,
@@ -175,7 +180,7 @@ function initGraph(data: any) {
         },
         {
           type: 'radial',
-          center: [ -800, 0 ],
+          center: [ -1200, 300 ],
           focusNode: '7d0740a7-5ee6-41a9-846b-d52890d690d5_host_10.10.10.111',
           unitRadius: 150,
           maxIteration: 300,
