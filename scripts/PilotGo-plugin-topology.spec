@@ -2,7 +2,7 @@
 
 Name:           PilotGo-plugin-topology
 Version:        1.0.1
-Release:        3
+Release:        4
 Summary:        system application architecture detection plugin for PilotGo
 License:        MulanPSL-2.0
 URL:            https://gitee.com/openeuler/PilotGo-plugin-topology
@@ -40,20 +40,20 @@ tar -xzvf %{SOURCE1}
 cp -rf dist/* server/handler/
 # server
 cd server
-GO111MODULE=on go build -mod=vendor -tags=production -o PilotGo-plugin-topology-server main.go
+GOWORK=off GO111MODULE=on go build -mod=vendor -tags=production -o PilotGo-plugin-topology-server main.go
 # agent
 cd ../agent
-GO111MODULE=on go build -mod=vendor -o PilotGo-plugin-topology-agent main.go
+GOWORK=off GO111MODULE=on go build -mod=vendor -o PilotGo-plugin-topology-agent main.go
 
 %install
 mkdir -p %{buildroot}/opt/PilotGo/plugin/topology/{server/log,agent/log}
 # server
 install -D -m 0755 server/PilotGo-plugin-topology-server %{buildroot}/opt/PilotGo/plugin/topology/server
-install -D -m 0644 conf/config_server.yaml.templete %{buildroot}/opt/PilotGo/plugin/topology/server/config_server.yaml
+install -D -m 0644 conf/topo_server.yaml.templete %{buildroot}/opt/PilotGo/plugin/topology/server/topo_server.yaml
 install -D -m 0644 scripts/PilotGo-plugin-topology-server.service %{buildroot}%{_unitdir}/PilotGo-plugin-topology-server.service
 # agent
 install -D -m 0755 agent/PilotGo-plugin-topology-agent %{buildroot}/opt/PilotGo/plugin/topology/agent
-install -D -m 0644 conf/config_agent.yaml.templete %{buildroot}/opt/PilotGo/plugin/topology/agent/config_agent.yaml
+install -D -m 0644 conf/topo_agent.yaml.templete %{buildroot}/opt/PilotGo/plugin/topology/agent/topo_agent.yaml
 install -D -m 0644 scripts/PilotGo-plugin-topology-agent.service %{buildroot}%{_unitdir}/PilotGo-plugin-topology-agent.service
 
 %files          server
@@ -63,7 +63,7 @@ install -D -m 0644 scripts/PilotGo-plugin-topology-agent.service %{buildroot}%{_
 %dir /opt/PilotGo/plugin/topology/server
 %dir /opt/PilotGo/plugin/topology/server/log
 /opt/PilotGo/plugin/topology/server/PilotGo-plugin-topology-server
-/opt/PilotGo/plugin/topology/server/config_server.yaml
+/opt/PilotGo/plugin/topology/server/topo_server.yaml
 %{_unitdir}/PilotGo-plugin-topology-server.service
 
 %files          agent
@@ -73,10 +73,13 @@ install -D -m 0644 scripts/PilotGo-plugin-topology-agent.service %{buildroot}%{_
 %dir /opt/PilotGo/plugin/topology/agent
 %dir /opt/PilotGo/plugin/topology/agent/log
 /opt/PilotGo/plugin/topology/agent/PilotGo-plugin-topology-agent
-/opt/PilotGo/plugin/topology/agent/config_agent.yaml
+/opt/PilotGo/plugin/topology/agent/topo_agent.yaml
 %{_unitdir}/PilotGo-plugin-topology-agent.service
 
 %changelog
+* Mon Dec 11 2023 wangjunqi <wangjunqi@kylinos.cn> - 1.0.1-4
+- modify configuration file name
+
 * Thu Oct 19 2023 jiangxinyu <jiangxinyu@kylinos.cn> - 1.0.1-3
 - Update spec file specification
 

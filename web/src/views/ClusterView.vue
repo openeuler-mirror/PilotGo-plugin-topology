@@ -16,7 +16,7 @@ import G6, { Graph } from '@antv/g6';
 import { ref, reactive, onMounted, watch } from "vue";
 import { topo } from '../request/api';
 import server_logo from "@/assets/icon/server.png";
-import topodata from '@/assets/cluster-2.json'
+// import topodata from '@/assets/cluster-2.json'
 import { useMacStore } from '@/stores/mac';
 import HostDrawer from '@/views/HostDrawer.vue'
 import ProcessDrawer from '@/views/ProcessDrawer.vue'

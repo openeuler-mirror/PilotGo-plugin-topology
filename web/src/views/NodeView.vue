@@ -14,7 +14,7 @@ import { ref, reactive, onMounted } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { topo } from '../request/api';
 import server_logo from "@/assets/icon/server.png";
-import topodata from '@/assets/single.json'
+// import topodata from '@/assets/single.json'
 
 const router = useRouter()
 const route = useRoute()
