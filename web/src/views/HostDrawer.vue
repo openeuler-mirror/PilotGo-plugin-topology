@@ -8,6 +8,7 @@
       </div>
     </el-scrollbar>
 
+    <!-- 图表 -->
     <div class="drawer_body_div">
       <grid-layout :col-num="3" :is-draggable="grid.draggable" :is-resizable="grid.resizable" :layout.sync="layout"
       :row-height="100" :use-css-transforms="true" :vertical-compact="true" :responsive="true">

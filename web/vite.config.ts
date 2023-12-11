@@ -21,7 +21,7 @@ export default defineConfig({
     proxy:{
       "/plugin/topology/api": {
         // target: 'http://192.168.241.129:9991',
-        target: 'http://10.41.121.1:9991',
+        target: 'http://10.41.107.29:9991',
         changeOrigin:true,
         // rewrite: (path)=> path.replace("/^\/api/", ""),
       },

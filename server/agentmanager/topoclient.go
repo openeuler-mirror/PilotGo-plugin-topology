@@ -98,6 +98,11 @@ func (t *Topoclient) InitMachineList() {
 }
 
 func (t *Topoclient) UpdateMachineList() {
+	// TODO
+	// if Topo.Sdkmethod.Server() == "" {
+		
+	// }
+
 	url := "http://" + Topo.Sdkmethod.Server() + "/api/v1/pluginapi/machine_list"
 
 	resp, err := httputils.Get(url, nil)
@@ -146,7 +151,7 @@ func (t *Topoclient) UpdateMachineList() {
 		agent := t.GetAgent(p.UUID)
 		if agent == nil {
 			Topo.AddAgent(p)
-			return
+			continue
 		}
 
 		agent.IP = p.IP
