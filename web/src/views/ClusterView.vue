@@ -38,6 +38,13 @@ const props = defineProps({
 const global_combos = ref('collapse')
 let graph: Graph
 let node: any
+// let data: { "code": number,
+//             "data": {
+//               "combos": any[],
+//               "edges": any[],
+//               "nodes": any[]
+//             }
+//           }
 let data: any
 
 let drawer_display = reactive({
@@ -74,7 +81,7 @@ onMounted(async () => {
   try {
     // ttcode
     // data = topodata
-    const data = await topo.multi_host_topo();
+    data = await topo.multi_host_topo();
 
 
     for (let i = 0; i < data.data.edges.length; i++) {
