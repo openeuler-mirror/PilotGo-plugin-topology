@@ -10,7 +10,6 @@ import (
 	"strings"
 	"sync"
 	"syscall"
-	"time"
 
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/conf"
 	"gitee.com/openeuler/PilotGo/sdk/logger"
@@ -34,20 +33,7 @@ type Topoclient struct {
 }
 
 func (t *Topoclient) InitMachineList() {
-	i := 0
-	loop := []string{`*.....`, `.*....`, `..*...`, `...*..`, `....*.`, `.....*`}
-	for {
-		if Topo.Sdkmethod.Server() != "" {
-			break
-		}
-		fmt.Printf("\r Waiting for handshake with pilotgo server%s", loop[i])
-		if i < 5 {
-			i++
-		} else {
-			i = 0
-		}
-		time.Sleep(1 * time.Second)
-	}
+	WaitingForHandshake()
 
 	url := "http://" + Topo.Sdkmethod.Server() + "/api/v1/pluginapi/machine_list"
 
@@ -98,10 +84,7 @@ func (t *Topoclient) InitMachineList() {
 }
 
 func (t *Topoclient) UpdateMachineList() {
-	// TODO
-	// if Topo.Sdkmethod.Server() == "" {
-		
-	// }
+	WaitingForHandshake()
 
 	url := "http://" + Topo.Sdkmethod.Server() + "/api/v1/pluginapi/machine_list"
 

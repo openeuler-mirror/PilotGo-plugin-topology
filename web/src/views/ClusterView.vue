@@ -161,7 +161,7 @@ function initGraph(data: any) {
         },
         {
           type: 'radial',
-          center: [ 0, 0 ],
+          // center: [ 0, 0 ],
           focusNode: '54bcecd3-ea5f-497e-9ccb-3bb1aa9c0864_host_10.10.10.20',
           unitRadius: 150,
           maxIteration: 300,
@@ -174,7 +174,7 @@ function initGraph(data: any) {
         },
         {
           type: 'radial',
-          center: [ 1100, 300 ],
+          // center: [ 1100, 300 ],
           focusNode: '070cb0b4-c415-4b6a-843b-efc51cff6b76_host_10.10.10.60',
           unitRadius: 150,
           maxIteration: 300,
@@ -187,7 +187,7 @@ function initGraph(data: any) {
         },
         {
           type: 'radial',
-          center: [ -1200, 300 ],
+          // center: [ -1200, 300 ],
           focusNode: '7d0740a7-5ee6-41a9-846b-d52890d690d5_host_10.10.10.111',
           unitRadius: 150,
           maxIteration: 300,
