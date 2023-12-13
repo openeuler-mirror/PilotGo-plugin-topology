@@ -89,14 +89,14 @@
   <el-card class="box-card" shadow="never">
     <div class="regional_table">
       <el-table :data="cart_table" style="width: 100%" :show-header="false" size="small" :row-style="{height: '0px'}">
-        <el-table-column prop="name" label="name" width="70" />
-        <el-table-column prop="content" label="content" width="100" />
+        <el-table-column prop="name" label="name" width="65" />
+        <el-table-column prop="content" label="content" width="130" />
       </el-table>
     </div>
   </el-card>
 </div>
 
-<RouterView :graph_mode="graph_mode" :time_interval="time_interval"/>
+<RouterView :graph_mode="graph_mode" :time_interval="time_interval" @update-topo-time="updateTopoTimeHandle"/>
 
 </template>
 
@@ -111,8 +111,10 @@ const interactive_mode = ref('全局交互模式')
 const appearance_mode = ref('亮色')
 const graph_mode = ref('mixmode')
 const current_topo = ref('全局网络拓扑')
+const topo_time = ref('')
 const activename = ref('first')
 
+let agent_list_data: any
 let agent_list = reactive<any>({})
 let node_list = ref<string[]>([])
 
@@ -133,6 +135,10 @@ const cart_table = reactive([
   {
     'name': '交互模式',
     'content': interactive_mode
+  },
+  {
+    'name': '时间',
+    'content': topo_time
   }
 ])
 
@@ -162,16 +168,20 @@ async function updateHostList() {
 	// 			"data": 
 	// 						{"agentlist": {"070cb0b4-c415-4b6a-843b-efc51cff6b76": "10.44.55.66:9992"}}
   //       }
-  const data = await topo.host_list()
+  agent_list_data = await topo.host_list()
   
   let temp_node_list: string[] = []
 
-  agent_list = data.data.agentlist
+  agent_list = agent_list_data.data.agentlist
   for (let key in agent_list) {
     temp_node_list.push(key)
   };
 
   node_list.value = temp_node_list
+}
+
+function updateTopoTimeHandle(topotime: string) {
+  topo_time.value = topotime
 }
 
 watch(() => time_interval.value, (newdata) => {
@@ -203,7 +213,7 @@ watch(() => time_interval.value, (newdata) => {
           clearInterval(timer)
         }
         timer = setInterval(updateHostList, time_interval_num)
-        console.log('timer: ', timer)
+        // console.log('timer: ', timer)
       } catch (error) {
         console.error(error)
       }
@@ -307,7 +317,7 @@ header > div:last-child {
   left: 0;
   margin-top: 40px;
   height: 150px;
-  width: 180px;
+  width: 200px;
 }
 
 .box-card {
