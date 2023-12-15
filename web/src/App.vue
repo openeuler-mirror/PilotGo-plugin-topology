@@ -88,10 +88,12 @@
 <div class="box_card_div">
   <el-card class="box-card" shadow="never">
     <div class="regional_table">
-      <el-table :data="cart_table" style="width: 100%" :show-header="false" size="small" :row-style="{height: '0px'}">
-        <el-table-column prop="name" label="name" width="65" />
-        <el-table-column prop="content" label="content" width="130" />
-      </el-table>
+      <el-descriptions class="description_table" :column="1" size="default" border>
+        <el-descriptions-item label="业务" label-class-name="description_table_label">{{ current_topo }}</el-descriptions-item>
+        <el-descriptions-item label="时间间隔">{{ time_interval }}</el-descriptions-item>
+        <el-descriptions-item label="交互模式">{{ interactive_mode }}</el-descriptions-item>
+        <el-descriptions-item label="时间">{{ topo_time }}</el-descriptions-item>
+      </el-descriptions>
     </div>
   </el-card>
 </div>
@@ -162,7 +164,7 @@ onMounted(async () => {
 
 async function updateHostList() {
   //ttcode
-  // const data = {
+  // const agent_list_data = {
 	// 			"code":  0,
 	// 			"error": null,
 	// 			"data": 
@@ -317,7 +319,7 @@ header > div:last-child {
   left: 0;
   margin-top: 40px;
   height: 150px;
-  width: 200px;
+  width: 225px;
 }
 
 .box-card {
@@ -329,16 +331,33 @@ header > div:last-child {
 }
 
 .el-card /deep/ .el-card__body {
-  padding: 5px !important;
+  padding-top: 10px !important;
+  padding-left: 10px !important;
+  padding-right: 10px !important;
 }
 
-.regional_table /deep/ .el-table, .regional_table /deep/ .el-table__expanded-cell {
-  background-color: transparent;
+.regional_table /deep/ .el-descriptions {
+  opacity: 0.8;
+}
+
+.regional_table /deep/ .el-descriptions__body .el-descriptions__table.is-bordered .el-descriptions__cell {
+  background-color: rgba(207, 210, 21, 0.1);
+  border: rgba(15, 5, 5, 0);
+  padding-top: 2px;
+  padding-left: 0px;
+  padding-right: 5px;
+  padding-bottom: 0px;
+}
+
+.regional_table /deep/ .el-descriptions, .regional_table /deep/ .el-descriptions__expanded-cell {
   color: #606266;
 }
 
-.regional_table /deep/ .el-table th, .regional_table /deep/ .el-table tr, .regional_table /deep/ .el-table td {
-  background-color: transparent !important;
+.regional_table /deep/ .el-descriptions th, .regional_table /deep/ .el-descriptions tr, .regional_table /deep/ .el-descriptions td {
+  /* background-color: rgba(207, 210, 21, 0.1); */
+  /* background-color: transparent !important; */
   color: #606266;
-}
+}                                         
+
+
 </style>
