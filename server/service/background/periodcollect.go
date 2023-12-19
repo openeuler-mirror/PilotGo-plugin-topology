@@ -77,7 +77,7 @@ func PeriodProcessWorking(unixtime int64, agentnum int, graphdb dao.GraphdbIface
 			defer nodeUuidWg.Done()
 
 			// TODO: 根据默认断点数拆分nodes
-			for _, _nodes := range utils.SplitNodesByBreakpoint(_nodesbyuuid, 10) {
+			for _, _nodes := range utils.SplitNodesByBreakpoint(_nodesbyuuid, int(_agentnum)) {
 				__nodes := _nodes
 				nodeTypeWg.Add(1)
 				go func(_nodesbytype []*meta.Node) {
