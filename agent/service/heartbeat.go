@@ -1,6 +1,7 @@
 package service
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
@@ -33,8 +34,19 @@ func sendHeartbeat(agentid string) error {
 		return err
 	}
 
-	if resp.StatusCode != http.StatusOK {
-		err = errors.Errorf("failed to send heartbeat: url => %s, statuscode => %d", url, resp.StatusCode)
+	resp_body := &struct {
+		Code  int         `json:"code"`
+		Error string      `json:"error"`
+		Data  interface{} `json:"data"`
+	}{}
+	err = json.Unmarshal(resp.Body, resp_body)
+	if err != nil {
+		err = errors.Errorf("failed to unmarshal json data: %s", err.Error())
+		return err
+	}
+
+	if resp.StatusCode != http.StatusOK || resp_body.Code != 0 {
+		err = errors.Errorf("failed to send heartbeat: url => %s, statuscode => %d, code => %d", url, resp.StatusCode, resp_body.Code)
 		return err
 	}
 
