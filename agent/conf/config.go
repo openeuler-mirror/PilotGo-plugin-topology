@@ -12,8 +12,10 @@ import (
 )
 
 type TopoConf struct {
-	Agent_addr string `yaml:"agent_addr"`
-	Datasource string `yaml:"datasource"`
+	Agent_addr  string `yaml:"agent_addr"`
+	Server_addr string `yaml:"server_addr"`
+	Datasource  string `yaml:"datasource"`
+	Heartbeat   int    `yaml:"heartbeat"`
 }
 
 type PilotGoConf struct {

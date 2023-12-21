@@ -1,6 +1,8 @@
 topo:
   agent_addr: "localhost:9992"
+  server_addr: "localhost:9991"
   datasource: "gopsutil"
+  heartbeat: 30
 PilotGo:
   http_addr: "localhost:8888"
 log:
