@@ -12,9 +12,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-var Neo4j *Neo4jclient
-
-type Neo4jclient struct {
+type Neo4jClient struct {
 	addr     string
 	username string
 	password string
@@ -22,8 +20,10 @@ type Neo4jclient struct {
 	Driver   neo4j.Driver
 }
 
-func CreateNeo4j(url, user, pass, db string) *Neo4jclient {
-	n := &Neo4jclient{
+var Global_Neo4j *Neo4jClient
+
+func Neo4jInit(url, user, pass, db string) *Neo4jClient {
+	n := &Neo4jClient{
 		addr:     url,
 		username: user,
 		password: pass,
@@ -49,7 +49,7 @@ func CreateNeo4j(url, user, pass, db string) *Neo4jclient {
 	return n
 }
 
-func (n *Neo4jclient) Node_create(unixtime string, node *meta.Node) error {
+func (n *Neo4jClient) Node_create(unixtime string, node *meta.Node) error {
 	var cqlIN string
 
 	if len(node.Metrics) == 0 {
@@ -82,7 +82,7 @@ func (n *Neo4jclient) Node_create(unixtime string, node *meta.Node) error {
 	return nil
 }
 
-func (n *Neo4jclient) Edge_create(unixtime string, edge *meta.Edge) error {
+func (n *Neo4jClient) Edge_create(unixtime string, edge *meta.Edge) error {
 	var cqlIN string
 
 	if len(edge.Metrics) == 0 {
@@ -115,7 +115,7 @@ func (n *Neo4jclient) Edge_create(unixtime string, edge *meta.Edge) error {
 	return nil
 }
 
-func (n *Neo4jclient) Timestamps_query() ([]string, error) {
+func (n *Neo4jClient) Timestamps_query() ([]string, error) {
 	var cqlOUT string
 	var varia string
 
@@ -157,7 +157,7 @@ func (n *Neo4jclient) Timestamps_query() ([]string, error) {
 	return list, nil
 }
 
-func (n *Neo4jclient) SingleHost_node_query(uuid string, unixtime string) ([]*meta.Node, error) {
+func (n *Neo4jClient) SingleHost_node_query(uuid string, unixtime string) ([]*meta.Node, error) {
 	var cqlOUT string
 	var varia string
 
@@ -167,7 +167,7 @@ func (n *Neo4jclient) SingleHost_node_query(uuid string, unixtime string) ([]*me
 	return n.Node_query(cqlOUT, varia)
 }
 
-func (n *Neo4jclient) MultiHost_node_query(unixtime string) ([]*meta.Node, error) {
+func (n *Neo4jClient) MultiHost_node_query(unixtime string) ([]*meta.Node, error) {
 	var cqlOUT string
 	var varia string
 
@@ -177,7 +177,7 @@ func (n *Neo4jclient) MultiHost_node_query(unixtime string) ([]*meta.Node, error
 	return n.Node_query(cqlOUT, varia)
 }
 
-func (n *Neo4jclient) Node_query(cypher string, varia string) ([]*meta.Node, error) {
+func (n *Neo4jClient) Node_query(cypher string, varia string) ([]*meta.Node, error) {
 	var list []*meta.Node
 	session := n.Driver.NewSession(neo4j.SessionConfig{AccessMode: neo4j.AccessModeRead, DatabaseName: n.DB})
 	defer session.Close()
@@ -210,7 +210,7 @@ func (n *Neo4jclient) Node_query(cypher string, varia string) ([]*meta.Node, err
 	return list, err
 }
 
-func (n *Neo4jclient) MultiHost_relation_query(unixtime string) ([]*meta.Edge, error) {
+func (n *Neo4jClient) MultiHost_relation_query(unixtime string) ([]*meta.Edge, error) {
 	var cqlOUT string
 	var varia string
 
@@ -220,7 +220,7 @@ func (n *Neo4jclient) MultiHost_relation_query(unixtime string) ([]*meta.Edge, e
 	return n.Relation_query(cqlOUT, varia)
 }
 
-func (n *Neo4jclient) Relation_query(cypher string, varia string) ([]*meta.Edge, error) {
+func (n *Neo4jClient) Relation_query(cypher string, varia string) ([]*meta.Edge, error) {
 	var list []*meta.Edge
 	session := n.Driver.NewSession(neo4j.SessionConfig{AccessMode: neo4j.AccessModeRead, DatabaseName: n.DB})
 	defer session.Close()

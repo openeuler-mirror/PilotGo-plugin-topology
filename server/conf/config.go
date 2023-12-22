@@ -2,6 +2,7 @@ package conf
 
 import (
 	"path"
+	"time"
 
 	"gitee.com/openeuler/PilotGo/sdk/logger"
 )
@@ -33,13 +34,21 @@ type PrometheusConf struct {
 	Addr string `yaml:"addr"`
 }
 
+type RedisConf struct {
+	Addr        string        `yaml:"addr"`
+	Password    string        `yaml:"password"`
+	DB          int           `yaml:"DB"`
+	DialTimeout time.Duration `yaml:"dialTimeout"`
+}
+
 type ServerConfig struct {
-	Topo       *TopoConf       `yaml:"topo"`
-	PilotGo    *PilotGoConf    `yaml:"PilotGo"`
-	Logopts    *logger.LogOpts `yaml:"log"`
-	Arangodb   *ArangodbConf   `yaml:"arangodb"`
-	Neo4j      *Neo4jConf      `yaml:"neo4j"`
-	Prometheus *PrometheusConf `yaml:"prometheus"`
+	Topo       *TopoConf
+	PilotGo    *PilotGoConf
+	Logopts    *logger.LogOpts
+	Arangodb   *ArangodbConf
+	Neo4j      *Neo4jConf
+	Prometheus *PrometheusConf
+	Redis      *RedisConf
 }
 
 const config_type = "topo_server.yaml"

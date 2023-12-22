@@ -18,3 +18,8 @@ neo4j:
   DB: "neo4j"
 prometheus:
   addr: "http://localhost:9090"
+redis:
+  addr: "localhost:6379"
+  password: ''
+  DB: 1
+  dialTimeout: 5s
