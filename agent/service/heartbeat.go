@@ -13,11 +13,11 @@ import (
 )
 
 func SendHeartbeat() {
-	agentID := conf.Config().Topo.Agent_addr
+	agent_addr := conf.Config().Topo.Agent_addr
 
 	go func() {
 		for {
-			err := sendHeartbeat(agentID)
+			err := sendHeartbeat(agent_addr)
 			if err != nil {
 				err = errors.Wrap(err, " ") // err top
 				fmt.Printf("%+v\n", err)
@@ -27,8 +27,8 @@ func SendHeartbeat() {
 	}()
 }
 
-func sendHeartbeat(agentid string) error {
-	url := fmt.Sprintf("http://%s/plugin/topology/api/heartbeat?agentid=%s&uuid=%s", conf.Config().Topo.Server_addr, agentid, collector.Psutildata.Host_1.MachineUUID)
+func sendHeartbeat(addr string) error {
+	url := fmt.Sprintf("http://%s/plugin/topology/api/heartbeat?agentaddr=%s&uuid=%s", conf.Config().Topo.Server_addr, addr, collector.Psutildata.Host_1.MachineUUID)
 	resp, err := httputils.Post(url, nil)
 	if err != nil {
 		err = errors.Errorf("failed to send heartbeat: %s", err.Error())
