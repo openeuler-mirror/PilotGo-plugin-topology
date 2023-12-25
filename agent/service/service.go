@@ -11,50 +11,50 @@ func DataCollectorService() (utils.Data_collector, error) {
 	datasource := conf.Config().Topo.Datasource
 	switch datasource {
 	case "gopsutil":
-		gops := collector.CreatePsutilCollector()
-		err := gops.Collect_host_data()
+		collector.Psutildata = collector.CreatePsutilCollector()
+		err := collector.Psutildata.Collect_host_data()
 		if err != nil {
 			err = errors.Wrap(err, "**2")
 			return nil, err
 		}
 
-		err = gops.Collect_netconnection_all_data()
+		err = collector.Psutildata.Collect_netconnection_all_data()
 		if err != nil {
 			err = errors.Wrap(err, "**2")
 			return nil, err
 		}
 
-		err = gops.Collect_interfaces_io_data()
+		err = collector.Psutildata.Collect_interfaces_io_data()
 		if err != nil {
 			err = errors.Wrap(err, "**2")
 			return nil, err
 		}
 
-		err = gops.Collect_process_instant_data()
+		err = collector.Psutildata.Collect_process_instant_data()
 		if err != nil {
 			err = errors.Wrap(err, "**2")
 			return nil, err
 		}
 
-		err = gops.Collect_addrInterfaceMap_data()
+		err = collector.Psutildata.Collect_addrInterfaceMap_data()
 		if err != nil {
 			err = errors.Wrap(err, "**2")
 			return nil, err
 		}
 
-		err = gops.Collect_disk_data()
+		err = collector.Psutildata.Collect_disk_data()
 		if err != nil {
 			err = errors.Wrap(err, "**2")
 			return nil, err
 		}
 
-		err = gops.Collect_cpu_data()
+		err = collector.Psutildata.Collect_cpu_data()
 		if err != nil {
 			err = errors.Wrap(err, "**2")
 			return nil, err
 		}
 
-		return gops, nil
+		return collector.Psutildata, nil
 	case "ebpf":
 
 	}
