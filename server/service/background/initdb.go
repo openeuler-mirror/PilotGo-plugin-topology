@@ -26,4 +26,7 @@ func InitDB() {
 		close(agentmanager.Topo.ErrCh)
 		os.Exit(1)
 	}
+
+	dao.Global_redis = dao.RedisInit(conf.Config().Redis.Addr, conf.Config().Redis.Password, conf.Config().Redis.DB, conf.Config().Redis.DialTimeout)
+
 }

@@ -3,8 +3,10 @@ package dao
 import (
 	"context"
 	"encoding/json"
+	"os"
 	"time"
 
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/agentmanager"
 	"github.com/go-redis/redis/v8"
 	"github.com/pkg/errors"
 )
@@ -13,19 +15,19 @@ type RedisClient struct {
 	Addr     string
 	Password string
 	DB       int
-	Client   *redis.Client
+	Client   redis.Client
 }
 
 var Global_redis *RedisClient
 
-func RedisInit(url, pass string, db int, dialTimeout time.Duration) error {
+func RedisInit(url, pass string, db int, dialTimeout time.Duration) *RedisClient {
 	r := &RedisClient{
 		Addr:     url,
 		Password: pass,
 		DB:       db,
 	}
 
-	r.Client = redis.NewClient(&redis.Options{
+	r.Client = *redis.NewClient(&redis.Options{
 		Addr:     r.Addr,
 		Password: r.Password,
 		DB:       r.DB,
@@ -37,10 +39,15 @@ func RedisInit(url, pass string, db int, dialTimeout time.Duration) error {
 	_, err := r.Client.Ping(timeoutCtx).Result()
 	if err != nil {
 		err = errors.Errorf("redis connection timeout: %s", err.Error())
-		return err
+		agentmanager.Topo.ErrCh <- err
+		agentmanager.Topo.Errmu.Lock()
+		agentmanager.Topo.ErrCond.Wait()
+		agentmanager.Topo.Errmu.Unlock()
+		close(agentmanager.Topo.ErrCh)
+		os.Exit(1)
 	}
 
-	return nil
+	return r
 }
 
 func (r *RedisClient) Set(key string, value interface{}) error {
