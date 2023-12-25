@@ -15,6 +15,7 @@ import (
 	"gitee.com/openeuler/PilotGo/sdk/logger"
 	"gitee.com/openeuler/PilotGo/sdk/plugin/client"
 	"gitee.com/openeuler/PilotGo/sdk/utils/httputils"
+	"github.com/go-redis/redis/v8"
 	"github.com/mitchellh/mapstructure"
 	"github.com/neo4j/neo4j-go-driver/v4/neo4j"
 	"github.com/pkg/errors"
@@ -234,15 +235,17 @@ func (t *Topoclient) InitConfig() {
 	}
 }
 
-func (t *Topoclient) SignalMonitoring(driver neo4j.Driver) {
+func (t *Topoclient) SignalMonitoring(neo4jclient neo4j.Driver, redisclient redis.Client) {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	for {
 		s := <-c
 		switch s {
 		case syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT:
-			driver.Close()
+			neo4jclient.Close()
 			fmt.Printf("close the connection to neo4j\n")
+			redisclient.Close()
+			fmt.Printf("close the connection to redis\n")
 			os.Exit(-1)
 		default:
 			fmt.Printf("unknown signal: %s\n", s.String())

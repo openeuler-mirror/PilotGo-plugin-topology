@@ -56,5 +56,5 @@ func main() {
 	/*
 		终止进程信号监听
 	*/
-	agentmanager.Topo.SignalMonitoring(dao.Global_Neo4j.Driver)
+	agentmanager.Topo.SignalMonitoring(dao.Global_Neo4j.Driver, dao.Global_redis.Client)
 }
