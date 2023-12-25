@@ -35,7 +35,7 @@ type Topoclient struct {
 func (t *Topoclient) InitMachineList() {
 	WaitingForHandshake()
 
-	url := "http://" + Topo.Sdkmethod.Server() + "/api/v1/pluginapi/machine_list"
+	url := "http://" + t.Sdkmethod.Server() + "/api/v1/pluginapi/machine_list"
 
 	resp, err := httputils.Get(url, nil)
 	if err != nil {
@@ -79,14 +79,14 @@ func (t *Topoclient) InitMachineList() {
 		p := &Agent_m{}
 		mapstructure.Decode(m, p)
 		p.TAState = 0
-		Topo.AddAgent(p)
+		t.AddAgent(p)
 	}
 }
 
 func (t *Topoclient) UpdateMachineList() {
 	WaitingForHandshake()
 
-	url := "http://" + Topo.Sdkmethod.Server() + "/api/v1/pluginapi/machine_list"
+	url := "http://" + t.Sdkmethod.Server() + "/api/v1/pluginapi/machine_list"
 
 	resp, err := httputils.Get(url, nil)
 	if err != nil {
@@ -133,7 +133,7 @@ func (t *Topoclient) UpdateMachineList() {
 
 		agent := t.GetAgent(p.UUID)
 		if agent == nil {
-			Topo.AddAgent(p)
+			t.AddAgent(p)
 			continue
 		}
 
@@ -145,7 +145,7 @@ func (t *Topoclient) UpdateMachineList() {
 		agent.Departname = p.Departname
 		agent.State = p.State
 		agent.TAState = p.TAState
-		Topo.AddAgent(agent)
+		t.AddAgent(agent)
 	}
 }
 
@@ -176,7 +176,7 @@ func (t *Topoclient) InitPluginClient() {
 }
 
 func (t *Topoclient) InitErrorControl(errch <-chan error, emu sync.Locker, econd *sync.Cond) {
-	switch conf.Global_config.Logopts.Driver {
+	switch conf.Config().Logopts.Driver {
 	case "stdout":
 		t.Out = os.Stdout
 	case "file":

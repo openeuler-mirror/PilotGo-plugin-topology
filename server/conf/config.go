@@ -44,7 +44,7 @@ type RedisConf struct {
 type ServerConfig struct {
 	Topo       *TopoConf
 	PilotGo    *PilotGoConf
-	Logopts    *logger.LogOpts
+	Logopts    *logger.LogOpts `yaml:"log"`
 	Arangodb   *ArangodbConf
 	Neo4j      *Neo4jConf
 	Prometheus *PrometheusConf
