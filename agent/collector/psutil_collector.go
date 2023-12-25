@@ -6,13 +6,15 @@ import (
 	"strconv"
 
 	"gitee.com/openeuler/PilotGo-plugin-topology-agent/utils"
-	"gitee.com/openeuler/PilotGo-plugins/sdk/logger"
+	"gitee.com/openeuler/PilotGo/sdk/logger"
 	"github.com/shirou/gopsutil/cpu"
 	"github.com/shirou/gopsutil/disk"
 	"github.com/shirou/gopsutil/process"
 	"github.com/shirou/gopsutil/v3/host"
 	"github.com/shirou/gopsutil/v3/net"
 )
+
+var Psutildata *PsutilCollector
 
 type PsutilCollector struct {
 	Host_1             *utils.Host

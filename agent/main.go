@@ -7,7 +7,7 @@ import (
 	"gitee.com/openeuler/PilotGo-plugin-topology-agent/conf"
 	"gitee.com/openeuler/PilotGo-plugin-topology-agent/handler"
 	"gitee.com/openeuler/PilotGo-plugin-topology-agent/service"
-	"gitee.com/openeuler/PilotGo-plugins/sdk/logger"
+	"gitee.com/openeuler/PilotGo/sdk/logger"
 	"github.com/gin-gonic/gin"
 )
 
@@ -15,7 +15,7 @@ func main() {
 
 	InitLogger()
 
-	go func ()  {
+	go func() {
 		engine := gin.Default()
 		handler.InitRouter(engine)
 		if err := engine.Run(conf.Config().Topo.Agent_addr); err != nil {
