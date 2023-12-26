@@ -18,10 +18,24 @@ type AgentHeartbeat struct {
 
 func HeartbeatHandle(ctx *gin.Context) {
 	// agent发送的心跳参数为uuid和ip:port，写入redis的数据为 (heartbeat-uuid: {addr: "10.44.55.66:9992", time: "2023-12-22T17:09:23+08:00"})
-	key := "heartbeat-topoagent-" + ctx.Query("uuid")
+	uuid := ctx.Query("uuid")
+	addr := ctx.Query("agentaddr")
+
+	key := "heartbeat-topoagent-" + uuid
 	value := AgentHeartbeat{
-		Addr: ctx.Query("agentaddr"),
+		Addr: addr,
 		Time: time.Now(),
+	}
+
+	if agentmanager.Topo.GetAgent(uuid) != nil {
+		err := errors.Errorf("unknown agent heartbeat: %s, %s **warn**1", uuid, addr) // err top
+		agentmanager.Topo.ErrCh <- err
+		ctx.JSON(http.StatusOK, gin.H{
+			"code":  -1,
+			"error": fmt.Sprintf("%+v", err),
+			"data":  nil,
+		})
+		return
 	}
 
 	err := dao.Global_redis.Set(key, value)
@@ -34,7 +48,6 @@ func HeartbeatHandle(ctx *gin.Context) {
 			"error": fmt.Sprintf("%+v", err),
 			"data":  nil,
 		})
-
 		return
 	}
 
