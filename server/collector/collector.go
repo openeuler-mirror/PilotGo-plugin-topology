@@ -56,7 +56,7 @@ func (d *DataCollector) Collect_instant_data() []error {
 }
 
 func (d *DataCollector) GetCollectDataFromTopoAgent(agent *agentmanager.Agent_m) error {
-	url := "http://" + agent.IP + ":" + agent.Port + "/plugin/api/rawdata"
+	url := "http://" + agent.IP + ":" + agent.Port + "/plugin/topology/api/rawdata"
 
 	resp, err := httputils.Get(url, nil)
 	if err != nil {
