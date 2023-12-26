@@ -18,7 +18,7 @@ type AgentHeartbeat struct {
 
 func HeartbeatHandle(ctx *gin.Context) {
 	// agent发送的心跳参数为uuid和ip:port，写入redis的数据为 (heartbeat-uuid: {addr: "10.44.55.66:9992", time: "2023-12-22T17:09:23+08:00"})
-	key := "heartbeat-" + ctx.Query("uuid")
+	key := "heartbeat-topoagent-" + ctx.Query("uuid")
 	value := AgentHeartbeat{
 		Addr: ctx.Query("agentaddr"),
 		Time: time.Now(),

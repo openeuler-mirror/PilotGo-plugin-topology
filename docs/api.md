@@ -18,7 +18,9 @@
 - GET /plugin/topology/api/single_host_tree/:uuid
 ### 2.3 多机网络拓扑图数据
 - GET /plugin/topology/api/multi_host
+### 2.4 topo-agent心跳监听
+- POST /heartbeat
 
 ## 3. agent端API接口
 ### 3.1 获取agent端采集数据
-- GET /plugin/api/rawdata
+- GET /plugin/topology/api/rawdata

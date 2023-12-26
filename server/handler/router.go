@@ -37,7 +37,7 @@ func InitWebServer() {
 func InitRouter(router *gin.Engine) {
 	api := router.Group("/plugin/topology/api")
 	{
-		api.POST("heartbeat", HeartbeatHandle)
+		api.POST("/heartbeat", HeartbeatHandle)
 		api.GET("/agentlist", AgentListHandle)
 
 		api.GET("/single_host/:uuid", SingleHostHandle)
