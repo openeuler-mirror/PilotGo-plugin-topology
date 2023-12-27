@@ -25,7 +25,7 @@ func (d *DataCollector) Collect_instant_data() []error {
 	var wg sync.WaitGroup
 	var errorlist []error
 
-	agentmanager.Topo.AgentMap.Range(
+	agentmanager.Topo.TAgentMap.Range(
 		func(key, value interface{}) bool {
 			wg.Add(1)
 
@@ -37,7 +37,7 @@ func (d *DataCollector) Collect_instant_data() []error {
 				if err != nil {
 					errorlist = append(errorlist, errors.Wrapf(err, "%s**2", agent.IP))
 				}
-				agentmanager.Topo.AddAgent(agent)
+				agentmanager.Topo.AddAgent_P(agent)
 			}()
 
 			return true

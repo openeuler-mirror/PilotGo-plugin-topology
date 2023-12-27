@@ -26,7 +26,8 @@ var Topo *Topoclient
 
 type Topoclient struct {
 	Sdkmethod *client.Client
-	AgentMap  sync.Map
+	PAgentMap sync.Map
+	TAgentMap sync.Map
 	Errmu     sync.Locker
 	ErrCond   *sync.Cond
 	ErrCh     chan error
@@ -34,7 +35,7 @@ type Topoclient struct {
 }
 
 func (t *Topoclient) InitMachineList() {
-	WaitingForHandshake()
+	// WaitingForHandshake()
 
 	url := "http://" + t.Sdkmethod.Server() + "/api/v1/pluginapi/machine_list"
 
@@ -80,12 +81,12 @@ func (t *Topoclient) InitMachineList() {
 		p := &Agent_m{}
 		mapstructure.Decode(m, p)
 		p.TAState = 0
-		t.AddAgent(p)
+		t.AddAgent_P(p)
 	}
 }
 
 func (t *Topoclient) UpdateMachineList() {
-	WaitingForHandshake()
+	// WaitingForHandshake()
 
 	url := "http://" + t.Sdkmethod.Server() + "/api/v1/pluginapi/machine_list"
 
@@ -127,27 +128,39 @@ func (t *Topoclient) UpdateMachineList() {
 		os.Exit(1)
 	}
 
+	t.PAgentMap.Range(func(key, value interface{}) bool {
+		t.DeleteAgent_P(key.(string))
+		return true
+	})
+
 	for _, m := range result.Data.([]interface{}) {
 		p := &Agent_m{}
 		mapstructure.Decode(m, p)
 		p.TAState = 0
-
-		agent := t.GetAgent(p.UUID)
-		if agent == nil {
-			t.AddAgent(p)
-			continue
-		}
-
-		agent.IP = p.IP
-		agent.ID = p.ID
-		agent.UUID = p.UUID
-		agent.Port = p.Port
-		agent.Departid = p.Departid
-		agent.Departname = p.Departname
-		agent.State = p.State
-		agent.TAState = p.TAState
-		t.AddAgent(agent)
+		t.AddAgent_P(p)
 	}
+
+	// for _, m := range result.Data.([]interface{}) {
+	// 	p := &Agent_m{}
+	// 	mapstructure.Decode(m, p)
+	// 	p.TAState = 0
+
+	// 	agent := t.GetAgent(p.UUID)
+	// 	if agent == nil {
+	// 		t.AddAgent(p)
+	// 		continue
+	// 	}
+
+	// 	agent.IP = p.IP
+	// 	agent.ID = p.ID
+	// 	agent.UUID = p.UUID
+	// 	agent.Port = p.Port
+	// 	agent.Departid = p.Departid
+	// 	agent.Departname = p.Departname
+	// 	agent.State = p.State
+	// 	agent.TAState = p.TAState
+	// 	t.AddAgent(agent)
+	// }
 }
 
 func (t *Topoclient) InitLogger() {

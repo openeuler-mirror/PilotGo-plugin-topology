@@ -28,7 +28,7 @@ func SendHeartbeat() {
 }
 
 func sendHeartbeat(addr string) error {
-	url := fmt.Sprintf("http://%s/plugin/topology/api/heartbeat?agentaddr=%s&uuid=%s", conf.Config().Topo.Server_addr, addr, collector.Psutildata.Host_1.MachineUUID)
+	url := fmt.Sprintf("http://%s/plugin/topology/api/heartbeat?agentaddr=%s&uuid=%s&interval=%d", conf.Config().Topo.Server_addr, addr, collector.Psutildata.Host_1.MachineUUID, conf.Config().Topo.Heartbeat)
 	resp, err := httputils.Post(url, nil)
 	if err != nil {
 		err = errors.Errorf("failed to send heartbeat: %s", err.Error())
