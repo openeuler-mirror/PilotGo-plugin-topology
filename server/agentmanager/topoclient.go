@@ -35,7 +35,7 @@ type Topoclient struct {
 }
 
 func (t *Topoclient) InitMachineList() {
-	// WaitingForHandshake()
+	WaitingForHandshake()
 
 	url := "http://" + t.Sdkmethod.Server() + "/api/v1/pluginapi/machine_list"
 
@@ -86,7 +86,7 @@ func (t *Topoclient) InitMachineList() {
 }
 
 func (t *Topoclient) UpdateMachineList() {
-	// WaitingForHandshake()
+	WaitingForHandshake()
 
 	url := "http://" + t.Sdkmethod.Server() + "/api/v1/pluginapi/machine_list"
 

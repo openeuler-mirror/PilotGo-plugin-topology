@@ -4,6 +4,10 @@ import "gitee.com/openeuler/PilotGo-plugin-topology-server/meta"
 
 func SplitEdgesByBreakpoint(arr []*meta.Edge, n int) [][]*meta.Edge {
 	length := len(arr)
+	if length == 0 {
+		return nil
+	}
+
 	size := length / n
 	result := make([][]*meta.Edge, n)
 
@@ -23,6 +27,10 @@ func SplitEdgesByBreakpoint(arr []*meta.Edge, n int) [][]*meta.Edge {
 
 func SplitNodesByBreakpoint(arr []*meta.Node, n int) [][]*meta.Node {
 	length := len(arr)
+	if length == 0 {
+		return nil
+	}
+	
 	size := length / n
 	result := make([][]*meta.Node, n)
 

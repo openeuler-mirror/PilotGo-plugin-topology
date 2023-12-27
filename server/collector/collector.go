@@ -37,7 +37,7 @@ func (d *DataCollector) Collect_instant_data() []error {
 				if err != nil {
 					errorlist = append(errorlist, errors.Wrapf(err, "%s**2", agent.IP))
 				}
-				agentmanager.Topo.AddAgent_P(agent)
+				agentmanager.Topo.AddAgent_T(agent)
 			}()
 
 			return true
