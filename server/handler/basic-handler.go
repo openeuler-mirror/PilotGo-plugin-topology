@@ -3,31 +3,31 @@ package handler
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/agentmanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/dao"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/meta"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 )
-
-type AgentHeartbeat struct {
-	Addr string
-	Time time.Time
-}
 
 func HeartbeatHandle(ctx *gin.Context) {
 	// agent发送的心跳参数为uuid和ip:port，写入redis的数据为 (heartbeat-uuid: {addr: "10.44.55.66:9992", time: "2023-12-22T17:09:23+08:00"})
 	uuid := ctx.Query("uuid")
 	addr := ctx.Query("agentaddr")
+	heartbeatinterval, _ := strconv.Atoi(ctx.Query("interval"))
 
 	key := "heartbeat-topoagent-" + uuid
-	value := AgentHeartbeat{
-		Addr: addr,
-		Time: time.Now(),
+	value := meta.AgentHeartbeat{
+		UUID:              uuid,
+		Addr:              addr,
+		HeartbeatInterval: heartbeatinterval,
+		Time:              time.Now(),
 	}
 
-	if agentmanager.Topo.GetAgent(uuid) != nil {
+	if agentmanager.Topo.GetAgent_P(uuid) != nil {
 		err := errors.Errorf("unknown agent heartbeat: %s, %s **warn**1", uuid, addr) // err top
 		agentmanager.Topo.ErrCh <- err
 		ctx.JSON(http.StatusOK, gin.H{

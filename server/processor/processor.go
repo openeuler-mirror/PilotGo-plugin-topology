@@ -23,7 +23,7 @@ func CreateDataProcesser() *DataProcesser {
 	return &DataProcesser{}
 }
 
-func (d *DataProcesser) Process_data() (*meta.Nodes, *meta.Edges, []error, []error) {
+func (d *DataProcesser) Process_data(agentnum int) (*meta.Nodes, *meta.Edges, []error, []error) {
 	start := time.Now()
 	nodes := &meta.Nodes{
 		Lock:         sync.Mutex{},
@@ -54,10 +54,7 @@ func (d *DataProcesser) Process_data() (*meta.Nodes, *meta.Edges, []error, []err
 		// return nil, nil, collect_errorlist, nil
 	}
 
-	// TODO: 临时获取运行状态agent的数目
-	agent_count := agentmanager.Topo.GetRunningAgentNumber()
-
-	agentmanager.Topo.AgentMap.Range(
+	agentmanager.Topo.TAgentMap.Range(
 		func(key, value interface{}) bool {
 			wg.Add(1)
 
@@ -73,7 +70,7 @@ func (d *DataProcesser) Process_data() (*meta.Nodes, *meta.Edges, []error, []err
 					}
 
 					for {
-						if atomic.LoadInt32(&agent_node_count) == agent_count {
+						if atomic.LoadInt32(&agent_node_count) == int32(agentnum) {
 							break
 						}
 					}

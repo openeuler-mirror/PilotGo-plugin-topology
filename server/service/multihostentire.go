@@ -10,7 +10,10 @@ import (
 
 func MultiHostEntireService() ([]*meta.Node, []*meta.Edge, []error, []error) {
 	dataprocesser := processor.CreateDataProcesser()
-	nodes, edges, collect_errlist, process_errlist := dataprocesser.Process_data()
+
+	// TODO: 临时定义agentnum
+	agentnum := 0
+	nodes, edges, collect_errlist, process_errlist := dataprocesser.Process_data(agentnum)
 	if len(collect_errlist) != 0 || len(process_errlist) != 0 {
 		for i, cerr := range collect_errlist {
 			collect_errlist[i] = errors.Wrap(cerr, "**3")

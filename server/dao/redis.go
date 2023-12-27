@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/agentmanager"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/meta"
 	"github.com/go-redis/redis/v8"
 	"github.com/pkg/errors"
 )
@@ -38,7 +39,7 @@ func RedisInit(url, pass string, db int, dialTimeout time.Duration) *RedisClient
 	defer cancelFunc()
 	_, err := r.Client.Ping(timeoutCtx).Result()
 	if err != nil {
-		err = errors.Errorf("redis connection timeout: %s", err.Error())
+		err = errors.Errorf("redis connection timeout: %s **fatal**2", err.Error()) // err top
 		agentmanager.Topo.ErrCh <- err
 		agentmanager.Topo.Errmu.Lock()
 		agentmanager.Topo.ErrCond.Wait()
@@ -56,7 +57,7 @@ func (r *RedisClient) Set(key string, value interface{}) error {
 	bytes, _ := json.Marshal(value)
 	err := r.Client.Set(ctx, key, string(bytes), 0).Err()
 	if err != nil {
-		err = errors.Errorf("failed to set key-value: %s", err.Error())
+		err = errors.Errorf("failed to set key-value: %s **2", err.Error())
 		return err
 	}
 
@@ -68,7 +69,7 @@ func (r *RedisClient) Get(key string, obj interface{}) (interface{}, error) {
 
 	data, err := r.Client.Get(ctx, key).Result()
 	if err != nil {
-		err = errors.Errorf("failed to get value: %s", err.Error())
+		err = errors.Errorf("failed to get value: %s, %s **2", key, err.Error())
 		return nil, err
 	}
 	json.Unmarshal([]byte(data), obj)
@@ -92,8 +93,43 @@ func (r *RedisClient) Delete(key string) error {
 
 	err := r.Client.Del(ctx, key).Err()
 	if err != nil {
-		err = errors.Errorf("failed to del key-value: %s", err.Error())
+		err = errors.Errorf("failed to del key-value: %s **2", err.Error())
 		return err
 	}
 	return nil
+}
+
+// 更新运行状态agent的列表
+func (r *RedisClient) UpdateTopoRunningAgentList() (int, error) {
+	var runningAgentNum int
+
+	agentmanager.Topo.TAgentMap.Range(func(key, value interface{}) bool {
+		agentmanager.Topo.TAgentMap.Delete(key)
+		return true
+	})
+
+	agent_keys := r.Scan("heartbeat-topoagent*")
+	if len(agent_keys) != 0 {
+		for _, agentkey := range agent_keys {
+			v, err := r.Get(agentkey, &meta.AgentHeartbeat{})
+			if err != nil {
+				err = errors.Wrap(err, "**warn**2") // err top
+				agentmanager.Topo.ErrCh <- err
+				continue
+			}
+
+			agentvalue := v.(*meta.AgentHeartbeat)
+
+			if time.Since(agentvalue.Time) < 1*time.Second+time.Duration(agentvalue.HeartbeatInterval)*time.Second {
+				agentmanager.Topo.AddAgent_T(agentmanager.Topo.GetAgent_P(agentvalue.UUID))
+				runningAgentNum += 1
+			}
+
+		}
+	} else {
+		err := errors.New("no running agent **4")
+		return 0, err
+	}
+
+	return runningAgentNum, nil
 }

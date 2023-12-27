@@ -10,8 +10,6 @@ import (
 )
 
 func SingleHostHandle(ctx *gin.Context) {
-	agentmanager.Topo.UpdateMachineList()
-
 	uuid := ctx.Param("uuid")
 	nodes, edges, collect_errlist, process_errlist := service.SingleHostService(uuid)
 
@@ -50,8 +48,6 @@ func SingleHostHandle(ctx *gin.Context) {
 }
 
 func SingleHostTreeHandle(ctx *gin.Context) {
-	agentmanager.Topo.UpdateMachineList()
-
 	uuid := ctx.Param("uuid")
 	nodes, err := service.SingleHostTreeService(uuid)
 	if err != nil {
@@ -101,8 +97,6 @@ func SingleHostTreeHandle(ctx *gin.Context) {
 }
 
 func MultiHostHandle(ctx *gin.Context) {
-	agentmanager.Topo.UpdateMachineList()
-
 	nodes, edges, combos, err := service.MultiHostService()
 	if err != nil {
 		err = errors.Wrap(err, " **warn**2") // err top
@@ -155,10 +149,9 @@ func MultiHostHandle(ctx *gin.Context) {
 }
 
 func AgentListHandle(ctx *gin.Context) {
-	agentmanager.Topo.UpdateMachineList()
-
 	agentmap := make(map[string]string)
-	agentmanager.Topo.AgentMap.Range(func(key, value interface{}) bool {
+
+	agentmanager.Topo.TAgentMap.Range(func(key, value interface{}) bool {
 		agent := value.(*agentmanager.Agent_m)
 		if agent.Host_2 != nil {
 			agentmap[agent.UUID] = agent.IP + ":" + agent.Port

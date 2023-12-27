@@ -16,25 +16,23 @@ import (
 )
 
 func PeriodCollectWorking() {
-	var graphperiod int64
-	var runningAgents int
+	graphperiod := conf.Global_config.Topo.Period
 
-	graphperiod = conf.Global_config.Topo.Period
+	agentmanager.Topo.UpdateMachineList()
+
 	go func(interval int64, gdb dao.GraphdbIface) {
 		for {
-			// if runningAgents = agentmanager.Topo.GetRunningAgentNumber(); runningAgents <= 0 {
-			// 	err := errors.New("no running agent **warn**1")
-			// 	agentmanager.Topo.ErrCh <- err
-
-			// 	time.Sleep(5 * time.Second)
-			// 	continue
-			// }
+			runningAgentNum, err := dao.Global_redis.UpdateTopoRunningAgentList()
+			if err != nil {
+				err = errors.Wrapf(err, "**warn**2") // err top
+				agentmanager.Topo.ErrCh <- err
+				time.Sleep(5 * time.Second)
+				continue
+			}
 
 			unixtime_now := time.Now().Unix()
-			PeriodProcessWorking(unixtime_now, runningAgents, gdb)
+			PeriodProcessWorking(unixtime_now, runningAgentNum, gdb)
 			time.Sleep(time.Duration(interval) * time.Second)
-
-			// break
 		}
 	}(graphperiod, dao.Global_GraphDB)
 }
@@ -48,7 +46,7 @@ func PeriodProcessWorking(unixtime int64, agentnum int, graphdb dao.GraphdbIface
 	_unixtime := strconv.Itoa(int(unixtime))
 
 	dataprocesser := processor.CreateDataProcesser()
-	nodes, edges, collect_errlist, process_errlist := dataprocesser.Process_data()
+	nodes, edges, collect_errlist, process_errlist := dataprocesser.Process_data(agentnum)
 	if len(collect_errlist) != 0 || len(process_errlist) != 0 {
 		for i, cerr := range collect_errlist {
 			collect_errlist[i] = errors.Wrap(cerr, "**warn**3") // err top
@@ -61,14 +59,6 @@ func PeriodProcessWorking(unixtime int64, agentnum int, graphdb dao.GraphdbIface
 		}
 	}
 
-	// TODO: 临时获取运行状态agent的数目
-	_agentnum := agentmanager.Topo.GetRunningAgentNumber()
-	if _agentnum <= 0 {
-		err := errors.New("no running agent **warn**2") // err top
-		agentmanager.Topo.ErrCh <- err
-		return
-	}
-
 	for _, nodesByUUID := range nodes.LookupByUUID {
 		nodesbyuuid := nodesByUUID
 
@@ -77,7 +67,7 @@ func PeriodProcessWorking(unixtime int64, agentnum int, graphdb dao.GraphdbIface
 			defer nodeUuidWg.Done()
 
 			// TODO: 根据默认断点数拆分nodes
-			for _, _nodes := range utils.SplitNodesByBreakpoint(_nodesbyuuid, int(_agentnum)) {
+			for _, _nodes := range utils.SplitNodesByBreakpoint(_nodesbyuuid, agentnum) {
 				__nodes := _nodes
 				nodeTypeWg.Add(1)
 				go func(_nodesbytype []*meta.Node) {
@@ -109,7 +99,7 @@ func PeriodProcessWorking(unixtime int64, agentnum int, graphdb dao.GraphdbIface
 	}
 	nodeUuidWg.Wait()
 
-	for _, _edges := range utils.SplitEdgesByBreakpoint(edges.Edges, int(_agentnum)) {
+	for _, _edges := range utils.SplitEdgesByBreakpoint(edges.Edges, agentnum) {
 		__edges := _edges
 		edgeBreakWg.Add(1)
 		go func(___edges []*meta.Edge) {
