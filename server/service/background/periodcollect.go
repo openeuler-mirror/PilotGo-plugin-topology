@@ -22,14 +22,7 @@ func PeriodCollectWorking() {
 
 	go func(interval int64, gdb dao.GraphdbIface) {
 		for {
-			runningAgentNum, err := dao.Global_redis.UpdateTopoRunningAgentList()
-			if err != nil {
-				err = errors.Wrapf(err, "**warn**2") // err top
-				agentmanager.Topo.ErrCh <- err
-				time.Sleep(5 * time.Second)
-				continue
-			}
-
+			runningAgentNum := dao.Global_redis.UpdateTopoRunningAgentList()
 			unixtime_now := time.Now().Unix()
 			PeriodProcessWorking(unixtime_now, runningAgentNum, gdb)
 			time.Sleep(time.Duration(interval) * time.Second)
@@ -66,56 +59,60 @@ func PeriodProcessWorking(unixtime int64, agentnum int, graphdb dao.GraphdbIface
 		go func(_nodesbyuuid []*meta.Node) {
 			defer nodeUuidWg.Done()
 
-			// TODO: 根据默认断点数拆分nodes
-			for _, _nodes := range utils.SplitNodesByBreakpoint(_nodesbyuuid, agentnum) {
-				__nodes := _nodes
-				nodeTypeWg.Add(1)
-				go func(_nodesbytype []*meta.Node) {
-					defer nodeTypeWg.Done()
+			// TODO: 根据插件运行状态agent的数目拆分nodes
+			splitnodes := utils.SplitNodesByBreakpoint(_nodesbyuuid, agentnum)
+			if splitnodes != nil {
+				for _, _nodes := range splitnodes {
+					__nodes := _nodes
+					nodeTypeWg.Add(1)
+					go func(_nodesbytype []*meta.Node) {
+						defer nodeTypeWg.Done()
 
-					var cqlIN string
+						var cqlIN string
 
-					for _, node := range _nodesbytype {
-						_node := node
-						if len(_node.Metrics) == 0 {
-							cqlIN = fmt.Sprintf("create (node:`%s` {unixtime:'%s', nid:'%s', name:'%s'} set node:'%s')",
-								_node.Type, _unixtime, _node.ID, _node.Name, _node.UUID)
-						} else {
-							cqlIN = fmt.Sprintf("create (node:`%s` {unixtime:'%s', nid:'%s', name:'%s'}) set node:`%s`, node += $metrics",
-								_node.Type, _unixtime, _node.ID, _node.Name, _node.UUID)
+						for _, node := range _nodesbytype {
+							_node := node
+							if len(_node.Metrics) == 0 {
+								cqlIN = fmt.Sprintf("create (node:`%s` {unixtime:'%s', nid:'%s', name:'%s'} set node:'%s')",
+									_node.Type, _unixtime, _node.ID, _node.Name, _node.UUID)
+							} else {
+								cqlIN = fmt.Sprintf("create (node:`%s` {unixtime:'%s', nid:'%s', name:'%s'}) set node:`%s`, node += $metrics",
+									_node.Type, _unixtime, _node.ID, _node.Name, _node.UUID)
+							}
+
+							err := graphdb.Node_create(_unixtime, _node)
+							if err != nil {
+								err = errors.Wrapf(err, "create neo4j node failed; %s **warn**2", cqlIN) // err top
+								agentmanager.Topo.ErrCh <- err
+							}
 						}
-
-						err := graphdb.Node_create(_unixtime, _node)
-						if err != nil {
-							err = errors.Wrapf(err, "create neo4j node failed; %s **warn**2", cqlIN) // err top
-							agentmanager.Topo.ErrCh <- err
-						}
-					}
-				}(__nodes)
+					}(__nodes)
+				}
+				nodeTypeWg.Wait()
 			}
-			nodeTypeWg.Wait()
-
 		}(nodesbyuuid)
 	}
 	nodeUuidWg.Wait()
 
-	for _, _edges := range utils.SplitEdgesByBreakpoint(edges.Edges, agentnum) {
-		__edges := _edges
-		edgeBreakWg.Add(1)
-		go func(___edges []*meta.Edge) {
-			defer edgeBreakWg.Done()
+	splitedges := utils.SplitEdgesByBreakpoint(edges.Edges, agentnum)
+	if splitedges != nil {
+		for _, _edges := range splitedges {
+			__edges := _edges
+			edgeBreakWg.Add(1)
+			go func(___edges []*meta.Edge) {
+				defer edgeBreakWg.Done()
 
-			for _, _edge := range ___edges {
-				err := graphdb.Edge_create(_unixtime, _edge)
-				if err != nil {
-					err = errors.Wrapf(err, "create neo4j edge failed **warn**2") // err top
-					agentmanager.Topo.ErrCh <- err
+				for _, _edge := range ___edges {
+					err := graphdb.Edge_create(_unixtime, _edge)
+					if err != nil {
+						err = errors.Wrapf(err, "create neo4j edge failed **warn**2") // err top
+						agentmanager.Topo.ErrCh <- err
+					}
 				}
-			}
-		}(__edges)
+			}(__edges)
+		}
+		edgeBreakWg.Wait()
 	}
-
-	edgeBreakWg.Wait()
 
 	elapse := time.Since(start)
 	fmt.Fprintf(agentmanager.Topo.Out, "\033[32mtopo server 数据库写入时间\033[0m: %v\n\n", elapse)

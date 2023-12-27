@@ -3,6 +3,7 @@ package dao
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"os"
 	"time"
 
@@ -100,36 +101,50 @@ func (r *RedisClient) Delete(key string) error {
 }
 
 // 更新运行状态agent的列表
-func (r *RedisClient) UpdateTopoRunningAgentList() (int, error) {
+func (r *RedisClient) UpdateTopoRunningAgentList() int {
 	var runningAgentNum int
+	i := 0
+	loop := []string{`*.....`, `.*....`, `..*...`, `...*..`, `....*.`, `.....*`}
 
 	agentmanager.Topo.TAgentMap.Range(func(key, value interface{}) bool {
 		agentmanager.Topo.TAgentMap.Delete(key)
 		return true
 	})
 
-	agent_keys := r.Scan("heartbeat-topoagent*")
-	if len(agent_keys) != 0 {
-		for _, agentkey := range agent_keys {
-			v, err := r.Get(agentkey, &meta.AgentHeartbeat{})
-			if err != nil {
-				err = errors.Wrap(err, "**warn**2") // err top
-				agentmanager.Topo.ErrCh <- err
-				continue
+	// 主进程阻塞
+	for {
+		agent_keys := r.Scan("heartbeat-topoagent*")
+		if len(agent_keys) != 0 {
+			for _, agentkey := range agent_keys {
+				v, err := r.Get(agentkey, &meta.AgentHeartbeat{})
+				if err != nil {
+					err = errors.Wrap(err, "**warn**2") // err top
+					agentmanager.Topo.ErrCh <- err
+					continue
+				}
+
+				agentvalue := v.(*meta.AgentHeartbeat)
+
+				if time.Since(agentvalue.Time) < 1*time.Second+time.Duration(agentvalue.HeartbeatInterval)*time.Second {
+					agentmanager.Topo.AddAgent_T(agentmanager.Topo.GetAgent_P(agentvalue.UUID))
+					runningAgentNum += 1
+				}
+
 			}
 
-			agentvalue := v.(*meta.AgentHeartbeat)
-
-			if time.Since(agentvalue.Time) < 1*time.Second+time.Duration(agentvalue.HeartbeatInterval)*time.Second {
-				agentmanager.Topo.AddAgent_T(agentmanager.Topo.GetAgent_P(agentvalue.UUID))
-				runningAgentNum += 1
+			if runningAgentNum > 0 {
+				break
 			}
-
 		}
-	} else {
-		err := errors.New("no running agent **4")
-		return 0, err
+
+		fmt.Printf("\r no running agent%s", loop[i])
+		if i < 5 {
+			i++
+		} else {
+			i = 0
+		}
+		time.Sleep(1 * time.Second)
 	}
 
-	return runningAgentNum, nil
+	return runningAgentNum
 }

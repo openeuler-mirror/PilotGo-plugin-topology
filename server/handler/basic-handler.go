@@ -9,6 +9,7 @@ import (
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/agentmanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/dao"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/meta"
+	"gitee.com/openeuler/PilotGo/sdk/logger"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 )
@@ -27,12 +28,14 @@ func HeartbeatHandle(ctx *gin.Context) {
 		Time:              time.Now(),
 	}
 
-	if agentmanager.Topo.GetAgent_P(uuid) != nil {
-		err := errors.Errorf("unknown agent heartbeat: %s, %s **warn**1", uuid, addr) // err top
-		agentmanager.Topo.ErrCh <- err
+	if agentmanager.Topo.GetAgent_P(uuid) == nil {
+		// err := errors.Errorf("unknown agent's heartbeat: %s, %s **warn**1", uuid, addr) // err top
+		// agentmanager.Topo.ErrCh <- err
+		logger.Warn("unknown agent's heartbeat: %s, %s", uuid, addr)
+
 		ctx.JSON(http.StatusOK, gin.H{
 			"code":  -1,
-			"error": fmt.Sprintf("%+v", err),
+			"error": fmt.Sprintf("%+v", fmt.Errorf("unknown agent's heartbeat: %s, %s", uuid, addr)),
 			"data":  nil,
 		})
 		return

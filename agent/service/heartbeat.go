@@ -6,8 +6,9 @@ import (
 	"net/http"
 	"time"
 
-	"gitee.com/openeuler/PilotGo-plugin-topology-agent/collector"
 	"gitee.com/openeuler/PilotGo-plugin-topology-agent/conf"
+	"gitee.com/openeuler/PilotGo-plugin-topology-agent/utils"
+	"gitee.com/openeuler/PilotGo/sdk/logger"
 	"gitee.com/openeuler/PilotGo/sdk/utils/httputils"
 	"github.com/pkg/errors"
 )
@@ -28,7 +29,19 @@ func SendHeartbeat() {
 }
 
 func sendHeartbeat(addr string) error {
-	url := fmt.Sprintf("http://%s/plugin/topology/api/heartbeat?agentaddr=%s&uuid=%s&interval=%d", conf.Config().Topo.Server_addr, addr, collector.Psutildata.Host_1.MachineUUID, conf.Config().Topo.Heartbeat)
+	m_u_bytes, err := utils.FileReadBytes(utils.Agentuuid_filepath)
+	if err != nil {
+		// err = errors.New(err.Error())
+		logger.Error(err.Error())
+		return err
+	}
+	type machineuuid struct {
+		Agentuuid string `json:"agent_uuid"`
+	}
+	m_u_struct := &machineuuid{}
+	json.Unmarshal(m_u_bytes, m_u_struct)
+
+	url := fmt.Sprintf("http://%s/plugin/topology/api/heartbeat?agentaddr=%s&uuid=%s&interval=%d", conf.Config().Topo.Server_addr, addr, m_u_struct.Agentuuid, conf.Config().Topo.Heartbeat)
 	resp, err := httputils.Post(url, nil)
 	if err != nil {
 		err = errors.Errorf("failed to send heartbeat: %s", err.Error())

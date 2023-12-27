@@ -30,7 +30,7 @@ func MultiHostService() ([]*meta.Node, []*meta.Edge, []map[string]string, error)
 	if len(times) < 2 {
 		latest = times[0]
 	} else {
-		latest = times[len(times)-2]
+		latest = times[1]
 	}
 
 	nodes, err = dao.Global_GraphDB.MultiHost_node_query(latest)
