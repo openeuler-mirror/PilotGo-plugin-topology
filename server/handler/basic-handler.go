@@ -31,6 +31,7 @@ func HeartbeatHandle(ctx *gin.Context) {
 	if agentmanager.Topo.GetAgent_P(uuid) == nil {
 		// err := errors.Errorf("unknown agent's heartbeat: %s, %s **warn**1", uuid, addr) // err top
 		// agentmanager.Topo.ErrCh <- err
+		fmt.Println()
 		logger.Warn("unknown agent's heartbeat: %s, %s", uuid, addr)
 
 		ctx.JSON(http.StatusOK, gin.H{
