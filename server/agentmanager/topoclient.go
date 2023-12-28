@@ -35,13 +35,14 @@ type Topoclient struct {
 }
 
 func (t *Topoclient) InitMachineList() {
-	WaitingForHandshake()
+	// WaitingForHandshake()
+	t.Sdkmethod.Wait4Bind()
 
 	url := "http://" + t.Sdkmethod.Server() + "/api/v1/pluginapi/machine_list"
 
 	resp, err := httputils.Get(url, nil)
 	if err != nil {
-		err = errors.Errorf("%s (url: %s) **fatal**2", err.Error(), url) // err top
+		err = errors.Errorf("err-> %s (url-> %s) **fatal**2", err.Error(), url) // err top
 		t.ErrCh <- err
 		t.Errmu.Lock()
 		t.ErrCond.Wait()
@@ -86,7 +87,8 @@ func (t *Topoclient) InitMachineList() {
 }
 
 func (t *Topoclient) UpdateMachineList() {
-	WaitingForHandshake()
+	// WaitingForHandshake()
+	// t.Sdkmethod.Wait4Bind()
 
 	url := "http://" + t.Sdkmethod.Server() + "/api/v1/pluginapi/machine_list"
 
@@ -256,12 +258,13 @@ func (t *Topoclient) SignalMonitoring(neo4jclient neo4j.Driver, redisclient redi
 		switch s {
 		case syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT:
 			neo4jclient.Close()
-			fmt.Printf("close the connection to neo4j\n")
+			fmt.Println()
+			logger.Info("close the connection to neo4j\n")
 			redisclient.Close()
-			fmt.Printf("close the connection to redis\n")
+			logger.Info("close the connection to redis\n")
 			os.Exit(-1)
 		default:
-			fmt.Printf("unknown signal: %s\n", s.String())
+			logger.Warn("unknown signal-> %s\n", s.String())
 		}
 	}
 }
