@@ -2,13 +2,13 @@ package collector
 
 import (
 	"encoding/json"
-	"fmt"
 	"sync"
 	"time"
 
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/agentmanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/conf"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/meta"
+	"gitee.com/openeuler/PilotGo/sdk/logger"
 	"gitee.com/openeuler/PilotGo/sdk/utils/httputils"
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
@@ -47,7 +47,8 @@ func (d *DataCollector) Collect_instant_data() []error {
 	wg.Wait()
 
 	elapse := time.Since(start)
-	fmt.Fprintf(agentmanager.Topo.Out, "\033[32mtopo server 采集数据获取时间\033[0m: %v\n", elapse)
+	// fmt.Fprintf(agentmanager.Topo.Out, "\033[32mtopo server 采集数据获取时间\033[0m: %v\n", elapse)
+	logger.Info("\033[32mtopo server 采集数据获取时间\033[0m: %v\n", elapse)
 
 	if len(errorlist) != 0 {
 		return errorlist

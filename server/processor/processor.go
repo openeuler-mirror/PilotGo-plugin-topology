@@ -12,6 +12,7 @@ import (
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/collector"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/meta"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/utils"
+	"gitee.com/openeuler/PilotGo/sdk/logger"
 	"github.com/pkg/errors"
 )
 
@@ -90,7 +91,8 @@ func (d *DataProcesser) Process_data(agentnum int) (*meta.Nodes, *meta.Edges, []
 	atomic.StoreInt32(&agent_node_count, int32(0))
 
 	elapse := time.Since(start)
-	fmt.Fprintf(agentmanager.Topo.Out, "\033[32mtopo server 采集数据处理时间\033[0m: %v\n", elapse)
+	// fmt.Fprintf(agentmanager.Topo.Out, "\033[32mtopo server 采集数据处理时间\033[0m: %v\n", elapse)
+	logger.Info("\033[32mtopo server 采集数据处理时间\033[0m: %v\n", elapse)
 
 	return nodes, edges, collect_errorlist, process_errorlist
 }
