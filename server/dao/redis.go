@@ -3,12 +3,13 @@ package dao
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"os"
+	"sync"
 	"time"
 
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/agentmanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/meta"
+	"gitee.com/openeuler/PilotGo/sdk/logger"
 	"github.com/go-redis/redis/v8"
 	"github.com/pkg/errors"
 )
@@ -103,47 +104,56 @@ func (r *RedisClient) Delete(key string) error {
 // 更新运行状态agent的列表
 func (r *RedisClient) UpdateTopoRunningAgentList() int {
 	var runningAgentNum int
-	i := 0
-	loop := []string{`*.....`, `.*....`, `..*...`, `...*..`, `....*.`, `.....*`}
+	ch := make(chan int)
+	var once sync.Once
 
 	agentmanager.Topo.TAgentMap.Range(func(key, value interface{}) bool {
 		agentmanager.Topo.TAgentMap.Delete(key)
 		return true
 	})
 
+	go func() {
+		for {
+			agent_keys := r.Scan("heartbeat-topoagent*")
+			if len(agent_keys) != 0 {
+				for _, agentkey := range agent_keys {
+					v, err := r.Get(agentkey, &meta.AgentHeartbeat{})
+					if err != nil {
+						err = errors.Wrap(err, "**warn**2") // err top
+						agentmanager.Topo.ErrCh <- err
+						continue
+					}
+
+					agentvalue := v.(*meta.AgentHeartbeat)
+
+					if time.Since(agentvalue.Time) < 1*time.Second+time.Duration(agentvalue.HeartbeatInterval)*time.Second {
+						agentmanager.Topo.AddAgent_T(agentmanager.Topo.GetAgent_P(agentvalue.UUID))
+						runningAgentNum += 1
+					}
+				}
+
+				if runningAgentNum > 0 {
+					ch <- runningAgentNum
+					break
+				}
+			}
+
+			ch <- 0
+			time.Sleep(1 * time.Second)
+		}
+	}()
+
 	// 主进程阻塞
 	for {
-		agent_keys := r.Scan("heartbeat-topoagent*")
-		if len(agent_keys) != 0 {
-			for _, agentkey := range agent_keys {
-				v, err := r.Get(agentkey, &meta.AgentHeartbeat{})
-				if err != nil {
-					err = errors.Wrap(err, "**warn**2") // err top
-					agentmanager.Topo.ErrCh <- err
-					continue
-				}
-
-				agentvalue := v.(*meta.AgentHeartbeat)
-
-				if time.Since(agentvalue.Time) < 1*time.Second+time.Duration(agentvalue.HeartbeatInterval)*time.Second {
-					agentmanager.Topo.AddAgent_T(agentmanager.Topo.GetAgent_P(agentvalue.UUID))
-					runningAgentNum += 1
-				}
-
-			}
-
-			if runningAgentNum > 0 {
-				break
-			}
+		if num := <-ch; num > 0 {
+			logger.Info("running agent number: %d", num)
+			close(ch)
+			break
 		}
 
-		fmt.Printf("\r no running agent%s", loop[i])
-		if i < 5 {
-			i++
-		} else {
-			i = 0
-		}
-		time.Sleep(1 * time.Second)
+		once.Do(func() {
+			logger.Warn("no running agent......")
+		})
 	}
 
 	return runningAgentNum

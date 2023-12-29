@@ -12,6 +12,7 @@ import (
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/meta"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/processor"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/utils"
+	"gitee.com/openeuler/PilotGo/sdk/logger"
 	"github.com/pkg/errors"
 )
 
@@ -115,5 +116,6 @@ func PeriodProcessWorking(unixtime int64, agentnum int, graphdb dao.GraphdbIface
 	}
 
 	elapse := time.Since(start)
-	fmt.Fprintf(agentmanager.Topo.Out, "\033[32mtopo server 数据库写入时间\033[0m: %v\n\n", elapse)
+	// fmt.Fprintf(agentmanager.Topo.Out, "\033[32mtopo server 数据库写入时间\033[0m: %v\n\n", elapse)
+	logger.Info("\033[32mtopo server 数据库写入时间\033[0m: %v\n\n", elapse)
 }
