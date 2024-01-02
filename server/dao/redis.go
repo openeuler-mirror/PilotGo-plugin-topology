@@ -104,7 +104,6 @@ func (r *RedisClient) Delete(key string) error {
 // 更新运行状态agent的列表
 func (r *RedisClient) UpdateTopoRunningAgentList() int {
 	var runningAgentNum int
-	ch := make(chan int)
 	var once sync.Once
 
 	agentmanager.Topo.TAgentMap.Range(func(key, value interface{}) bool {
@@ -112,49 +111,38 @@ func (r *RedisClient) UpdateTopoRunningAgentList() int {
 		return true
 	})
 
-	go func() {
-		for {
-			agent_keys := r.Scan("heartbeat-topoagent*")
-			if len(agent_keys) != 0 {
-				for _, agentkey := range agent_keys {
-					v, err := r.Get(agentkey, &meta.AgentHeartbeat{})
-					if err != nil {
-						err = errors.Wrap(err, "**warn**2") // err top
-						agentmanager.Topo.ErrCh <- err
-						continue
-					}
-
-					agentvalue := v.(*meta.AgentHeartbeat)
-
-					if time.Since(agentvalue.Time) < 1*time.Second+time.Duration(agentvalue.HeartbeatInterval)*time.Second {
-						agentmanager.Topo.AddAgent_T(agentmanager.Topo.GetAgent_P(agentvalue.UUID))
-						runningAgentNum += 1
-					}
+	for {
+		agent_keys := r.Scan("heartbeat-topoagent*")
+		if len(agent_keys) != 0 {
+			for _, agentkey := range agent_keys {
+				v, err := r.Get(agentkey, &meta.AgentHeartbeat{})
+				if err != nil {
+					err = errors.Wrap(err, "**warn**2") // err top
+					agentmanager.Topo.ErrCh <- err
+					continue
 				}
 
-				if runningAgentNum > 0 {
-					ch <- runningAgentNum
-					break
+				agentvalue := v.(*meta.AgentHeartbeat)
+
+				if time.Since(agentvalue.Time) < 1*time.Second+time.Duration(agentvalue.HeartbeatInterval)*time.Second {
+					agentmanager.Topo.AddAgent_T(agentmanager.Topo.GetAgent_P(agentvalue.UUID))
+					runningAgentNum += 1
 				}
 			}
 
-			ch <- 0
-			time.Sleep(1 * time.Second)
-		}
-	}()
-
-	// 主进程阻塞
-	for {
-		if num := <-ch; num > 0 {
-			logger.Info("running agent number: %d", num)
-			close(ch)
-			break
+			if runningAgentNum > 0 {
+				break
+			}
 		}
 
 		once.Do(func() {
 			logger.Warn("no running agent......")
 		})
+
+		time.Sleep(1 * time.Second)
 	}
+
+	logger.Info("running agent number: %d", runningAgentNum)
 
 	return runningAgentNum
 }
