@@ -1,15 +1,18 @@
 package agentmanager
 
 import (
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"os/signal"
 	"strings"
 	"sync"
 	"syscall"
+	"time"
 
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/conf"
 	"gitee.com/openeuler/PilotGo/sdk/logger"
@@ -26,16 +29,28 @@ var Topo *Topoclient
 
 type Topoclient struct {
 	Sdkmethod *client.Client
+
 	PAgentMap sync.Map
 	TAgentMap sync.Map
-	Errmu     sync.Locker
-	ErrCond   *sync.Cond
-	ErrCh     chan error
-	Out       io.Writer
+
+	Errmu   sync.Locker
+	ErrCond *sync.Cond
+	ErrCh   chan error
+
+	Out io.Writer
+
+	Tctx context.Context
 }
 
 func (t *Topoclient) InitMachineList() {
-	// WaitingForHandshake()
+	for {
+		resp, err := http.Get("http://" + conf.Config().Topo.Server_addr)
+		if err == nil && resp.StatusCode == http.StatusOK {
+			break
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+
 	t.Sdkmethod.Wait4Bind()
 
 	url := "http://" + t.Sdkmethod.Server() + "/api/v1/pluginapi/machine_list"
@@ -188,6 +203,7 @@ func (t *Topoclient) InitPluginClient() {
 		Errmu:     &errcondmu,
 		ErrCond:   sync.NewCond(&errcondmu),
 		ErrCh:     make(chan error, 10),
+		Tctx:      context.Background(),
 	}
 }
 
