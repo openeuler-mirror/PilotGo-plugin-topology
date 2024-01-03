@@ -1,6 +1,7 @@
 package processor
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"strings"
@@ -55,13 +56,23 @@ func (d *DataProcesser) Process_data(agentnum int) (*meta.Nodes, *meta.Edges, []
 		// return nil, nil, collect_errorlist, nil
 	}
 
+	ctx1, cancel1 := context.WithCancel(agentmanager.Topo.Tctx)
+	go func(cancelfunc context.CancelFunc) {
+		for {
+			if atomic.LoadInt32(&agent_node_count) == int32(agentnum) {
+				cancelfunc()
+				break
+			}
+		}
+	}(cancel1)
+
 	agentmanager.Topo.TAgentMap.Range(
 		func(key, value interface{}) bool {
 			wg.Add(1)
 
 			agent := value.(*agentmanager.Agent_m)
 
-			go func(_agent *agentmanager.Agent_m, _nodes *meta.Nodes, _edges *meta.Edges) {
+			go func(ctx context.Context, _agent *agentmanager.Agent_m, _nodes *meta.Nodes, _edges *meta.Edges) {
 				defer wg.Done()
 
 				if _agent.Host_2 != nil && _agent.Processes_2 != nil && _agent.Netconnections_2 != nil {
@@ -70,18 +81,14 @@ func (d *DataProcesser) Process_data(agentnum int) (*meta.Nodes, *meta.Edges, []
 						process_errorlist = append(process_errorlist, errors.Wrap(err, "**2"))
 					}
 
-					for {
-						if atomic.LoadInt32(&agent_node_count) == int32(agentnum) {
-							break
-						}
-					}
+					<-ctx.Done()
 
 					err = d.Create_edge_entities(_agent, _edges, _nodes)
 					if err != nil {
 						process_errorlist = append(process_errorlist, errors.Wrap(err, "**2"))
 					}
 				}
-			}(agent, nodes, edges)
+			}(ctx1, agent, nodes, edges)
 
 			return true
 		},
