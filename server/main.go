@@ -20,7 +20,7 @@ func main() {
 	/*
 		init plugin client
 	*/
-	agentmanager.Topo.InitPluginClient()
+	agentmanager.InitPluginClient()
 
 	/*
 		init error control

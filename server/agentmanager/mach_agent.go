@@ -2,6 +2,7 @@ package agentmanager
 
 import (
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/meta"
+	"gitee.com/openeuler/PilotGo/sdk/logger"
 	"github.com/pkg/errors"
 )
 
@@ -25,14 +26,21 @@ type Agent_m struct {
 }
 
 func (t *Topoclient) AddAgent_P(a *Agent_m) {
-	t.PAgentMap.Store(a.UUID, a)
+	if Topo != nil {
+		Topo.PAgentMap.Store(a.UUID, a)
+		return
+	}
+
+	logger.Error("agentmanager.Topo is nil")
 }
 
 func (t *Topoclient) GetAgent_P(uuid string) *Agent_m {
-	agent, ok := t.PAgentMap.Load(uuid)
-	if ok {
-		return agent.(*Agent_m)
+	if Topo != nil && uuid != "" {
+		if agent, ok := Topo.PAgentMap.Load(uuid); ok {
+			return agent.(*Agent_m)
+		}
 	}
+
 	return nil
 }
 
@@ -44,14 +52,20 @@ func (t *Topoclient) DeleteAgent_P(uuid string) {
 }
 
 func (t *Topoclient) AddAgent_T(a *Agent_m) {
-	t.TAgentMap.Store(a.UUID, a)
+	if a != nil {
+		t.TAgentMap.Store(a.UUID, a)
+		return
+	}
+	logger.Error("failed to add agent_t: %v", a)
 }
 
 func (t *Topoclient) GetAgent_T(uuid string) *Agent_m {
-	agent, ok := t.TAgentMap.Load(uuid)
-	if ok {
-		return agent.(*Agent_m)
+	if uuid != "" {
+		if agent, ok := t.TAgentMap.Load(uuid); ok {
+			return agent.(*Agent_m)
+		}
 	}
+
 	return nil
 }
 

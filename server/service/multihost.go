@@ -21,16 +21,26 @@ func MultiHostService() ([]*meta.Node, []*meta.Edge, []map[string]string, error)
 	multi_edges := make([]*meta.Edge, 0)
 	combos := make([]map[string]string, 0)
 
+	if dao.Global_GraphDB == nil {
+		err := errors.New("dao.global_graphdb is nil **warn**1")
+		return nil, nil, nil, err
+	}
+
 	times, err := dao.Global_GraphDB.Timestamps_query()
 	if err != nil {
 		err = errors.Wrap(err, " **2")
 		return nil, nil, nil, err
 	}
 
-	if len(times) < 2 {
-		latest = times[0]
+	if len(times) != 0 {
+		if len(times) < 2 {
+			latest = times[0]
+		} else {
+			latest = times[len(times)-2]
+		}
 	} else {
-		latest = times[1]
+		err := errors.New("the number of timestamp is zero **warn**0")
+		return nil, nil, nil, err
 	}
 
 	nodes, err = dao.Global_GraphDB.MultiHost_node_query(latest)
@@ -77,14 +87,18 @@ func MultiHostService() ([]*meta.Node, []*meta.Edge, []map[string]string, error)
 				multi_edges = append(multi_edges, edge)
 			}
 
-			if _, ok := multi_nodes_map[edge.SrcID]; !ok {
-				multi_nodes_map[edge.SrcID] = nodes_map[edge.SrcID]
-				multi_nodes = append(multi_nodes, nodes_map[edge.SrcID])
+			if _, ok1 := multi_nodes_map[edge.SrcID]; !ok1 {
+				if n, ok2 := nodes_map[edge.SrcID]; ok2 {
+					multi_nodes_map[edge.SrcID] = n
+					multi_nodes = append(multi_nodes, n)
+				}
 			}
 
-			if _, ok := multi_nodes_map[edge.DstID]; !ok {
-				multi_nodes_map[edge.DstID] = nodes_map[edge.DstID]
-				multi_nodes = append(multi_nodes, nodes_map[edge.DstID])
+			if _, ok1 := multi_nodes_map[edge.DstID]; !ok1 {
+				if n, ok2 := nodes_map[edge.DstID]; ok2 {
+					multi_nodes_map[edge.DstID] = n
+					multi_nodes = append(multi_nodes, n)
+				}
 			}
 		} else if edge.Type == "server" || edge.Type == "client" {
 			if _, ok := multi_edges_map[edge.DBID]; !ok {
@@ -92,24 +106,30 @@ func MultiHostService() ([]*meta.Node, []*meta.Edge, []map[string]string, error)
 				multi_edges = append(multi_edges, edge)
 			}
 
-			if _, ok := multi_nodes_map[edge.SrcID]; !ok {
-				multi_nodes_map[edge.SrcID] = nodes_map[edge.SrcID]
-				multi_nodes = append(multi_nodes, nodes_map[edge.SrcID])
+			if _, ok1 := multi_nodes_map[edge.SrcID]; !ok1 {
+				if n, ok2 := nodes_map[edge.SrcID]; ok2 {
+					multi_nodes_map[edge.SrcID] = n
+					multi_nodes = append(multi_nodes, n)
+				}
 			}
 
-			if _, ok := multi_nodes_map[edge.DstID]; !ok {
-				multi_nodes_map[edge.DstID] = nodes_map[edge.DstID]
-				multi_nodes = append(multi_nodes, nodes_map[edge.DstID])
+			if _, ok1 := multi_nodes_map[edge.DstID]; !ok1 {
+				if n, ok2 := nodes_map[edge.DstID]; ok2 {
+					multi_nodes_map[edge.DstID] = n
+					multi_nodes = append(multi_nodes, n)
+				}
 			}
 
 			// 创建 net 节点相连的 process 节点与 host 节点的边实例
 			for _, hostid := range hostids {
-				if nodes_map[edge.DstID].UUID == nodes_map[hostid].UUID {
+				process_node, ok1 := nodes_map[edge.DstID]
+				host_node, ok2 := nodes_map[hostid]
+				if ok1 && ok2 && process_node.UUID == host_node.UUID {
 					net_process_host_edge := &meta.Edge{
-						ID:   fmt.Sprintf("%s_%s_%s", nodes_map[edge.DstID].ID, meta.EDGE_BELONG, nodes_map[hostid].ID),
+						ID:   fmt.Sprintf("%s_%s_%s", process_node.ID, meta.EDGE_BELONG, host_node.ID),
 						Type: meta.EDGE_BELONG,
 						Src:  edge.Dst,
-						Dst:  nodes_map[hostid].ID,
+						Dst:  host_node.ID,
 						Dir:  "direct",
 					}
 
