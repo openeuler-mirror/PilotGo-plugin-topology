@@ -23,7 +23,7 @@ func WaitingForHandshake() {
 	i := 0
 	loop := []string{`*.....`, `.*....`, `..*...`, `...*..`, `....*.`, `.....*`}
 	for {
-		if Topo.Sdkmethod.Server() != "" {
+		if Topo != nil && Topo.Sdkmethod != nil && Topo.Sdkmethod.Server() != "" {
 			break
 		}
 		fmt.Printf("\r Waiting for handshake with pilotgo server%s", loop[i])

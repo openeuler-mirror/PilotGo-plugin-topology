@@ -49,7 +49,9 @@ func HostToMap(host *meta.Host, a_i_map *map[string][]string) *map[string]string
 		interfaces_string = append(interfaces_string, key+":"+strings.Join(value, " "))
 	}
 
-	host_metrics["interfaces"] = strings.Join(interfaces_string, ";")
+	if _, ok := host_metrics["interfaces"]; ok {
+		host_metrics["interfaces"] = strings.Join(interfaces_string, ";")
+	}
 
 	return &host_metrics
 }

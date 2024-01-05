@@ -2,6 +2,8 @@ package collector
 
 import (
 	"encoding/json"
+	"fmt"
+	"os"
 	"sync"
 	"time"
 
@@ -24,6 +26,12 @@ func (d *DataCollector) Collect_instant_data() []error {
 	start := time.Now()
 	var wg sync.WaitGroup
 	var errorlist []error
+
+	if agentmanager.Topo == nil {
+		err := errors.New("agentmanager.Topo is not initialized!") // err top
+		fmt.Printf("%+v\n", err)
+		os.Exit(1)
+	}
 
 	agentmanager.Topo.TAgentMap.Range(
 		func(key, value interface{}) bool {

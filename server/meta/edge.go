@@ -4,6 +4,7 @@ import (
 	"strings"
 	"sync"
 
+	"gitee.com/openeuler/PilotGo/sdk/logger"
 	"github.com/pkg/errors"
 )
 
@@ -33,6 +34,11 @@ type Edge struct {
 func (e *Edges) Add(edge *Edge) {
 	if edge.Type == EDGE_TCP || edge.Type == EDGE_UDP {
 		id_slice := strings.Split(edge.ID, "_")
+		if len(id_slice) != 3 {
+			logger.Error("can not generate mirror id of edge: %s, failed to add edge.", edge.ID)
+			return
+		}
+
 		id_slice[0], id_slice[2] = id_slice[2], id_slice[0]
 		mirror_id := strings.Join(id_slice, "_")
 

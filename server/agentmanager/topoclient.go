@@ -27,6 +27,20 @@ import (
 
 var Topo *Topoclient
 
+func InitPluginClient() {
+	var errcondmu sync.Mutex
+	PluginInfo.Url = "http://" + conf.Config().Topo.Server_addr + "/plugin/topology"
+	PluginClient := client.DefaultClient(PluginInfo)
+
+	Topo = &Topoclient{
+		Sdkmethod: PluginClient,
+		Errmu:     &errcondmu,
+		ErrCond:   sync.NewCond(&errcondmu),
+		ErrCh:     make(chan error, 10),
+		Tctx:      context.Background(),
+	}
+}
+
 type Topoclient struct {
 	Sdkmethod *client.Client
 
@@ -45,7 +59,7 @@ type Topoclient struct {
 func (t *Topoclient) InitMachineList() {
 	for {
 		resp, err := http.Get("http://" + conf.Config().Topo.Server_addr)
-		if err == nil && resp.StatusCode == http.StatusOK {
+		if err == nil && resp != nil && resp.StatusCode == http.StatusOK {
 			break
 		}
 		time.Sleep(100 * time.Millisecond)
@@ -102,10 +116,13 @@ func (t *Topoclient) InitMachineList() {
 }
 
 func (t *Topoclient) UpdateMachineList() {
-	// WaitingForHandshake()
-	// t.Sdkmethod.Wait4Bind()
+	var url_pilotgo_server string
 
-	url := "http://" + t.Sdkmethod.Server() + "/api/v1/pluginapi/machine_list"
+	if Topo != nil && Topo.Sdkmethod != nil {
+		url_pilotgo_server = Topo.Sdkmethod.Server()
+	}
+
+	url := "http://" + url_pilotgo_server + "/api/v1/pluginapi/machine_list"
 
 	resp, err := httputils.Get(url, nil)
 	if err != nil {
@@ -145,10 +162,20 @@ func (t *Topoclient) UpdateMachineList() {
 		os.Exit(1)
 	}
 
-	t.PAgentMap.Range(func(key, value interface{}) bool {
-		t.DeleteAgent_P(key.(string))
-		return true
-	})
+	if Topo != nil {
+		Topo.PAgentMap.Range(func(key, value interface{}) bool {
+			t.DeleteAgent_P(key.(string))
+			return true
+		})
+	} else {
+		err := errors.New("agentmanager.Topo is nil, can not clear Topo.PAgentMap **fatal**6") // err top
+		t.ErrCh <- err
+		t.Errmu.Lock()
+		t.ErrCond.Wait()
+		t.Errmu.Unlock()
+		close(t.ErrCh)
+		os.Exit(1)
+	}
 
 	for _, m := range result.Data.([]interface{}) {
 		p := &Agent_m{}
@@ -190,20 +217,6 @@ func (t *Topoclient) InitLogger() {
 		t.Errmu.Unlock()
 		close(t.ErrCh)
 		os.Exit(1)
-	}
-}
-
-func (t *Topoclient) InitPluginClient() {
-	var errcondmu sync.Mutex
-	PluginInfo.Url = "http://" + conf.Config().Topo.Server_addr + "/plugin/topology"
-	PluginClient := client.DefaultClient(PluginInfo)
-
-	Topo = &Topoclient{
-		Sdkmethod: PluginClient,
-		Errmu:     &errcondmu,
-		ErrCond:   sync.NewCond(&errcondmu),
-		ErrCh:     make(chan error, 10),
-		Tctx:      context.Background(),
 	}
 }
 

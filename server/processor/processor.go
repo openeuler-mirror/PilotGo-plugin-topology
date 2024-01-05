@@ -3,6 +3,7 @@ package processor
 import (
 	"context"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -45,6 +46,12 @@ func (d *DataProcesser) Process_data(agentnum int) (*meta.Nodes, *meta.Edges, []
 	var wg sync.WaitGroup
 	var collect_errorlist []error
 	var process_errorlist []error
+
+	if agentmanager.Topo == nil {
+		err := errors.New("agentmanager.Topo is not initialized!") // err top
+		fmt.Printf("%+v\n", err)
+		os.Exit(1)
+	}
 
 	datacollector := collector.CreateDataCollector()
 	collect_errorlist = datacollector.Collect_instant_data()
@@ -98,7 +105,6 @@ func (d *DataProcesser) Process_data(agentnum int) (*meta.Nodes, *meta.Edges, []
 	atomic.StoreInt32(&agent_node_count, int32(0))
 
 	elapse := time.Since(start)
-	// fmt.Fprintf(agentmanager.Topo.Out, "\033[32mtopo server 采集数据处理时间\033[0m: %v\n", elapse)
 	logger.Info("\033[32mtopo server 采集数据处理时间\033[0m: %v\n", elapse)
 
 	return nodes, edges, collect_errorlist, process_errorlist
@@ -159,17 +165,22 @@ func (d *DataProcesser) Create_node_entities(agent *agentmanager.Agent_m, nodes 
 
 	// 临时定义不含网络流量metric的网络节点
 	for _, net := range agent.Netconnections_2 {
-		net_node := &meta.Node{
-			ID:         fmt.Sprintf("%s_%s_%d:%s", agent.UUID, meta.NODE_NET, net.Pid, strings.Split(net.Laddr, ":")[1]),
-			Name:       net.Laddr,
-			Type:       meta.NODE_NET,
-			UUID:       agent.UUID,
-			LayoutAttr: "d",
-			ComboId:    agent.UUID,
-			Metrics:    *utils.NetToMap(net),
-		}
+		if laddr_slice := strings.Split(net.Laddr, ":"); len(laddr_slice) != 0 {
+			net_node := &meta.Node{
+				ID:         fmt.Sprintf("%s_%s_%d:%s", agent.UUID, meta.NODE_NET, net.Pid, laddr_slice[1]),
+				Name:       net.Laddr,
+				Type:       meta.NODE_NET,
+				UUID:       agent.UUID,
+				LayoutAttr: "d",
+				ComboId:    agent.UUID,
+				Metrics:    *utils.NetToMap(net),
+			}
 
-		nodes.Add(net_node)
+			nodes.Add(net_node)
+		} else {
+			err := errors.Errorf("syntax error: %s **warn**13", net.Laddr) // err top
+			agentmanager.Topo.ErrCh <- err
+		}
 	}
 
 	for _, disk := range agent.Disks_2 {

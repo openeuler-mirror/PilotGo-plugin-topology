@@ -40,7 +40,7 @@ func InitRouter(router *gin.Engine) {
 		api.POST("/heartbeat", HeartbeatHandle)
 		api.GET("/agentlist", AgentListHandle)
 
-		api.GET("/single_host/:uuid", SingleHostHandle)
+		// api.GET("/single_host/:uuid", SingleHostHandle)
 		api.GET("/single_host_tree/:uuid", SingleHostTreeHandle)
 
 		api.GET("/multi_host", MultiHostHandle)

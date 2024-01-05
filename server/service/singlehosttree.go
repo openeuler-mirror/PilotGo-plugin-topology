@@ -15,16 +15,26 @@ func SingleHostTreeService(uuid string) (*TreeTopoNode, error) {
 	treenodes_net := make([]*TreeTopoNode, 0)
 	nodes_type_map := make(map[string][]*meta.Node)
 
+	if dao.Global_GraphDB == nil {
+		err := errors.New("dao.global_graphdb is nil **warn**1")
+		return nil, err
+	}
+
 	times, err := dao.Global_GraphDB.Timestamps_query()
 	if err != nil {
 		err = errors.Wrap(err, " **2")
 		return nil, err
 	}
 
-	if len(times) < 2 {
-		latest = times[0]
+	if len(times) != 0 {
+		if len(times) < 2 {
+			latest = times[0]
+		} else {
+			latest = times[len(times)-2]
+		}
 	} else {
-		latest = times[len(times)-2]
+		err := errors.New("the number of timestamp is zero **warn**0")
+		return nil, err
 	}
 
 	single_nodes, err = dao.Global_GraphDB.SingleHost_node_query(uuid, latest)
@@ -44,6 +54,11 @@ func SingleHostTreeService(uuid string) (*TreeTopoNode, error) {
 		if node.Type == "host" {
 			treerootnode = CreateTreeNode(node)
 		}
+	}
+
+	if treerootnode == nil {
+		err := errors.New("there are no host node in single_nodes **warn**5")
+		return nil, err
 	}
 
 	for _, node := range nodes_type_map[meta.NODE_RESOURCE] {

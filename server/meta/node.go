@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sync"
 
+	"gitee.com/openeuler/PilotGo/sdk/logger"
 	"github.com/pkg/errors"
 )
 
@@ -45,18 +46,26 @@ func (ns *Nodes) Remove(node *Node) error {
 			continue
 		}
 
-		for j, n := range ns.LookupByType[ns.Nodes[i].Type] {
-			if n.ID == node.ID {
-				ns.LookupByType[ns.Nodes[i].Type] = append(ns.LookupByType[ns.Nodes[i].Type][:j], ns.LookupByType[ns.Nodes[i].Type][j+1:]...)
-				break
+		if typenodes, ok := ns.LookupByType[ns.Nodes[i].Type]; ok && len(typenodes) > 0 {
+			for j, n := range typenodes {
+				if n.ID == node.ID {
+					ns.LookupByType[ns.Nodes[i].Type] = append(typenodes[:j], typenodes[j+1:]...)
+					break
+				}
 			}
+		} else {
+			logger.Error("failed to remove node: %v from nodes.lookupbytype", node)
 		}
 
-		for j, n := range ns.LookupByUUID[ns.Nodes[i].UUID] {
-			if n.ID == node.ID {
-				ns.LookupByUUID[ns.Nodes[i].Type] = append(ns.LookupByUUID[ns.Nodes[i].UUID][:j], ns.LookupByUUID[ns.Nodes[i].UUID][j+1:]...)
-				break
+		if uuidnodes, ok := ns.LookupByUUID[ns.Nodes[i].UUID]; ok && len(uuidnodes) > 0 {
+			for j, n := range uuidnodes {
+				if n.ID == node.ID {
+					ns.LookupByUUID[ns.Nodes[i].UUID] = append(uuidnodes[:j], uuidnodes[j+1:]...)
+					break
+				}
 			}
+		} else {
+			logger.Error("failed to remove node: %v from nodes.lookupbyuuid", node)
 		}
 
 		ns.Nodes = append(ns.Nodes[:i], ns.Nodes[i+1:]...)
