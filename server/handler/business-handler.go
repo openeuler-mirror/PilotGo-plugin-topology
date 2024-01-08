@@ -54,7 +54,7 @@ func SingleHostTreeHandle(ctx *gin.Context) {
 		err = errors.Wrap(err, " **warn**2") // err top
 		agentmanager.Topo.ErrCh <- err
 
-		ctx.JSON(http.StatusBadRequest, gin.H{
+		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"code":  -1,
 			"error": err.Error(),
 			"data":  nil,
@@ -66,7 +66,7 @@ func SingleHostTreeHandle(ctx *gin.Context) {
 		err := errors.New("node tree is null **warn**0") // err top
 		agentmanager.Topo.ErrCh <- err
 
-		ctx.JSON(http.StatusBadRequest, gin.H{
+		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"code":  -1,
 			"error": err.Error(),
 			"data":  nil,
@@ -102,7 +102,7 @@ func MultiHostHandle(ctx *gin.Context) {
 		err = errors.Wrap(err, " **warn**2") // err top
 		agentmanager.Topo.ErrCh <- err
 
-		ctx.JSON(http.StatusBadRequest, gin.H{
+		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"code":  -1,
 			"error": err.Error(),
 			"data":  nil,
@@ -114,7 +114,7 @@ func MultiHostHandle(ctx *gin.Context) {
 		err := errors.New("nodes list is null or edges list is null **warn**0") // err top
 		agentmanager.Topo.ErrCh <- err
 
-		ctx.JSON(http.StatusBadRequest, gin.H{
+		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"code":  -1,
 			"error": err.Error(),
 			"data":  nil,

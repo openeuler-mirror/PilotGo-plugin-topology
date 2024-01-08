@@ -8,6 +8,7 @@ import (
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/agentmanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/conf"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/dao"
+	"gitee.com/openeuler/PilotGo/sdk/logger"
 )
 
 func InitDB() {
@@ -27,6 +28,17 @@ func InitDB() {
 		os.Exit(1)
 	}
 
+	if dao.Global_GraphDB != nil {
+		logger.Debug("graph database initialization successful")
+	} else {
+		logger.Error("graph database initialization failed")
+	}
+
 	dao.Global_redis = dao.RedisInit(conf.Config().Redis.Addr, conf.Config().Redis.Password, conf.Config().Redis.DB, conf.Config().Redis.DialTimeout)
 
+	if dao.Global_redis != nil {
+		logger.Debug("redis database initialization successful")
+	} else {
+		logger.Error("redis database initialization failed")
+	}
 }

@@ -76,7 +76,6 @@ import { useMacStore } from '@/stores/mac';
 
 let tags = reactive<any>([])
 let table_data = reactive<any>([])
-let node = reactive<any>({})
 const host_drawer = ref(false)
 const props = defineProps({
     host_drawer: {
@@ -126,17 +125,17 @@ const tags_color: string[] = [
 
 onMounted(() => {
     host_drawer.value = props.host_drawer;
-    node = props.node
     
 })
 
 watch(() => props.host_drawer, (new_data) => {
     host_drawer.value = new_data as any;
-    node = props.node
+    // node = props.node
+    console.log(props.node.unixtime)
 
     if (host_drawer.value) { 
         table_data = [];
-        let metrics = node.model.metrics;
+        let metrics = props.node.metrics;
         for (let key in metrics) {
             table_data.push({
             name: key,
@@ -145,14 +144,21 @@ watch(() => props.host_drawer, (new_data) => {
         };
 
         tags = [];
-        for (let i in node.model.tags) {
-            tags.push(node.model.tags[i])
+        for (let i in props.node.tags) {
+            tags.push(props.node.tags[i])
         };
     }
 
 }, {
   deep: true
 })
+
+// watch(() => props.node, (old, new_data) => {
+//   node = new_data
+//   console.log(old.model.unixtime, new_data.model.unixtime)
+// }, {
+//   deep: true
+// })
 
 function handleClose() {
     // host_drawer.value = false

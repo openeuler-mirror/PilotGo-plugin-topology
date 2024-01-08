@@ -44,6 +44,8 @@ func InitRouter(router *gin.Engine) {
 		api.GET("/single_host_tree/:uuid", SingleHostTreeHandle)
 
 		api.GET("/multi_host", MultiHostHandle)
+
+		api.GET("/timestamps", TimestampsHandle)
 	}
 }
 
