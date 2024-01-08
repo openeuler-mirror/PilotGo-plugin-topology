@@ -74,7 +74,6 @@
   
   let tags = reactive<any>([])
   let table_data = reactive<any>([])
-  let node = reactive<any>({})
   const net_drawer = ref(false)
   const props = defineProps({
       net_drawer: {
@@ -124,17 +123,15 @@
   
   onMounted(() => {
       net_drawer.value = props.net_drawer;
-      node = props.node
       
   })
   
   watch(() => props.net_drawer, (new_data) => {
       net_drawer.value = new_data as any;
-      node = props.node
   
       if (net_drawer.value) { 
           table_data = [];
-          let metrics = node.model.metrics;
+          let metrics = props.node.metrics;
           for (let key in metrics) {
               table_data.push({
               name: key,
@@ -143,8 +140,8 @@
           };
   
           tags = [];
-          for (let i in node.model.tags) {
-              tags.push(node.model.tags[i])
+          for (let i in props.node.tags) {
+              tags.push(props.node.tags[i])
           };
       }
   

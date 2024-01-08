@@ -74,7 +74,6 @@ import { useMacStore } from '@/stores/mac';
 
 let tags = reactive<any>([])
 let table_data = reactive<any>([])
-let node = reactive<any>({})
 const process_drawer = ref(false)
 const props = defineProps({
     process_drawer: {
@@ -124,17 +123,15 @@ const tags_color: string[] = [
 
 onMounted(() => {
     process_drawer.value = props.process_drawer;
-    node = props.node
     
 })
 
 watch(() => props.process_drawer, (new_data) => {
     process_drawer.value = new_data as any;
-    node = props.node
 
     if (process_drawer.value) { 
         table_data = [];
-        let metrics = node.model.metrics;
+        let metrics = props.node.metrics;
         for (let key in metrics) {
             table_data.push({
             name: key,
@@ -143,8 +140,8 @@ watch(() => props.process_drawer, (new_data) => {
         };
 
         tags = [];
-        for (let i in node.model.tags) {
-            tags.push(node.model.tags[i])
+        for (let i in props.node.tags) {
+            tags.push(props.node.tags[i])
         };
     }
 

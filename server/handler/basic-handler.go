@@ -34,7 +34,7 @@ func HeartbeatHandle(ctx *gin.Context) {
 
 		logger.Warn("unknown agent's heartbeat: %s, %s", uuid, addr)
 
-		ctx.JSON(http.StatusOK, gin.H{
+		ctx.JSON(http.StatusUnauthorized, gin.H{
 			"code":  -1,
 			"error": fmt.Sprintf("%+v", fmt.Errorf("unknown agent's heartbeat: %s, %s", uuid, addr)),
 			"data":  nil,
@@ -47,7 +47,7 @@ func HeartbeatHandle(ctx *gin.Context) {
 		err = errors.Wrap(err, " **warn**2") // err top
 		agentmanager.Topo.ErrCh <- err
 
-		ctx.JSON(http.StatusOK, gin.H{
+		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"code":  -1,
 			"error": fmt.Sprintf("%+v", err),
 			"data":  nil,
@@ -59,5 +59,26 @@ func HeartbeatHandle(ctx *gin.Context) {
 		"code":  0,
 		"error": nil,
 		"data":  nil,
+	})
+}
+
+func TimestampsHandle(ctx *gin.Context) {
+	times, err := dao.Global_GraphDB.Timestamps_query()
+	if err != nil {
+		err = errors.Wrap(err, " **warn**2")
+		agentmanager.Topo.ErrCh <- err
+
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"code":  -1,
+			"error": fmt.Sprintf("%+v", err),
+			"data":  nil,
+		})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"code": 0,
+		"error": nil,
+		"data": times,
 	})
 }
