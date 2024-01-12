@@ -38,14 +38,15 @@ func InitRouter(router *gin.Engine) {
 	api := router.Group("/plugin/topology/api")
 	{
 		api.POST("/heartbeat", HeartbeatHandle)
+		api.GET("/timestamps", TimestampsHandle)
 		api.GET("/agentlist", AgentListHandle)
 
 		// api.GET("/single_host/:uuid", SingleHostHandle)
 		api.GET("/single_host_tree/:uuid", SingleHostTreeHandle)
-
 		api.GET("/multi_host", MultiHostHandle)
 
-		api.GET("/timestamps", TimestampsHandle)
+		
+
 	}
 }
 

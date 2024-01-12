@@ -2,7 +2,8 @@ topo:
   server_addr: "localhost:9991"
   agent_port: "9992"
   graphDB: "neo4j"
-  period: 5
+  period: 5 # 数据采集时间间隔，单位秒(s)
+  retention: 1 # 图历史数据保留策略，单位天(d)
 PilotGo:
   http_addr: "localhost:8888"
 log:

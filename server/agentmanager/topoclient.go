@@ -58,7 +58,9 @@ type Topoclient struct {
 
 func (t *Topoclient) InitMachineList() {
 	for {
-		resp, err := http.Get("http://" + conf.Config().Topo.Server_addr)
+		url := "http://" + conf.Config().Topo.Server_addr + "/plugin_manage/info"
+		resp, err := http.Get(url)
+
 		if err == nil && resp != nil && resp.StatusCode == http.StatusOK {
 			break
 		}

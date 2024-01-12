@@ -8,6 +8,7 @@ topo_server.yaml
 topo_agent.yaml
 
 # binary files
+run
 build
 toserver
 toagent
@@ -20,5 +21,6 @@ web/node_modules
 web/dist/
 web/src/assets/*.json
 docs/time-series.json
+*.jsonc
 
 go.work*

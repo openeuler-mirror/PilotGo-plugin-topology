@@ -12,6 +12,7 @@ type TopoConf struct {
 	Agent_port  string `yaml:"agent_port"`
 	GraphDB     string `yaml:"graphDB"`
 	Period      int64  `yaml:"period"`
+	Retention   int64  `yaml:"retention"`
 }
 
 type PilotGoConf struct {
