@@ -132,6 +132,7 @@ func (r *RedisClient) UpdateTopoRunningAgentList() int {
 		return true
 	})
 
+	// 主进程阻塞
 	for {
 		agent_keys, err := r.Scan("heartbeat-topoagent*")
 		if err != nil {

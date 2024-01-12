@@ -3,6 +3,7 @@ package dao
 import (
 	"fmt"
 	"os"
+	"sort"
 	"time"
 
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/agentmanager"
@@ -152,8 +153,11 @@ func (n *Neo4jClient) Timestamps_query() ([]string, error) {
 
 	if err != nil {
 		err = errors.Errorf("query Readtransaction error: %s, %s **26", err.Error(), cqlOUT)
+		return nil, err
 	}
 
+	sort.Strings(list)
+	
 	return list, nil
 }
 
