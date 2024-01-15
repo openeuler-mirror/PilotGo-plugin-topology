@@ -5,6 +5,8 @@ import "gitee.com/openeuler/PilotGo-plugin-topology-server/meta"
 var Global_GraphDB GraphdbIface
 
 type GraphdbIface interface {
+	ClearExpiredData(int64)
+	
 	Node_create(string, *meta.Node) error
 	Edge_create(string, *meta.Edge) error
 

@@ -13,6 +13,7 @@ type TopoConf struct {
 	GraphDB     string `yaml:"graphDB"`
 	Period      int64  `yaml:"period"`
 	Retention   int64  `yaml:"retention"`
+	Cleartime   string `yaml:"cleartime"`
 }
 
 type PilotGoConf struct {
