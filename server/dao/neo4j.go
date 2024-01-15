@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"os"
 	"sort"
+	"strconv"
 	"time"
 
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/agentmanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/meta"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/utils"
+	"gitee.com/openeuler/PilotGo/sdk/logger"
 	"github.com/neo4j/neo4j-go-driver/v4/neo4j"
 	"github.com/pkg/errors"
 )
@@ -253,4 +255,30 @@ func (n *Neo4jClient) Relation_query(cypher string, varia string) ([]*meta.Edge,
 		err = errors.Errorf("relation Readtransaction error: %s, %s **22", err.Error(), cypher)
 	}
 	return list, err
+}
+
+func (n *Neo4jClient) ClearExpiredData(retention int64) {
+	current := time.Now()
+	timepoint := current.Add(- time.Duration(retention) * time.Hour).Unix()
+	cqlIN := `match (n) where n.unixtime < $timepoint detach delete n`
+	params := map[string]interface{}{
+		"timepoint": strconv.Itoa(int(timepoint)),
+	}
+
+	session := n.Driver.NewSession(neo4j.SessionConfig{AccessMode: neo4j.AccessModeWrite, DatabaseName: n.DB})
+	defer session.Close()
+
+	result, err := session.Run(cqlIN, params)
+	if err != nil {
+		logger.Error("ClearExpiredData failed: %s, %s", err.Error(), cqlIN)
+		return
+	}
+
+	summary, err := result.Consume()
+	if err != nil {
+		logger.Error("failed to consume ClearExpiredData result: %s, %s", err.Error(), cqlIN)
+		return
+	}
+
+	logger.Debug("delete %d nodes\n", summary.Counters().NodesDeleted())
 }
