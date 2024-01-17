@@ -39,7 +39,6 @@ func main() {
 
 	/*
 		init machine agent list
-		TODO: 实时更新machine agent、topo agent的状态
 	*/
 	agentmanager.Topo.InitMachineList()
 
