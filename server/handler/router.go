@@ -39,7 +39,10 @@ func InitRouter(router *gin.Engine) {
 		// api.GET("/single_host/:uuid", SingleHostHandle)
 		api.GET("/single_host_tree/:uuid", SingleHostTreeHandle)
 		api.GET("/multi_host", MultiHostHandle)
-		api.GET("/custom_topo", CustomTopoHandle)
+		api.POST("/create_custom_topo", CreateCustomTopoHandle)
+		api.DELETE("/delete_custom_topo", DeleteCustomTopoHandle)
+		api.PUT("/update_custom_topo", UpdateCustomTopoHandle)
+		api.GET("/use_custom_topo", UseCustomTopoHandle)
 
 	}
 }
