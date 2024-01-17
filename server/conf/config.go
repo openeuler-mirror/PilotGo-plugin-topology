@@ -43,6 +43,13 @@ type RedisConf struct {
 	DialTimeout time.Duration `yaml:"dialTimeout"`
 }
 
+type MysqlConf struct {
+	Addr     string `yaml:"addr"`
+	Username string `yaml:"username"`
+	Password string `yaml:"password"`
+	DB       string `yaml:"DB"`
+}
+
 type ServerConfig struct {
 	Topo       *TopoConf
 	PilotGo    *PilotGoConf
@@ -51,6 +58,7 @@ type ServerConfig struct {
 	Neo4j      *Neo4jConf
 	Prometheus *PrometheusConf
 	Redis      *RedisConf
+	Mysql      *MysqlConf
 }
 
 const config_type = "topo_server.yaml"

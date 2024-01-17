@@ -25,3 +25,8 @@ redis:
   password: ''
   DB: 1
   dialTimeout: 5s
+mysql:
+  addr: "localhost:3306"
+  username: ''
+  password: ''
+  DB: "PluginTopo"
