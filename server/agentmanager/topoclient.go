@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/conf"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/meta"
 	"gitee.com/openeuler/PilotGo/sdk/logger"
 	"gitee.com/openeuler/PilotGo/sdk/plugin/client"
 	"gitee.com/openeuler/PilotGo/sdk/utils/httputils"
@@ -27,6 +28,22 @@ import (
 
 var Topo *Topoclient
 
+type Topoclient struct {
+	Sdkmethod *client.Client
+
+	PAgentMap sync.Map
+	TAgentMap sync.Map
+
+	mu   sync.Locker // 暂时闲置
+	cond *sync.Cond  // 暂时闲置
+
+	ErrCh chan *meta.Topoerror
+
+	Out io.Writer
+
+	Tctx context.Context
+}
+
 func InitPluginClient() {
 	var errcondmu sync.Mutex
 	PluginInfo.Url = "http://" + conf.Config().Topo.Server_addr + "/plugin/topology"
@@ -34,26 +51,11 @@ func InitPluginClient() {
 
 	Topo = &Topoclient{
 		Sdkmethod: PluginClient,
-		Errmu:     &errcondmu,
-		ErrCond:   sync.NewCond(&errcondmu),
-		ErrCh:     make(chan error, 10),
+		mu:        &errcondmu,
+		cond:      sync.NewCond(&errcondmu),
+		ErrCh:     make(chan *meta.Topoerror, 10),
 		Tctx:      context.Background(),
 	}
-}
-
-type Topoclient struct {
-	Sdkmethod *client.Client
-
-	PAgentMap sync.Map
-	TAgentMap sync.Map
-
-	Errmu   sync.Locker
-	ErrCond *sync.Cond
-	ErrCh   chan error
-
-	Out io.Writer
-
-	Tctx context.Context
 }
 
 func (t *Topoclient) InitMachineList() {
@@ -74,23 +76,13 @@ func (t *Topoclient) InitMachineList() {
 	resp, err := httputils.Get(url, nil)
 	if err != nil {
 		err = errors.Errorf("err-> %s (url-> %s) **fatal**2", err.Error(), url) // err top
-		t.ErrCh <- err
-		t.Errmu.Lock()
-		t.ErrCond.Wait()
-		t.Errmu.Unlock()
-		close(t.ErrCh)
-		os.Exit(1)
+		ErrorTransmit(t.Tctx, err, t.ErrCh, true)
 	}
 
 	statuscode := resp.StatusCode
 	if statuscode != 200 {
 		err := errors.Errorf("http返回状态码异常: %d, %s **fatal**2", statuscode, url) // err top
-		t.ErrCh <- err
-		t.Errmu.Lock()
-		t.ErrCond.Wait()
-		t.Errmu.Unlock()
-		close(t.ErrCh)
-		os.Exit(1)
+		ErrorTransmit(t.Tctx, err, t.ErrCh, true)
 	}
 
 	result := &struct {
@@ -101,12 +93,7 @@ func (t *Topoclient) InitMachineList() {
 	err = json.Unmarshal(resp.Body, result)
 	if err != nil {
 		err = errors.Errorf("%s **fatal**2", err.Error()) // err top
-		t.ErrCh <- err
-		t.Errmu.Lock()
-		t.ErrCond.Wait()
-		t.Errmu.Unlock()
-		close(t.ErrCh)
-		os.Exit(1)
+		ErrorTransmit(t.Tctx, err, t.ErrCh, true)
 	}
 
 	for _, m := range result.Data.([]interface{}) {
@@ -129,23 +116,13 @@ func (t *Topoclient) UpdateMachineList() {
 	resp, err := httputils.Get(url, nil)
 	if err != nil {
 		err = errors.Errorf("%s **fatal**2", err.Error()) // err top
-		t.ErrCh <- err
-		t.Errmu.Lock()
-		t.ErrCond.Wait()
-		t.Errmu.Unlock()
-		close(t.ErrCh)
-		os.Exit(1)
+		ErrorTransmit(t.Tctx, err, t.ErrCh, true)
 	}
 
 	statuscode := resp.StatusCode
 	if statuscode != 200 {
 		err = errors.Errorf("http返回状态码异常: %d **fatal**2", statuscode) // err top
-		t.ErrCh <- err
-		t.Errmu.Lock()
-		t.ErrCond.Wait()
-		t.Errmu.Unlock()
-		close(t.ErrCh)
-		os.Exit(1)
+		ErrorTransmit(t.Tctx, err, t.ErrCh, true)
 	}
 
 	result := &struct {
@@ -156,12 +133,7 @@ func (t *Topoclient) UpdateMachineList() {
 	err = json.Unmarshal(resp.Body, result)
 	if err != nil {
 		err = errors.Errorf("%s **fatal**2", err.Error()) // err top
-		t.ErrCh <- err
-		t.Errmu.Lock()
-		t.ErrCond.Wait()
-		t.Errmu.Unlock()
-		close(t.ErrCh)
-		os.Exit(1)
+		ErrorTransmit(t.Tctx, err, t.ErrCh, true)
 	}
 
 	if Topo != nil {
@@ -171,12 +143,7 @@ func (t *Topoclient) UpdateMachineList() {
 		})
 	} else {
 		err := errors.New("agentmanager.Topo is nil, can not clear Topo.PAgentMap **fatal**6") // err top
-		t.ErrCh <- err
-		t.Errmu.Lock()
-		t.ErrCond.Wait()
-		t.Errmu.Unlock()
-		close(t.ErrCh)
-		os.Exit(1)
+		ErrorTransmit(t.Tctx, err, t.ErrCh, true)
 	}
 
 	for _, m := range result.Data.([]interface{}) {
@@ -213,16 +180,11 @@ func (t *Topoclient) InitLogger() {
 	err := logger.Init(conf.Config().Logopts)
 	if err != nil {
 		err = errors.Errorf("%s **fatal**2", err.Error()) // err top
-		t.ErrCh <- err
-		t.Errmu.Lock()
-		t.ErrCond.Wait()
-		t.Errmu.Unlock()
-		close(t.ErrCh)
-		os.Exit(1)
+		ErrorTransmit(t.Tctx, err, t.ErrCh, true)
 	}
 }
 
-func (t *Topoclient) InitErrorControl(errch <-chan error, emu sync.Locker, econd *sync.Cond) {
+func (t *Topoclient) InitErrorControl(errch <-chan *meta.Topoerror) {
 	switch conf.Config().Logopts.Driver {
 	case "stdout":
 		t.Out = os.Stdout
@@ -234,32 +196,30 @@ func (t *Topoclient) InitErrorControl(errch <-chan error, emu sync.Locker, econd
 		t.Out = logfile
 	}
 
-	go func(ch <-chan error, mu sync.Locker, ec *sync.Cond) {
+	go func(ch <-chan *meta.Topoerror) {
 		for {
-			err, ok := <-ch
+			topoerr, ok := <-ch
 			if !ok {
 				break
 			}
 
-			if err != nil {
-				errarr := strings.Split(err.Error(), "**")
+			if topoerr.Err != nil {
+				errarr := strings.Split(topoerr.Err.Error(), "**")
 				switch errarr[1] {
 				case "warn":
-					fmt.Fprintf(t.Out, "%+v\n", err)
+					fmt.Fprintf(t.Out, "%+v\n", topoerr.Err)
 					// errors.EORE(err)
 				case "fatal":
-					mu.Lock()
-					fmt.Fprintf(t.Out, "%+v\n", err)
+					fmt.Fprintf(t.Out, "%+v\n", topoerr.Err)
 					// errors.EORE(err)
-					ec.Broadcast()
-					mu.Unlock()
+					topoerr.Cancel()
 				default:
-					fmt.Printf("only support warn and fatal error type: %+v\n", err)
+					fmt.Printf("only support warn and fatal error type: %+v\n", topoerr.Err)
 					os.Exit(1)
 				}
 			}
 		}
-	}(errch, emu, econd)
+	}(errch)
 }
 
 func (t *Topoclient) InitConfig() {

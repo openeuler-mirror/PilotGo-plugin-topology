@@ -1,9 +1,12 @@
 package agentmanager
 
 import (
+	"context"
 	"fmt"
+	"os"
 	"time"
 
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/meta"
 	"gitee.com/openeuler/PilotGo/sdk/plugin/client"
 )
 
@@ -33,5 +36,22 @@ func WaitingForHandshake() {
 			i = 0
 		}
 		time.Sleep(1 * time.Second)
+	}
+}
+
+func ErrorTransmit(ctx context.Context, err error, ch chan *meta.Topoerror, exit_after_print bool) {
+	if exit_after_print {
+		cctx, cancelF := context.WithCancel(ctx)
+		ch <- &meta.Topoerror{
+			Err:    err,
+			Cancel: cancelF,
+		}
+		<-cctx.Done()
+		close(ch)
+		os.Exit(1)
+	}
+
+	ch <- &meta.Topoerror{
+		Err: err,
 	}
 }

@@ -45,7 +45,7 @@ func HeartbeatHandle(ctx *gin.Context) {
 	err := dao.Global_redis.Set(key, value)
 	if err != nil {
 		err = errors.Wrap(err, " **warn**2") // err top
-		agentmanager.Topo.ErrCh <- err
+		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"code":  -1,
@@ -66,7 +66,7 @@ func TimestampsHandle(ctx *gin.Context) {
 	times, err := dao.Global_GraphDB.Timestamps_query()
 	if err != nil {
 		err = errors.Wrap(err, " **warn**2")
-		agentmanager.Topo.ErrCh <- err
+		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"code":  -1,

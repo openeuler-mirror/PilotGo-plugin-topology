@@ -47,7 +47,7 @@ func (t *Topoclient) GetAgent_P(uuid string) *Agent_m {
 func (t *Topoclient) DeleteAgent_P(uuid string) {
 	if _, ok := t.PAgentMap.LoadAndDelete(uuid); !ok {
 		err := errors.Errorf("delete unknown agent:%s **warn**2", uuid) // err top
-		t.ErrCh <- err
+		ErrorTransmit(t.Tctx, err, t.ErrCh, false)
 	}
 }
 
@@ -72,6 +72,6 @@ func (t *Topoclient) GetAgent_T(uuid string) *Agent_m {
 func (t *Topoclient) DeleteAgent_T(uuid string) {
 	if _, ok := t.TAgentMap.LoadAndDelete(uuid); !ok {
 		err := errors.Errorf("delete unknown agent:%s **warn**2", uuid) // err top
-		t.ErrCh <- err
+		ErrorTransmit(t.Tctx, err, t.ErrCh, false)
 	}
 }

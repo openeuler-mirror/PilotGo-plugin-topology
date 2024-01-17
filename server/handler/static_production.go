@@ -22,7 +22,7 @@ func StaticRouter(router *gin.Engine) {
 	sf, err := fs.Sub(StaticFiles, "assets")
 	if err != nil {
 		err = errors.Errorf("%s **warn**2", err.Error()) // err top
-		agentmanager.Topo.ErrCh <- err
+		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 		return
 	}
 

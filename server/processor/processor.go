@@ -179,7 +179,7 @@ func (d *DataProcesser) Create_node_entities(agent *agentmanager.Agent_m, nodes 
 			nodes.Add(net_node)
 		} else {
 			err := errors.Errorf("syntax error: %s **warn**13", net.Laddr) // err top
-			agentmanager.Topo.ErrCh <- err
+			agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 		}
 	}
 

@@ -52,7 +52,7 @@ func SingleHostTreeHandle(ctx *gin.Context) {
 	nodes, err := service.SingleHostTreeService(uuid)
 	if err != nil {
 		err = errors.Wrap(err, " **warn**2") // err top
-		agentmanager.Topo.ErrCh <- err
+		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"code":  -1,
@@ -64,7 +64,7 @@ func SingleHostTreeHandle(ctx *gin.Context) {
 
 	if nodes == nil {
 		err := errors.New("node tree is null **warn**0") // err top
-		agentmanager.Topo.ErrCh <- err
+		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"code":  -1,
@@ -100,7 +100,7 @@ func MultiHostHandle(ctx *gin.Context) {
 	nodes, edges, combos, err := service.MultiHostService()
 	if err != nil {
 		err = errors.Wrap(err, " **warn**2") // err top
-		agentmanager.Topo.ErrCh <- err
+		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"code":  -1,
@@ -112,7 +112,7 @@ func MultiHostHandle(ctx *gin.Context) {
 
 	if len(nodes) == 0 || len(edges) == 0 {
 		err := errors.New("nodes list is null or edges list is null **warn**0") // err top
-		agentmanager.Topo.ErrCh <- err
+		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"code":  -1,

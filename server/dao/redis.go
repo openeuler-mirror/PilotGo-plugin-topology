@@ -43,12 +43,7 @@ func RedisInit(url, pass string, db int, dialTimeout time.Duration) *RedisClient
 	_, err := r.Client.Ping(timeoutCtx).Result()
 	if err != nil {
 		err = errors.Errorf("redis connection timeout: %s **fatal**2", err.Error()) // err top
-		agentmanager.Topo.ErrCh <- err
-		agentmanager.Topo.Errmu.Lock()
-		agentmanager.Topo.ErrCond.Wait()
-		agentmanager.Topo.Errmu.Unlock()
-		close(agentmanager.Topo.ErrCh)
-		os.Exit(1)
+		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, true)
 	}
 
 	return r
@@ -137,7 +132,7 @@ func (r *RedisClient) UpdateTopoRunningAgentList() int {
 		agent_keys, err := r.Scan("heartbeat-topoagent*")
 		if err != nil {
 			err = errors.Wrap(err, "**warn**2") // err top
-			agentmanager.Topo.ErrCh <- err
+			agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 			continue
 		}
 
@@ -146,7 +141,7 @@ func (r *RedisClient) UpdateTopoRunningAgentList() int {
 				v, err := r.Get(agentkey, &meta.AgentHeartbeat{})
 				if err != nil {
 					err = errors.Wrap(err, "**warn**2") // err top
-					agentmanager.Topo.ErrCh <- err
+					agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 					continue
 				}
 

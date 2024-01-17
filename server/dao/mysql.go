@@ -3,7 +3,6 @@ package dao
 import (
 	"database/sql"
 	"fmt"
-	"os"
 	"strings"
 
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/agentmanager"
@@ -30,12 +29,7 @@ func MysqldbInit(conf *conf.MysqlConf) *MysqlClient {
 	err := ensureDatabase(conf)
 	if err != nil {
 		err = errors.Wrapf(err, "**fatal**2") // err top
-		agentmanager.Topo.ErrCh <- err
-		agentmanager.Topo.Errmu.Lock()
-		agentmanager.Topo.ErrCond.Wait()
-		agentmanager.Topo.Errmu.Unlock()
-		close(agentmanager.Topo.ErrCh)
-		os.Exit(1)
+		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, true)
 	}
 
 	m := &MysqlClient{
@@ -55,23 +49,13 @@ func MysqldbInit(conf *conf.MysqlConf) *MysqlClient {
 	})
 	if err != nil {
 		err := errors.Errorf("mysql connect failed: %s(url: %s) **fatal**2", err.Error(), url) // err top
-		agentmanager.Topo.ErrCh <- err
-		agentmanager.Topo.Errmu.Lock()
-		agentmanager.Topo.ErrCond.Wait()
-		agentmanager.Topo.Errmu.Unlock()
-		close(agentmanager.Topo.ErrCh)
-		os.Exit(1)
+		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, true)
 	}
 
 	var db *sql.DB
 	if db, err = m.db.DB(); err != nil {
 		err = errors.Errorf("get mysql sql.db failed: %s **fatal**2", err.Error()) // err top
-		agentmanager.Topo.ErrCh <- err
-		agentmanager.Topo.Errmu.Lock()
-		agentmanager.Topo.ErrCond.Wait()
-		agentmanager.Topo.Errmu.Unlock()
-		close(agentmanager.Topo.ErrCh)
-		os.Exit(1)
+		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, true)
 	}
 
 	db.SetMaxIdleConns(10)
@@ -81,12 +65,7 @@ func MysqldbInit(conf *conf.MysqlConf) *MysqlClient {
 	err = m.db.AutoMigrate(&meta.TopoConfiguration{})
 	if err != nil {
 		err = errors.Errorf("mysql automigrate failed: %s **fatal**2", err.Error()) // err top
-		agentmanager.Topo.ErrCh <- err
-		agentmanager.Topo.Errmu.Lock()
-		agentmanager.Topo.ErrCond.Wait()
-		agentmanager.Topo.Errmu.Unlock()
-		close(agentmanager.Topo.ErrCh)
-		os.Exit(1)
+		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, true)
 	}
 
 	return m
