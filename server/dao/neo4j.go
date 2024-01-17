@@ -2,7 +2,6 @@ package dao
 
 import (
 	"fmt"
-	"os"
 	"sort"
 	"strconv"
 	"time"
@@ -40,12 +39,7 @@ func Neo4jInit(url, user, pass, db string) *Neo4jClient {
 	})
 	if err != nil {
 		err := errors.Errorf("create neo4j driver failed: %s **fatal**2", err.Error()) // err top
-		agentmanager.Topo.ErrCh <- err
-		agentmanager.Topo.Errmu.Lock()
-		agentmanager.Topo.ErrCond.Wait()
-		agentmanager.Topo.Errmu.Unlock()
-		close(agentmanager.Topo.ErrCh)
-		os.Exit(1)
+		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, true)
 	}
 
 	n.Driver = driver
@@ -159,7 +153,7 @@ func (n *Neo4jClient) Timestamps_query() ([]string, error) {
 	}
 
 	sort.Strings(list)
-	
+
 	return list, nil
 }
 
@@ -259,7 +253,7 @@ func (n *Neo4jClient) Relation_query(cypher string, varia string) ([]*meta.Edge,
 
 func (n *Neo4jClient) ClearExpiredData(retention int64) {
 	current := time.Now()
-	timepoint := current.Add(- time.Duration(retention) * time.Hour).Unix()
+	timepoint := current.Add(-time.Duration(retention) * time.Hour).Unix()
 	cqlIN := `match (n) where n.unixtime < $timepoint detach delete n`
 	params := map[string]interface{}{
 		"timepoint": strconv.Itoa(int(timepoint)),

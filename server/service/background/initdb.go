@@ -1,7 +1,6 @@
 package service
 
 import (
-	"os"
 	"time"
 
 	"github.com/pkg/errors"
@@ -32,12 +31,7 @@ func initGraphDB() {
 
 	default:
 		err := errors.Errorf("unknown database in topo_server.yaml: %s **fatal**4", conf.Global_config.Topo.GraphDB) // err top
-		agentmanager.Topo.ErrCh <- err
-		agentmanager.Topo.Errmu.Lock()
-		agentmanager.Topo.ErrCond.Wait()
-		agentmanager.Topo.Errmu.Unlock()
-		close(agentmanager.Topo.ErrCh)
-		os.Exit(1)
+		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, true)
 	}
 
 	if dao.Global_GraphDB != nil {

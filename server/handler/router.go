@@ -2,7 +2,6 @@ package handler
 
 import (
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/gin-contrib/timeout"
@@ -24,12 +23,7 @@ func InitWebServer() {
 		err := engine.Run(conf.Config().Topo.Server_addr)
 		if err != nil {
 			err = errors.Errorf("%s **fatal**2", err.Error()) // err top
-			agentmanager.Topo.ErrCh <- err
-			agentmanager.Topo.Errmu.Lock()
-			agentmanager.Topo.ErrCond.Wait()
-			agentmanager.Topo.Errmu.Unlock()
-			close(agentmanager.Topo.ErrCh)
-			os.Exit(1)
+			agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, true)
 		}
 	}()
 }
@@ -40,12 +34,12 @@ func InitRouter(router *gin.Engine) {
 		api.POST("/heartbeat", HeartbeatHandle)
 		api.GET("/timestamps", TimestampsHandle)
 		api.GET("/agentlist", AgentListHandle)
+		api.GET("/custom_topo_list", CustomTopoListHandle)
 
 		// api.GET("/single_host/:uuid", SingleHostHandle)
 		api.GET("/single_host_tree/:uuid", SingleHostTreeHandle)
 		api.GET("/multi_host", MultiHostHandle)
-
-		
+		api.GET("/custom_topo", CustomTopoHandle)
 
 	}
 }
