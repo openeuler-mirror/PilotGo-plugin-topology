@@ -82,3 +82,34 @@ func TimestampsHandle(ctx *gin.Context) {
 		"data": times,
 	})
 }
+
+func AgentListHandle(ctx *gin.Context) {
+	agentmap := make(map[string]string)
+
+	agentmanager.Topo.TAgentMap.Range(func(key, value interface{}) bool {
+		agent := value.(*agentmanager.Agent_m)
+		if agent.Host_2 != nil {
+			agentmap[agent.UUID] = agent.IP + ":" + agent.Port
+		}
+
+		return true
+	})
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"code":  0,
+		"error": nil,
+		"data": map[string]interface{}{
+			"agentlist": agentmap,
+		},
+	})
+}
+
+func CustomTopoListHandle(ctx *gin.Context) {
+	custommap := make(map[string]interface{})
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"code":  0,
+		"error": nil,
+		"data": custommap,
+	})
+}

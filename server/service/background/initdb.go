@@ -17,6 +17,8 @@ func InitDB() {
 
 	initRedis()
 
+	initMysql()
+
 	go ClearGraphData(conf.Config().Topo.Retention)
 }
 
@@ -48,7 +50,6 @@ func initGraphDB() {
 // 初始化redis
 func initRedis() {
 	dao.Global_redis = dao.RedisInit(conf.Config().Redis.Addr, conf.Config().Redis.Password, conf.Config().Redis.DB, conf.Config().Redis.DialTimeout)
-
 	if dao.Global_redis != nil {
 		logger.Debug("redis database initialization successful")
 	} else {
@@ -56,9 +57,18 @@ func initRedis() {
 	}
 }
 
+func initMysql() {
+	dao.Global_mysql = dao.MysqldbInit(conf.Config().Mysql)
+	if dao.Global_mysql != nil {
+		logger.Debug("mysql database initialization successful")
+	} else {
+		logger.Error("mysql database initialization failed")
+	}
+}
+
 func ClearGraphData(retention int64) {
 	dao.Global_GraphDB.ClearExpiredData(retention)
-	
+
 	for {
 		current := time.Now()
 		clear, err := time.Parse("15:04:05", conf.Config().Topo.Cleartime)
@@ -71,7 +81,7 @@ func ClearGraphData(retention int64) {
 			next = next.Add(24 * time.Hour)
 		}
 
-		timer := time.NewTicker(next.Sub(current))
+		timer := time.NewTimer(next.Sub(current))
 
 		<-timer.C
 
