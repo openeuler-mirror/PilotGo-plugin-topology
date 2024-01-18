@@ -103,13 +103,3 @@ func AgentListHandle(ctx *gin.Context) {
 		},
 	})
 }
-
-func CustomTopoListHandle(ctx *gin.Context) {
-	custommap := make(map[string]interface{})
-
-	ctx.JSON(http.StatusOK, gin.H{
-		"code":  0,
-		"error": nil,
-		"data": custommap,
-	})
-}
