@@ -112,7 +112,7 @@ func ensureDatabase(conf *conf.MysqlConf) error {
 }
 
 func (m *MysqlClient) QueryTopoConfiguration(tcid uint) (*meta.TopoConfiguration, error) {
-	var tc *meta.TopoConfiguration
+	var tc *meta.TopoConfiguration = new(meta.TopoConfiguration)
 	err := m.db.Model(&meta.TopoConfiguration{}).Where("id=?", tcid).First(tc).Error
 	if err != nil {
 		err = errors.Errorf("query topo configuration failed: %s, %d", err.Error(), tcid)
