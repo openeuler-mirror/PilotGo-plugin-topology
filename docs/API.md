@@ -11,7 +11,7 @@
 - POST /plugin_manage/api/v1/event
 - PUT /plugin_manage/api/v1/command_result
 
-## 2. server端API接口
+## 2. server端 API接口
 ### 2.1 获取agent列表
 - GET /plugin/topology/api/agentlist
 ### 2.2 单机图数据
@@ -21,6 +21,6 @@
 ### 2.4 topo-agent心跳监听
 - POST /heartbeat
 
-## 3. agent端API接口
+## 3. agent端 API接口
 ### 3.1 获取agent端采集数据
 - GET /plugin/topology/api/rawdata

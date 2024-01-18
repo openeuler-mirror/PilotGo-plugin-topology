@@ -25,7 +25,7 @@ func CustomTopoListHandle(ctx *gin.Context) {
 }
 
 func CreateCustomTopoHandle(ctx *gin.Context) {
-	var topoconfig *meta.TopoConfiguration = new(meta.TopoConfiguration)
+	var topoconfig *meta.Topo_configuration = new(meta.Topo_configuration)
 	if err := ctx.ShouldBindJSON(topoconfig); err != nil {
 		err = errors.Wrap(err, "**warn**1") // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)

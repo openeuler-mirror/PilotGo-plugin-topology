@@ -62,7 +62,7 @@ func MysqldbInit(conf *conf.MysqlConf) *MysqlClient {
 	db.SetMaxOpenConns(100)
 
 	// mysql 模型迁移
-	err = m.db.AutoMigrate(&meta.TopoConfiguration{})
+	err = m.db.AutoMigrate(&meta.Topo_configuration{})
 	if err != nil {
 		err = errors.Errorf("mysql automigrate failed: %s **fatal**2", err.Error()) // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, true)
@@ -111,9 +111,9 @@ func ensureDatabase(conf *conf.MysqlConf) error {
 	return nil
 }
 
-func (m *MysqlClient) QueryTopoConfiguration(tcid uint) (*meta.TopoConfiguration, error) {
-	var tc *meta.TopoConfiguration = new(meta.TopoConfiguration)
-	err := m.db.Model(&meta.TopoConfiguration{}).Where("id=?", tcid).First(tc).Error
+func (m *MysqlClient) QueryTopoConfiguration(tcid uint) (*meta.Topo_configuration, error) {
+	var tc *meta.Topo_configuration = new(meta.Topo_configuration)
+	err := m.db.Model(&meta.Topo_configuration{}).Where("id=?", tcid).First(tc).Error
 	if err != nil {
 		err = errors.Errorf("query topo configuration failed: %s, %d", err.Error(), tcid)
 		return nil, err
@@ -121,7 +121,7 @@ func (m *MysqlClient) QueryTopoConfiguration(tcid uint) (*meta.TopoConfiguration
 	return tc, nil
 }
 
-func (m *MysqlClient) AddTopoConfiguration(tc *meta.TopoConfiguration) error {
+func (m *MysqlClient) AddTopoConfiguration(tc *meta.Topo_configuration) error {
 	_tc := tc
 	err := m.db.Save(_tc).Error
 	if err != nil {
@@ -132,7 +132,7 @@ func (m *MysqlClient) AddTopoConfiguration(tc *meta.TopoConfiguration) error {
 }
 
 func (m *MysqlClient) DeleteTopoConfiguration(tcid uint) error {
-	err := m.db.Where("id = ?", tcid).Unscoped().Delete(meta.TopoConfiguration{}).Error
+	err := m.db.Where("id = ?", tcid).Unscoped().Delete(meta.Topo_configuration{}).Error
 	if err != nil {
 		err = errors.Errorf("delete topo configuration failed: %s, %d", err.Error(), tcid)
 		return err
