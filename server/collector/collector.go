@@ -26,6 +26,7 @@ func (d *DataCollector) Collect_instant_data() []error {
 	start := time.Now()
 	var wg sync.WaitGroup
 	var errorlist []error
+	var errorlist_rwlock sync.RWMutex
 
 	if agentmanager.Topo == nil {
 		err := errors.New("agentmanager.Topo is not initialized!") // err top
@@ -43,7 +44,9 @@ func (d *DataCollector) Collect_instant_data() []error {
 				agent.Port = conf.Config().Topo.Agent_port
 				err := d.GetCollectDataFromTopoAgent(agent)
 				if err != nil {
+					errorlist_rwlock.Lock()
 					errorlist = append(errorlist, errors.Wrapf(err, "%s**2", agent.IP))
+					errorlist_rwlock.Unlock()
 				}
 				agentmanager.Topo.AddAgent_T(agent)
 			}()
