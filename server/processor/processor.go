@@ -46,6 +46,7 @@ func (d *DataProcesser) Process_data(agentnum int) (*meta.Nodes, *meta.Edges, []
 	var wg sync.WaitGroup
 	var collect_errorlist []error
 	var process_errorlist []error
+	var process_errorlist_rwlock sync.RWMutex
 
 	if agentmanager.Topo == nil {
 		err := errors.New("agentmanager.Topo is not initialized!") // err top
@@ -85,14 +86,18 @@ func (d *DataProcesser) Process_data(agentnum int) (*meta.Nodes, *meta.Edges, []
 				if _agent.Host_2 != nil && _agent.Processes_2 != nil && _agent.Netconnections_2 != nil {
 					err := d.Create_node_entities(_agent, _nodes)
 					if err != nil {
+						process_errorlist_rwlock.Lock()
 						process_errorlist = append(process_errorlist, errors.Wrap(err, "**2"))
+						process_errorlist_rwlock.Unlock()
 					}
 
 					<-ctx.Done()
 
 					err = d.Create_edge_entities(_agent, _edges, _nodes)
 					if err != nil {
+						process_errorlist_rwlock.Lock()
 						process_errorlist = append(process_errorlist, errors.Wrap(err, "**2"))
+						process_errorlist_rwlock.Unlock()
 					}
 				}
 			}(ctx1, agent, nodes, edges)
