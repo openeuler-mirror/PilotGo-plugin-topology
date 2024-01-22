@@ -48,9 +48,9 @@ func main() {
 	service.InitDB()
 
 	/*
-		topo插件自身数据采集模块周期性数据采集
+		topo插件自身数据采集模块周期性数据采集: 全局网络拓扑、单机拓扑
 	*/
-	service.PeriodCollectWorking()
+	service.PeriodCollectWorking([]string{})
 
 	/*
 		终止进程信号监听

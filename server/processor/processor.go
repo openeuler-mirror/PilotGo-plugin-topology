@@ -60,8 +60,6 @@ func (d *DataProcesser) Process_data(agentnum int) (*meta.Nodes, *meta.Edges, []
 		for i, err := range collect_errorlist {
 			collect_errorlist[i] = errors.Wrap(err, "**7")
 		}
-
-		// return nil, nil, collect_errorlist, nil
 	}
 
 	ctx1, cancel1 := context.WithCancel(agentmanager.Topo.Tctx)

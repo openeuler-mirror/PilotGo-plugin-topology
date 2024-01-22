@@ -111,9 +111,9 @@ func (r *RedisClient) Delete(key string) error {
 	return err
 }
 
-// 更新运行状态agent的列表
-func (r *RedisClient) UpdateTopoRunningAgentList() int {
-	var runningAgentNum int
+// 基于batch中的机器列表更新运行状态agent的TAgentMap
+func (r *RedisClient) UpdateTopoRunningAgentList(batch []string) int {
+	var running_agent_num int
 	var once sync.Once
 
 	if agentmanager.Topo == nil {
@@ -147,15 +147,29 @@ func (r *RedisClient) UpdateTopoRunningAgentList() int {
 
 				agentvalue := v.(*meta.AgentHeartbeat)
 
+				if len(batch) != 0 {
+					inbatch := false
+					for _, uuid := range batch {
+						if agentvalue.UUID == uuid {
+							inbatch = true
+							break
+						}
+					}
+
+					if !inbatch {
+						continue
+					}
+				}
+
 				if time.Since(agentvalue.Time) < 1*time.Second+time.Duration(agentvalue.HeartbeatInterval)*time.Second {
 					if agentp := agentmanager.Topo.GetAgent_P(agentvalue.UUID); agentp != nil {
 						agentmanager.Topo.AddAgent_T(agentp)
-						runningAgentNum += 1
+						running_agent_num += 1
 					}
 				}
 			}
 
-			if runningAgentNum > 0 {
+			if running_agent_num > 0 {
 				break
 			}
 		}
@@ -167,7 +181,7 @@ func (r *RedisClient) UpdateTopoRunningAgentList() int {
 		time.Sleep(1 * time.Second)
 	}
 
-	logger.Info("running agent number: %d", runningAgentNum)
+	logger.Info("running agent number: %d", running_agent_num)
 
-	return runningAgentNum
+	return running_agent_num
 }
