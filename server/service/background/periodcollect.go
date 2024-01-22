@@ -16,16 +16,16 @@ import (
 	"github.com/pkg/errors"
 )
 
-func PeriodCollectWorking() {
+func PeriodCollectWorking(batch []string) {
 	graphperiod := conf.Global_config.Topo.Period
 
 	agentmanager.Topo.UpdateMachineList()
 
 	go func(interval int64, gdb dao.GraphdbIface) {
 		for {
-			runningAgentNum := dao.Global_redis.UpdateTopoRunningAgentList()
+			running_agent_num := dao.Global_redis.UpdateTopoRunningAgentList(batch)
 			unixtime_now := time.Now().Unix()
-			PeriodProcessWorking(unixtime_now, runningAgentNum, gdb)
+			PeriodProcessWorking(unixtime_now, running_agent_num, gdb)
 			time.Sleep(time.Duration(interval) * time.Second)
 		}
 	}(graphperiod, dao.Global_GraphDB)
