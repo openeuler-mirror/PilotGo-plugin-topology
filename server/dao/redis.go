@@ -122,12 +122,13 @@ func (r *RedisClient) UpdateTopoRunningAgentList(batch []string) int {
 		os.Exit(1)
 	}
 
+	// 重置TAgentMap
 	agentmanager.Topo.TAgentMap.Range(func(key, value interface{}) bool {
 		agentmanager.Topo.TAgentMap.Delete(key)
 		return true
 	})
 
-	// 主进程阻塞
+	// 阻塞
 	for {
 		agent_keys, err := r.Scan("heartbeat-topoagent*")
 		if err != nil {

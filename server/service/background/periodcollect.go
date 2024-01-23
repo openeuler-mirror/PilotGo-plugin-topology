@@ -16,22 +16,22 @@ import (
 	"github.com/pkg/errors"
 )
 
-func PeriodCollectWorking(batch []string) {
+func PeriodCollectWorking(batch []string, noderules [][]meta.Filter_rule) {
 	graphperiod := conf.Global_config.Topo.Period
 
 	agentmanager.Topo.UpdateMachineList()
 
-	go func(interval int64, gdb dao.GraphdbIface) {
+	go func(_interval int64, _gdb dao.GraphdbIface, _noderules [][]meta.Filter_rule) {
 		for {
 			running_agent_num := dao.Global_redis.UpdateTopoRunningAgentList(batch)
 			unixtime_now := time.Now().Unix()
-			PeriodProcessWorking(unixtime_now, running_agent_num, gdb)
-			time.Sleep(time.Duration(interval) * time.Second)
+			PeriodProcessWorking(unixtime_now, running_agent_num, _gdb, _noderules)
+			time.Sleep(time.Duration(_interval) * time.Second)
 		}
-	}(graphperiod, dao.Global_GraphDB)
+	}(graphperiod, dao.Global_GraphDB, noderules)
 }
 
-func PeriodProcessWorking(unixtime int64, agentnum int, graphdb dao.GraphdbIface) {
+func PeriodProcessWorking(unixtime int64, agentnum int, graphdb dao.GraphdbIface, noderules [][]meta.Filter_rule) {
 	start := time.Now()
 
 	var nodeTypeWg sync.WaitGroup
@@ -40,7 +40,7 @@ func PeriodProcessWorking(unixtime int64, agentnum int, graphdb dao.GraphdbIface
 	_unixtime := strconv.Itoa(int(unixtime))
 
 	dataprocesser := processor.CreateDataProcesser()
-	nodes, edges, collect_errlist, process_errlist := dataprocesser.Process_data(agentnum)
+	nodes, edges, collect_errlist, process_errlist := dataprocesser.ProcessData(agentnum, noderules)
 	if len(collect_errlist) != 0 || len(process_errlist) != 0 {
 		for i, cerr := range collect_errlist {
 			collect_errlist[i] = errors.Wrap(cerr, "**warn**3") // err top

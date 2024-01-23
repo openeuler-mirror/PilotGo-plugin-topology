@@ -6,6 +6,7 @@ import (
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/agentmanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/dao"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/handler"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/meta"
 	service "gitee.com/openeuler/PilotGo-plugin-topology-server/service/background"
 )
 
@@ -50,7 +51,7 @@ func main() {
 	/*
 		topo插件自身数据采集模块周期性数据采集: 全局网络拓扑、单机拓扑
 	*/
-	service.PeriodCollectWorking([]string{})
+	service.PeriodCollectWorking([]string{}, [][]meta.Filter_rule{})
 
 	/*
 		终止进程信号监听
