@@ -22,7 +22,7 @@ func CreateDataCollector() *DataCollector {
 	return &DataCollector{}
 }
 
-func (d *DataCollector) Collect_instant_data() []error {
+func (d *DataCollector) CollectInstantData() []error {
 	start := time.Now()
 	var wg sync.WaitGroup
 	var errorlist []error

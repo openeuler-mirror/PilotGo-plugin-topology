@@ -26,7 +26,7 @@ func CreateDataProcesser() *DataProcesser {
 	return &DataProcesser{}
 }
 
-func (d *DataProcesser) Process_data(agentnum int) (*meta.Nodes, *meta.Edges, []error, []error) {
+func (d *DataProcesser) ProcessData(agentnum int, noderules [][]meta.Filter_rule) (*meta.Nodes, *meta.Edges, []error, []error) {
 	start := time.Now()
 	nodes := &meta.Nodes{
 		Lock:         sync.Mutex{},
@@ -55,7 +55,7 @@ func (d *DataProcesser) Process_data(agentnum int) (*meta.Nodes, *meta.Edges, []
 	}
 
 	datacollector := collector.CreateDataCollector()
-	collect_errorlist = datacollector.Collect_instant_data()
+	collect_errorlist = datacollector.CollectInstantData()
 	if len(collect_errorlist) != 0 {
 		for i, err := range collect_errorlist {
 			collect_errorlist[i] = errors.Wrap(err, "**7")
@@ -78,27 +78,36 @@ func (d *DataProcesser) Process_data(agentnum int) (*meta.Nodes, *meta.Edges, []
 
 			agent := value.(*agentmanager.Agent_m)
 
-			go func(ctx context.Context, _agent *agentmanager.Agent_m, _nodes *meta.Nodes, _edges *meta.Edges) {
+			go func(ctx context.Context, _agent *agentmanager.Agent_m, _nodes *meta.Nodes, _edges *meta.Edges, _noderules [][]meta.Filter_rule) {
 				defer wg.Done()
 
 				if _agent.Host_2 != nil && _agent.Processes_2 != nil && _agent.Netconnections_2 != nil {
-					err := d.Create_node_entities(_agent, _nodes)
-					if err != nil {
-						process_errorlist_rwlock.Lock()
-						process_errorlist = append(process_errorlist, errors.Wrap(err, "**2"))
-						process_errorlist_rwlock.Unlock()
+					if len(_noderules) != 0 {
+						err := d.CustomCreateNodeEntities(_agent, _nodes, _noderules)
+						if err != nil {
+							process_errorlist_rwlock.Lock()
+							process_errorlist = append(process_errorlist, errors.Wrap(err, "**2"))
+							process_errorlist_rwlock.Unlock()
+						}
+					} else {
+						err := d.CreateNodeEntities(_agent, _nodes)
+						if err != nil {
+							process_errorlist_rwlock.Lock()
+							process_errorlist = append(process_errorlist, errors.Wrap(err, "**2"))
+							process_errorlist_rwlock.Unlock()
+						}
 					}
 
 					<-ctx.Done()
 
-					err = d.Create_edge_entities(_agent, _edges, _nodes)
+					err := d.CreateEdgeEntities(_agent, _edges, _nodes)
 					if err != nil {
 						process_errorlist_rwlock.Lock()
 						process_errorlist = append(process_errorlist, errors.Wrap(err, "**2"))
 						process_errorlist_rwlock.Unlock()
 					}
 				}
-			}(ctx1, agent, nodes, edges)
+			}(ctx1, agent, nodes, edges, noderules)
 
 			return true
 		},
@@ -113,7 +122,7 @@ func (d *DataProcesser) Process_data(agentnum int) (*meta.Nodes, *meta.Edges, []
 	return nodes, edges, collect_errorlist, process_errorlist
 }
 
-func (d *DataProcesser) Create_node_entities(agent *agentmanager.Agent_m, nodes *meta.Nodes) error {
+func (d *DataProcesser) CreateNodeEntities(agent *agentmanager.Agent_m, nodes *meta.Nodes) error {
 	host_node := &meta.Node{
 		ID:         fmt.Sprintf("%s_%s_%s", agent.UUID, meta.NODE_HOST, agent.IP),
 		Name:       agent.UUID,
@@ -233,7 +242,7 @@ func (d *DataProcesser) Create_node_entities(agent *agentmanager.Agent_m, nodes 
 	return nil
 }
 
-func (d *DataProcesser) Create_edge_entities(agent *agentmanager.Agent_m, edges *meta.Edges, nodes *meta.Nodes) error {
+func (d *DataProcesser) CreateEdgeEntities(agent *agentmanager.Agent_m, edges *meta.Edges, nodes *meta.Nodes) error {
 	nodes_map := map[string][]*meta.Node{}
 
 	for _, node := range nodes.Nodes {
@@ -353,6 +362,14 @@ func (d *DataProcesser) Create_edge_entities(agent *agentmanager.Agent_m, edges 
 
 			edges.Add(peernet_edge)
 		}
+	}
+
+	return nil
+}
+
+func (p *DataProcesser) CustomCreateNodeEntities(agent *agentmanager.Agent_m, nodes *meta.Nodes, noderules [][]meta.Filter_rule) error {
+	for _, process := range agent.Processes_2 {
+		fmt.Printf(">>>%s: %s\n", agent.UUID, process.ExeName)
 	}
 
 	return nil
