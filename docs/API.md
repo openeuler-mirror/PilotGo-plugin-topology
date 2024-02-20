@@ -14,12 +14,24 @@
 ## 2. server端 API接口
 ### 2.1 获取agent列表
 - GET /plugin/topology/api/agentlist
-### 2.2 单机图数据
+### 2.2 图数据时间戳列表
+- GET /plugin/topology/api/timestamps
+### 2.3 topo-agent心跳监听
+- POST /plugin/topology/api/heartbeat
+### 2.4 单机图数据
 - GET /plugin/topology/api/single_host_tree/:uuid
-### 2.3 多机网络拓扑图数据
+### 2.5 多机网络拓扑图数据
 - GET /plugin/topology/api/multi_host
-### 2.4 topo-agent心跳监听
-- POST /heartbeat
+### 2.6 创建自定义拓扑配置
+- POST /plugin/topology/api/create_custom_topo
+### 2.7 删除自定义拓扑配置
+- DELETE /plugin/topology/api/delete_custom_topo
+### 2.8 更新自定义拓扑配置
+- PUT /plugin/topology/api/update_custom_topo
+### 2.9 自定义拓扑配置列表
+- GET /plugin/topology/api/custom_topo_list
+### 2.10 调用自定义拓扑配置
+- GET /plugin/topology/api/use_custom_topo
 
 ## 3. agent端 API接口
 ### 3.1 获取agent端采集数据
