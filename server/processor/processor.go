@@ -18,9 +18,9 @@ import (
 	"github.com/pkg/errors"
 )
 
-type DataProcesser struct{}
-
-var agent_node_count int32
+type DataProcesser struct {
+	agent_node_count int32
+}
 
 func CreateDataProcesser() *DataProcesser {
 	return &DataProcesser{}
@@ -65,7 +65,7 @@ func (d *DataProcesser) ProcessData(agentnum int, noderules [][]meta.Filter_rule
 	ctx1, cancel1 := context.WithCancel(agentmanager.Topo.Tctx)
 	go func(cancelfunc context.CancelFunc) {
 		for {
-			if atomic.LoadInt32(&agent_node_count) == int32(agentnum) {
+			if atomic.LoadInt32(&d.agent_node_count) == int32(agentnum) {
 				cancelfunc()
 				break
 			}
@@ -89,6 +89,15 @@ func (d *DataProcesser) ProcessData(agentnum int, noderules [][]meta.Filter_rule
 							process_errorlist = append(process_errorlist, errors.Wrap(err, "**2"))
 							process_errorlist_rwlock.Unlock()
 						}
+
+						<-ctx.Done()
+
+						err = d.CustomCreateEdgeEntities(_agent, _edges, _nodes)
+						if err != nil {
+							process_errorlist_rwlock.Lock()
+							process_errorlist = append(process_errorlist, errors.Wrap(err, "**2"))
+							process_errorlist_rwlock.Unlock()
+						}
 					} else {
 						err := d.CreateNodeEntities(_agent, _nodes)
 						if err != nil {
@@ -96,15 +105,15 @@ func (d *DataProcesser) ProcessData(agentnum int, noderules [][]meta.Filter_rule
 							process_errorlist = append(process_errorlist, errors.Wrap(err, "**2"))
 							process_errorlist_rwlock.Unlock()
 						}
-					}
 
-					<-ctx.Done()
+						<-ctx.Done()
 
-					err := d.CreateEdgeEntities(_agent, _edges, _nodes)
-					if err != nil {
-						process_errorlist_rwlock.Lock()
-						process_errorlist = append(process_errorlist, errors.Wrap(err, "**2"))
-						process_errorlist_rwlock.Unlock()
+						err = d.CreateEdgeEntities(_agent, _edges, _nodes)
+						if err != nil {
+							process_errorlist_rwlock.Lock()
+							process_errorlist = append(process_errorlist, errors.Wrap(err, "**2"))
+							process_errorlist_rwlock.Unlock()
+						}
 					}
 				}
 			}(ctx1, agent, nodes, edges, noderules)
@@ -114,7 +123,7 @@ func (d *DataProcesser) ProcessData(agentnum int, noderules [][]meta.Filter_rule
 	)
 	wg.Wait()
 
-	atomic.StoreInt32(&agent_node_count, int32(0))
+	atomic.StoreInt32(&d.agent_node_count, int32(0))
 
 	elapse := time.Since(start)
 	logger.Info("\033[32mtopo server 采集数据处理时间\033[0m: %v\n", elapse)
@@ -237,7 +246,127 @@ func (d *DataProcesser) CreateNodeEntities(agent *agentmanager.Agent_m, nodes *m
 		nodes.Add(iface_node)
 	}
 
-	atomic.AddInt32(&agent_node_count, int32(1))
+	atomic.AddInt32(&d.agent_node_count, int32(1))
+
+	return nil
+}
+
+func (d *DataProcesser) CustomCreateNodeEntities(agent *agentmanager.Agent_m, nodes *meta.Nodes, noderules [][]meta.Filter_rule) error {
+	host_node := &meta.Node{
+		ID:         fmt.Sprintf("%s_%s_%s", agent.UUID, meta.NODE_HOST, agent.IP),
+		Name:       agent.UUID,
+		Type:       meta.NODE_HOST,
+		UUID:       agent.UUID,
+		LayoutAttr: "a",
+		ComboId:    agent.UUID,
+		Metrics:    *utils.HostToMap(agent.Host_2, &agent.AddrInterfaceMap_2),
+	}
+
+	nodes.Add(host_node)
+
+	for _, rules := range noderules {
+		uuid := ""
+
+		for _, condition := range rules {
+			if condition.Rule_type != meta.FILTER_TYPE_HOST {
+				continue
+			}
+
+			uuid = condition.Rule_condition["uuid"]
+		}
+
+		if uuid != agent.UUID {
+			continue
+		}
+
+		for _, condition := range rules {
+			switch condition.Rule_type {
+			case meta.FILTER_TYPE_HOST:
+
+			case meta.FILTER_TYPE_PROCESS:
+				for _, process := range agent.Processes_2 {
+					if condition.Rule_condition["name"] == process.ExeName {
+						proc_node := &meta.Node{
+							ID:         fmt.Sprintf("%s_%s_%d", agent.UUID, meta.NODE_PROCESS, process.Pid),
+							Name:       process.ExeName,
+							Type:       meta.NODE_PROCESS,
+							UUID:       agent.UUID,
+							LayoutAttr: "b",
+							ComboId:    agent.UUID,
+							Metrics:    *utils.ProcessToMap(process),
+						}
+
+						nodes.Add(proc_node)
+
+						break
+					}
+				}
+			case meta.FILTER_TYPE_TAG:
+				for _, process := range agent.Processes_2 {
+					if condition.Rule_condition["tag_name"] == process.ExeName {
+						proc_node := &meta.Node{
+							ID:         fmt.Sprintf("%s_%s_%d", agent.UUID, meta.NODE_PROCESS, process.Pid),
+							Name:       process.ExeName,
+							Type:       meta.NODE_PROCESS,
+							UUID:       agent.UUID,
+							LayoutAttr: "b",
+							ComboId:    agent.UUID,
+							Metrics:    *utils.ProcessToMap(process),
+						}
+
+						nodes.Add(proc_node)
+
+						break
+					}
+				}
+			case meta.FILTER_TYPE_RESOURCE:
+				for _, disk := range agent.Disks_2 {
+					disk_node := &meta.Node{
+						ID:         fmt.Sprintf("%s_%s_%s", agent.UUID, meta.NODE_RESOURCE, disk.Partition.Device),
+						Name:       disk.Partition.Device,
+						Type:       meta.NODE_RESOURCE,
+						UUID:       agent.UUID,
+						LayoutAttr: "e",
+						ComboId:    agent.UUID,
+						Metrics:    *utils.DiskToMap(disk),
+					}
+
+					nodes.Add(disk_node)
+				}
+
+				for _, cpu := range agent.Cpus_2 {
+					cpu_node := &meta.Node{
+						ID:         fmt.Sprintf("%s_%s_%s", agent.UUID, meta.NODE_RESOURCE, "CPU"+strconv.Itoa(int(cpu.Info.CPU))),
+						Name:       "CPU" + strconv.Itoa(int(cpu.Info.CPU)),
+						Type:       meta.NODE_RESOURCE,
+						UUID:       agent.UUID,
+						LayoutAttr: "e",
+						ComboId:    agent.UUID,
+						Metrics:    *utils.CpuToMap(cpu),
+					}
+
+					nodes.Add(cpu_node)
+				}
+
+				for _, ifaceio := range agent.NetIOcounters_2 {
+					iface_node := &meta.Node{
+						ID:         fmt.Sprintf("%s_%s_%s", agent.UUID, meta.NODE_RESOURCE, "NC"+ifaceio.Name),
+						Name:       "NC" + ifaceio.Name,
+						Type:       meta.NODE_RESOURCE,
+						UUID:       agent.UUID,
+						LayoutAttr: "e",
+						ComboId:    agent.UUID,
+						Metrics:    *utils.InterfaceToMap(ifaceio),
+					}
+
+					nodes.Add(iface_node)
+				}
+			}
+		}
+
+	}
+
+	atomic.AddInt32(&d.agent_node_count, int32(1))
 
 	return nil
 }
@@ -260,14 +389,14 @@ func (d *DataProcesser) CreateEdgeEntities(agent *agentmanager.Agent_m, edges *m
 		}
 	}
 
-	for _, obj := range nodes_map[meta.NODE_HOST] {
-		for _, sub := range nodes_map[meta.NODE_PROCESS] {
-			if sub.UUID == obj.UUID && sub.Metrics["Pid"] == "1" {
+	for _, sub := range nodes_map[meta.NODE_HOST] {
+		for _, obj := range nodes_map[meta.NODE_PROCESS] {
+			if obj.UUID == sub.UUID && obj.Metrics["Pid"] == "1" {
 				belong_edge := &meta.Edge{
-					ID:   fmt.Sprintf("%s_%s_%s", sub.ID, meta.EDGE_BELONG, obj.ID),
+					ID:   fmt.Sprintf("%s_%s_%s", obj.ID, meta.EDGE_BELONG, sub.ID),
 					Type: meta.EDGE_BELONG,
-					Src:  sub.ID,
-					Dst:  obj.ID,
+					Src:  obj.ID,
+					Dst:  sub.ID,
 					Dir:  "direct",
 				}
 
@@ -276,14 +405,14 @@ func (d *DataProcesser) CreateEdgeEntities(agent *agentmanager.Agent_m, edges *m
 		}
 	}
 
-	for _, obj := range nodes_map[meta.NODE_HOST] {
-		for _, sub := range nodes_map[meta.NODE_RESOURCE] {
+	for _, sub := range nodes_map[meta.NODE_HOST] {
+		for _, obj := range nodes_map[meta.NODE_RESOURCE] {
 			if sub.UUID == obj.UUID {
 				belong_edge := &meta.Edge{
-					ID:   fmt.Sprintf("%s_%s_%s", sub.ID, meta.EDGE_BELONG, obj.ID),
+					ID:   fmt.Sprintf("%s_%s_%s", obj.ID, meta.EDGE_BELONG, sub.ID),
 					Type: meta.EDGE_BELONG,
-					Src:  sub.ID,
-					Dst:  obj.ID,
+					Src:  obj.ID,
+					Dst:  sub.ID,
 					Dir:  "direct",
 				}
 
@@ -294,7 +423,7 @@ func (d *DataProcesser) CreateEdgeEntities(agent *agentmanager.Agent_m, edges *m
 
 	for _, sub := range nodes_map[meta.NODE_PROCESS] {
 		for _, obj := range nodes_map[meta.NODE_PROCESS] {
-			if obj.Metrics["Pid"] == sub.Metrics["Ppid"] && obj.UUID == sub.UUID {
+			if obj.UUID == sub.UUID && obj.Metrics["Pid"] == sub.Metrics["Ppid"] {
 				belong_edge := &meta.Edge{
 					ID:   fmt.Sprintf("%s_%s_%s", sub.ID, meta.EDGE_BELONG, obj.ID),
 					Type: meta.EDGE_BELONG,
@@ -367,9 +496,126 @@ func (d *DataProcesser) CreateEdgeEntities(agent *agentmanager.Agent_m, edges *m
 	return nil
 }
 
-func (p *DataProcesser) CustomCreateNodeEntities(agent *agentmanager.Agent_m, nodes *meta.Nodes, noderules [][]meta.Filter_rule) error {
-	for _, process := range agent.Processes_2 {
-		fmt.Printf(">>>%s: %s\n", agent.UUID, process.ExeName)
+func (d *DataProcesser) CustomCreateEdgeEntities(agent *agentmanager.Agent_m, edges *meta.Edges, nodes *meta.Nodes) error {
+	nodes_map := map[string][]*meta.Node{}
+
+	for _, node := range nodes.Nodes {
+		switch node.Type {
+		case meta.NODE_HOST:
+			nodes_map[meta.NODE_HOST] = append(nodes_map[meta.NODE_HOST], node)
+		case meta.NODE_PROCESS:
+			nodes_map[meta.NODE_PROCESS] = append(nodes_map[meta.NODE_PROCESS], node)
+		case meta.NODE_THREAD:
+			nodes_map[meta.NODE_THREAD] = append(nodes_map[meta.NODE_THREAD], node)
+		case meta.NODE_NET:
+			nodes_map[meta.NODE_NET] = append(nodes_map[meta.NODE_NET], node)
+		case meta.NODE_RESOURCE:
+			nodes_map[meta.NODE_RESOURCE] = append(nodes_map[meta.NODE_RESOURCE], node)
+		}
+	}
+
+	for _, sub := range nodes_map[meta.NODE_HOST] {
+		for _, obj := range nodes_map[meta.NODE_PROCESS] {
+			if obj.UUID == sub.UUID { // && obj.Metrics["Pid"] == "1"
+				belong_edge := &meta.Edge{
+					ID:   fmt.Sprintf("%s_%s_%s", obj.ID, meta.EDGE_BELONG, sub.ID),
+					Type: meta.EDGE_BELONG,
+					Src:  obj.ID,
+					Dst:  sub.ID,
+					Dir:  "direct",
+				}
+
+				edges.Add(belong_edge)
+			}
+		}
+	}
+
+	for _, sub := range nodes_map[meta.NODE_HOST] {
+		for _, obj := range nodes_map[meta.NODE_RESOURCE] {
+			if sub.UUID == obj.UUID {
+				belong_edge := &meta.Edge{
+					ID:   fmt.Sprintf("%s_%s_%s", obj.ID, meta.EDGE_BELONG, sub.ID),
+					Type: meta.EDGE_BELONG,
+					Src:  obj.ID,
+					Dst:  sub.ID,
+					Dir:  "direct",
+				}
+
+				edges.Add(belong_edge)
+			}
+		}
+	}
+
+	for _, sub := range nodes_map[meta.NODE_PROCESS] {
+		for _, obj := range nodes_map[meta.NODE_PROCESS] {
+			if obj.UUID == sub.UUID && obj.Metrics["Pid"] == sub.Metrics["Ppid"] {
+				belong_edge := &meta.Edge{
+					ID:   fmt.Sprintf("%s_%s_%s", sub.ID, meta.EDGE_BELONG, obj.ID),
+					Type: meta.EDGE_BELONG,
+					Src:  sub.ID,
+					Dst:  obj.ID,
+					Dir:  "direct",
+				}
+
+				edges.Add(belong_edge)
+			}
+		}
+	}
+
+	// TODO: 暂定net节点关系的type均为server，暂时无法判断socket连接中的server端和agent端，需要借助其他网络工具
+	for _, sub := range nodes_map[meta.NODE_NET] {
+		for _, obj := range nodes_map[meta.NODE_PROCESS] {
+			if obj.Metrics["Pid"] == sub.Metrics["Pid"] {
+				server_edge := &meta.Edge{
+					ID:   fmt.Sprintf("%s_%s_%s", sub.ID, meta.EDGE_SERVER, obj.ID),
+					Type: meta.EDGE_SERVER,
+					Src:  sub.ID,
+					Dst:  obj.ID,
+					Dir:  "direct",
+				}
+
+				edges.Add(server_edge)
+			}
+		}
+	}
+
+	// 生成跨主机对等网络关系实例
+	for _, net := range agent.Netconnections_2 {
+		var peernode1 *meta.Node
+		var peernode2 *meta.Node
+
+		for _, netnode := range nodes_map[meta.NODE_NET] {
+			switch netnode.Metrics["Laddr"] {
+			case net.Laddr:
+				peernode1 = netnode
+			case net.Raddr:
+				peernode2 = netnode
+			}
+
+			if peernode1 != nil && peernode2 != nil {
+				break
+			}
+		}
+
+		if peernode1 != nil && peernode2 != nil {
+			var edgetype string
+			switch peernode1.Metrics["Type"] {
+			case "1":
+				edgetype = meta.EDGE_TCP
+			case "2":
+				edgetype = meta.EDGE_UDP
+			}
+
+			peernet_edge := &meta.Edge{
+				ID:   fmt.Sprintf("%s_%s_%s", peernode1.ID, edgetype, peernode2.ID),
+				Type: edgetype,
+				Src:  peernode1.ID,
+				Dst:  peernode2.ID,
+				Dir:  "undirect",
+			}
+
+			edges.Add(peernet_edge)
+		}
 	}
 
 	return nil
