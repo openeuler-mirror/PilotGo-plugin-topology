@@ -25,13 +25,13 @@ func PeriodCollectWorking(batch []string, noderules [][]meta.Filter_rule) {
 		for {
 			running_agent_num := dao.Global_redis.UpdateTopoRunningAgentList(batch)
 			unixtime_now := time.Now().Unix()
-			PeriodProcessWorking(unixtime_now, running_agent_num, _gdb, _noderules)
+			DataProcessWorking(unixtime_now, running_agent_num, _gdb, _noderules)
 			time.Sleep(time.Duration(_interval) * time.Second)
 		}
 	}(graphperiod, dao.Global_GraphDB, noderules)
 }
 
-func PeriodProcessWorking(unixtime int64, agentnum int, graphdb dao.GraphdbIface, noderules [][]meta.Filter_rule) {
+func DataProcessWorking(unixtime int64, agentnum int, graphdb dao.GraphdbIface, noderules [][]meta.Filter_rule) ([]*meta.Node, []*meta.Edge, []map[string]string) {
 	start := time.Now()
 
 	var nodeTypeWg sync.WaitGroup
@@ -51,6 +51,21 @@ func PeriodProcessWorking(unixtime int64, agentnum int, graphdb dao.GraphdbIface
 			process_errlist[i] = errors.Wrap(perr, "**warn**8") // err top
 			agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, process_errlist[i], agentmanager.Topo.ErrCh, false)
 		}
+	}
+
+	if len(noderules) != 0 {
+		combos := make([]map[string]string, 0)
+
+		for _, node := range nodes.Nodes {
+			if node.Type == "host" {
+				combos = append(combos, map[string]string{
+					"id":    node.UUID,
+					"label": node.UUID,
+				})
+			}
+		}
+
+		return nodes.Nodes, edges.Edges, combos
 	}
 
 	for _, nodesByUUID := range nodes.LookupByUUID {
@@ -118,4 +133,6 @@ func PeriodProcessWorking(unixtime int64, agentnum int, graphdb dao.GraphdbIface
 	elapse := time.Since(start)
 	// fmt.Fprintf(agentmanager.Topo.Out, "\033[32mtopo server 数据库写入时间\033[0m: %v\n\n", elapse)
 	logger.Info("\033[32mtopo server 数据库写入时间\033[0m: %v\n\n", elapse)
+
+	return nil, nil, nil
 }
