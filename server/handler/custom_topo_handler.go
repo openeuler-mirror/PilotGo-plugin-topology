@@ -77,9 +77,9 @@ func UpdateCustomTopoHandle(ctx *gin.Context) {
 
 }
 
-func UseCustomTopoHandle(ctx *gin.Context) {
+func RunCustomTopoHandle(ctx *gin.Context) {
 	// TODO: 执行业务之前先判断batch集群中的机器是否部署且运行topo-agent
-	
+
 	tcid_str := ctx.Query("id")
 	if tcid_str == "" {
 		err := errors.New("id is nil **warn**1") // err top
@@ -131,7 +131,7 @@ func UseCustomTopoHandle(ctx *gin.Context) {
 			"error": err.Error(),
 			"data":  nil,
 		})
-		
+
 		return
 	}
 

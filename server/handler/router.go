@@ -42,7 +42,7 @@ func InitRouter(router *gin.Engine) {
 		api.POST("/create_custom_topo", CreateCustomTopoHandle)
 		api.DELETE("/delete_custom_topo", DeleteCustomTopoHandle)
 		api.PUT("/update_custom_topo", UpdateCustomTopoHandle)
-		api.GET("/use_custom_topo", UseCustomTopoHandle)
+		api.GET("/run_custom_topo", RunCustomTopoHandle)
 
 	}
 }

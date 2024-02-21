@@ -2,6 +2,13 @@ package meta
 
 import "time"
 
+const (
+	FILTER_TYPE_HOST = "host"
+	FILTER_TYPE_PROCESS = "process"
+	FILTER_TYPE_RESOURCE = "resource"
+	FILTER_TYPE_TAG = "tag"
+)
+
 type Topo_configuration struct {
 	ID          uint            `gorm:"primary_key;AUTO_INCREMENT" json:"id"`
 	Name        string          `gorm:"not null;type:varchar(200)" json:"conf_name"`
@@ -27,8 +34,8 @@ type Topo_configuration_DB struct {
 }
 
 type Filter_rule struct {
-	Rule_type      string              `json:"rule_type"`
-	Rule_condition []map[string]string `json:"rule_condition"`
+	Rule_type      string            `json:"rule_type"`
+	Rule_condition map[string]string `json:"rule_condition"`
 }
 
 type Tag_rule struct {

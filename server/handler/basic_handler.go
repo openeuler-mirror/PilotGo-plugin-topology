@@ -15,7 +15,8 @@ import (
 )
 
 func HeartbeatHandle(ctx *gin.Context) {
-	// agent发送的心跳参数为uuid和ip:port，写入redis的数据为 (heartbeat-uuid: {addr: "10.44.55.66:9992", time: "2023-12-22T17:09:23+08:00"})
+	// agent发送的心跳参数为uuid、ip:port、HeartbeatInterval、time，
+	// 写入redis的数据为 (heartbeat-<uuid>: {"UUID": "f7504bef-76e9-446c-95ee-196878b398a1", "Addr": "10.44.55.66:9992", "HeartbeatInterval": 60, "Time": "2023-12-22T17:09:23+08:00"})
 	uuid := ctx.Query("uuid")
 	addr := ctx.Query("agentaddr")
 	heartbeatinterval, _ := strconv.Atoi(ctx.Query("interval"))
