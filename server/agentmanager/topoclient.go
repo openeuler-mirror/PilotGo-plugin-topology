@@ -105,13 +105,13 @@ func (t *Topoclient) InitMachineList() {
 }
 
 func (t *Topoclient) UpdateMachineList() {
-	var url_pilotgo_server string
+	var ip_port_pilotgo_server string
 
 	if Topo != nil && Topo.Sdkmethod != nil {
-		url_pilotgo_server = Topo.Sdkmethod.Server()
+		ip_port_pilotgo_server = Topo.Sdkmethod.Server()
 	}
 
-	url := "http://" + url_pilotgo_server + "/api/v1/pluginapi/machine_list"
+	url := "http://" + ip_port_pilotgo_server + "/api/v1/pluginapi/machine_list"
 
 	resp, err := httputils.Get(url, nil)
 	if err != nil {
