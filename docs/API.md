@@ -25,13 +25,13 @@
 ### 2.6 创建自定义拓扑配置
 - POST /plugin/topology/api/create_custom_topo
 ### 2.7 删除自定义拓扑配置
-- DELETE /plugin/topology/api/delete_custom_topo
+- DELETE /plugin/topology/api/delete_custom_topo?id=1
 ### 2.8 更新自定义拓扑配置
-- PUT /plugin/topology/api/update_custom_topo
+- PUT /plugin/topology/api/update_custom_topo?id=1
 ### 2.9 自定义拓扑配置列表
 - GET /plugin/topology/api/custom_topo_list
 ### 2.10 调用自定义拓扑配置
-- GET /plugin/topology/api/use_custom_topo
+- GET /plugin/topology/api/run_custom_topo?id=1
 
 ## 3. agent端 API接口
 ### 3.1 获取agent端采集数据
