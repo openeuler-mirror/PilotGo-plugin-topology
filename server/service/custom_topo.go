@@ -26,7 +26,7 @@ func CustomTopoService(tcid uint) ([]*meta.Node, []*meta.Edge, []map[string]stri
 	agentmanager.Topo.UpdateMachineList()
 	running_agent_num := dao.Global_redis.UpdateTopoRunningAgentList(tc.Machines)
 	unixtime_now := time.Now().Unix()
-	nodes, edges, combos := back.DataProcessWorking(unixtime_now, running_agent_num, dao.Global_GraphDB, tc.NodeRules)
+	nodes, edges, combos := back.DataProcessWorking(unixtime_now, running_agent_num, dao.Global_GraphDB, tc.TagRules, tc.NodeRules)
 
 	return nodes, edges, combos, nil
 }

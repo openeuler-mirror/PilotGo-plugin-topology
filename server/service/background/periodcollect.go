@@ -25,13 +25,13 @@ func PeriodCollectWorking(batch []string, noderules [][]meta.Filter_rule) {
 		for {
 			running_agent_num := dao.Global_redis.UpdateTopoRunningAgentList(batch)
 			unixtime_now := time.Now().Unix()
-			DataProcessWorking(unixtime_now, running_agent_num, _gdb, _noderules)
+			DataProcessWorking(unixtime_now, running_agent_num, _gdb, nil, _noderules)
 			time.Sleep(time.Duration(_interval) * time.Second)
 		}
 	}(graphperiod, dao.Global_GraphDB, noderules)
 }
 
-func DataProcessWorking(unixtime int64, agentnum int, graphdb dao.GraphdbIface, noderules [][]meta.Filter_rule) ([]*meta.Node, []*meta.Edge, []map[string]string) {
+func DataProcessWorking(unixtime int64, agentnum int, graphdb dao.GraphdbIface, tagrules []meta.Tag_rule, noderules [][]meta.Filter_rule) ([]*meta.Node, []*meta.Edge, []map[string]string) {
 	start := time.Now()
 
 	var nodeTypeWg sync.WaitGroup
@@ -40,7 +40,7 @@ func DataProcessWorking(unixtime int64, agentnum int, graphdb dao.GraphdbIface, 
 	_unixtime := strconv.Itoa(int(unixtime))
 
 	dataprocesser := processor.CreateDataProcesser()
-	nodes, edges, collect_errlist, process_errlist := dataprocesser.ProcessData(agentnum, noderules)
+	nodes, edges, collect_errlist, process_errlist := dataprocesser.ProcessData(agentnum, tagrules, noderules)
 	if len(collect_errlist) != 0 || len(process_errlist) != 0 {
 		for i, cerr := range collect_errlist {
 			collect_errlist[i] = errors.Wrap(cerr, "**warn**3") // err top

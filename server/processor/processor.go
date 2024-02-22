@@ -26,7 +26,7 @@ func CreateDataProcesser() *DataProcesser {
 	return &DataProcesser{}
 }
 
-func (d *DataProcesser) ProcessData(agentnum int, noderules [][]meta.Filter_rule) (*meta.Nodes, *meta.Edges, []error, []error) {
+func (d *DataProcesser) ProcessData(agentnum int, tagrules []meta.Tag_rule, noderules [][]meta.Filter_rule) (*meta.Nodes, *meta.Edges, []error, []error) {
 	start := time.Now()
 	nodes := &meta.Nodes{
 		Lock:         sync.Mutex{},
@@ -78,12 +78,12 @@ func (d *DataProcesser) ProcessData(agentnum int, noderules [][]meta.Filter_rule
 
 			agent := value.(*agentmanager.Agent_m)
 
-			go func(ctx context.Context, _agent *agentmanager.Agent_m, _nodes *meta.Nodes, _edges *meta.Edges, _noderules [][]meta.Filter_rule) {
+			go func(ctx context.Context, _agent *agentmanager.Agent_m, _nodes *meta.Nodes, _edges *meta.Edges, _tagrules []meta.Tag_rule, _noderules [][]meta.Filter_rule) {
 				defer wg.Done()
 
 				if _agent.Host_2 != nil && _agent.Processes_2 != nil && _agent.Netconnections_2 != nil {
 					if len(_noderules) != 0 {
-						err := d.CustomCreateNodeEntities(_agent, _nodes, _noderules)
+						err := d.CustomCreateNodeEntities(_agent, _nodes, _tagrules, _noderules)
 						if err != nil {
 							process_errorlist_rwlock.Lock()
 							process_errorlist = append(process_errorlist, errors.Wrap(err, "**2"))
@@ -116,7 +116,7 @@ func (d *DataProcesser) ProcessData(agentnum int, noderules [][]meta.Filter_rule
 						}
 					}
 				}
-			}(ctx1, agent, nodes, edges, noderules)
+			}(ctx1, agent, nodes, edges, tagrules, noderules)
 
 			return true
 		},
@@ -251,7 +251,7 @@ func (d *DataProcesser) CreateNodeEntities(agent *agentmanager.Agent_m, nodes *m
 	return nil
 }
 
-func (d *DataProcesser) CustomCreateNodeEntities(agent *agentmanager.Agent_m, nodes *meta.Nodes, noderules [][]meta.Filter_rule) error {
+func (d *DataProcesser) CustomCreateNodeEntities(agent *agentmanager.Agent_m, nodes *meta.Nodes, tagrules []meta.Tag_rule, noderules [][]meta.Filter_rule) error {
 	host_node := &meta.Node{
 		ID:         fmt.Sprintf("%s_%s_%s", agent.UUID, meta.NODE_HOST, agent.IP),
 		Name:       agent.UUID,
@@ -262,19 +262,19 @@ func (d *DataProcesser) CustomCreateNodeEntities(agent *agentmanager.Agent_m, no
 		Metrics:    *utils.HostToMap(agent.Host_2, &agent.AddrInterfaceMap_2),
 	}
 
+	host_node.Tags = append(host_node.Tags, host_node.UUID, host_node.Type)
+	host_node = utils.TagInjection(host_node, tagrules)
+
 	nodes.Add(host_node)
 
 	for _, rules := range noderules {
 		uuid := ""
-
 		for _, condition := range rules {
-			if condition.Rule_type != meta.FILTER_TYPE_HOST {
-				continue
-			}
-
-			uuid = condition.Rule_condition["uuid"]
+			if condition.Rule_type == meta.FILTER_TYPE_HOST {
+				uuid = condition.Rule_condition["uuid"]
+				break
+			}	
 		}
-
 		if uuid != agent.UUID {
 			continue
 		}
@@ -296,6 +296,9 @@ func (d *DataProcesser) CustomCreateNodeEntities(agent *agentmanager.Agent_m, no
 							Metrics:    *utils.ProcessToMap(process),
 						}
 
+						proc_node.Tags = append(proc_node.Tags, proc_node.UUID, proc_node.Type)
+						proc_node = utils.TagInjection(proc_node, tagrules)
+
 						nodes.Add(proc_node)
 
 						break
@@ -314,6 +317,9 @@ func (d *DataProcesser) CustomCreateNodeEntities(agent *agentmanager.Agent_m, no
 							Metrics:    *utils.ProcessToMap(process),
 						}
 
+						proc_node.Tags = append(proc_node.Tags, proc_node.UUID, proc_node.Type)
+						proc_node = utils.TagInjection(proc_node, tagrules)
+
 						nodes.Add(proc_node)
 
 						break
@@ -331,6 +337,9 @@ func (d *DataProcesser) CustomCreateNodeEntities(agent *agentmanager.Agent_m, no
 						Metrics:    *utils.DiskToMap(disk),
 					}
 
+					disk_node.Tags = append(disk_node.Tags, disk_node.UUID, disk_node.Type)
+					disk_node = utils.TagInjection(disk_node, tagrules)
+
 					nodes.Add(disk_node)
 				}
 
@@ -345,6 +354,9 @@ func (d *DataProcesser) CustomCreateNodeEntities(agent *agentmanager.Agent_m, no
 						Metrics:    *utils.CpuToMap(cpu),
 					}
 
+					cpu_node.Tags = append(cpu_node.Tags, cpu_node.UUID, cpu_node.Type)
+					cpu_node = utils.TagInjection(cpu_node, tagrules)
+
 					nodes.Add(cpu_node)
 				}
 
@@ -358,6 +370,9 @@ func (d *DataProcesser) CustomCreateNodeEntities(agent *agentmanager.Agent_m, no
 						ComboId:    agent.UUID,
 						Metrics:    *utils.InterfaceToMap(ifaceio),
 					}
+
+					iface_node.Tags = append(iface_node.Tags, iface_node.UUID, iface_node.Type)
+					iface_node = utils.TagInjection(iface_node, tagrules)
 
 					nodes.Add(iface_node)
 				}
