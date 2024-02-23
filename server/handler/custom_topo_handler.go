@@ -233,5 +233,50 @@ func RunCustomTopoHandle(ctx *gin.Context) {
 }
 
 func DeleteCustomTopoHandle(ctx *gin.Context) {
+	tcid_str := ctx.Query("id")
+	if tcid_str == "" {
+		err := errors.New("id is nil **warn**1") // err top
+		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"code":  -1,
+			"error": fmt.Errorf("id is nil"),
+			"data":  nil,
+		})
+
+		return
+	}
+
+	tcid_int, err := strconv.Atoi(tcid_str)
+	if err != nil {
+		err = errors.Wrap(err, "**warn**2") // err top
+		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
+
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"code":  -1,
+			"error": err.Error(),
+			"data":  nil,
+		})
+
+		return
+	}
+
+	if err := dao.Global_mysql.DeleteTopoConfiguration(uint(tcid_int)); err != nil {
+		err = errors.Wrap(err, "**warn**2") // err top
+		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
+
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"code":  -1,
+			"error": err.Error(),
+			"data":  nil,
+		})
+
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"code":  0,
+		"error": nil,
+		"data":  nil,
+	})
 }
