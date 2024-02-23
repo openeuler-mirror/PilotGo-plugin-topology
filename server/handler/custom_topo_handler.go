@@ -168,7 +168,7 @@ func RunCustomTopoHandle(ctx *gin.Context) {
 
 	tcid_str := ctx.Query("id")
 	if tcid_str == "" {
-		err := errors.New("id is nil **warn**1") // err top
+		err := errors.New("id is nil **warn**2") // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 
 		ctx.JSON(http.StatusBadRequest, gin.H{
