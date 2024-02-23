@@ -1,40 +1,32 @@
 import request from './request';
 
-export const topo = {
-  async multi_host_topo() {
-    try {
-      const response = await request.get('/plugin/topology/api/multi_host');
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
-  async single_host_topo(node:string) {
-    try {
-      const response = await request.get('/plugin/topology/api/single_host/'+node);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  async single_host_tree(node:string) {
-    try {
-      const response = await request.get('/plugin/topology/api/single_host_tree/'+node);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  async host_list() {
-    try {
-      const response = await request.get('/plugin/topology/api/agentlist');
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
-  
-  // 添加其他API请求方法
-};
+// 请求拓扑图数据
+export function getTopoData() {
+  return request({
+    url: '/plugin/topology/api/multi_host',
+    method: 'get'
+  })
+}
+// 请求单个拓扑图数据
+export function getSingleTopo(node: string) {
+  return request({
+    url: '/plugin/topology/api/single_host',
+    method: 'get',
+    params: node
+  })
+}
+// 请求单个数图数据
+export function getSingleTree(node: string) {
+  return request({
+    url: '/plugin/topology/api/single_host_tree',
+    method: 'get',
+    params: node
+  })
+}
+// 请求host列表
+export function getHostList() {
+  return request({
+    url: '/plugin/topology/api/agentlist',
+    method: 'get'
+  })
+}
