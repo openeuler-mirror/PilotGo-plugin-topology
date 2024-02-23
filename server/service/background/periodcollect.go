@@ -3,6 +3,7 @@ package service
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -31,7 +32,7 @@ func PeriodCollectWorking(batch []string, noderules [][]meta.Filter_rule) {
 	}(graphperiod, dao.Global_GraphDB, noderules)
 }
 
-func DataProcessWorking(unixtime int64, agentnum int, graphdb dao.GraphdbIface, tagrules []meta.Tag_rule, noderules [][]meta.Filter_rule) ([]*meta.Node, []*meta.Edge, []map[string]string) {
+func DataProcessWorking(unixtime int64, agentnum int, graphdb dao.GraphdbIface, tagrules []meta.Tag_rule, noderules [][]meta.Filter_rule) ([]*meta.Node, []*meta.Edge, []map[string]string, error) {
 	start := time.Now()
 
 	var nodeTypeWg sync.WaitGroup
@@ -41,16 +42,27 @@ func DataProcessWorking(unixtime int64, agentnum int, graphdb dao.GraphdbIface, 
 
 	dataprocesser := processor.CreateDataProcesser()
 	nodes, edges, collect_errlist, process_errlist := dataprocesser.ProcessData(agentnum, tagrules, noderules)
-	if len(collect_errlist) != 0 || len(process_errlist) != 0 {
+	if len(collect_errlist) != 0 {
 		for i, cerr := range collect_errlist {
 			collect_errlist[i] = errors.Wrap(cerr, "**warn**3") // err top
 			agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, collect_errlist[i], agentmanager.Topo.ErrCh, false)
 		}
-
+		collect_errlist_string := []string{}
+		for _, e := range collect_errlist {
+			collect_errlist_string = append(collect_errlist_string, e.Error())
+		}
+		return nil, nil, nil, errors.Errorf("collect data failed: %+v **10", strings.Join(collect_errlist_string, "/e/"))
+	}
+	if len(process_errlist) != 0 {
 		for i, perr := range process_errlist {
-			process_errlist[i] = errors.Wrap(perr, "**warn**8") // err top
+			process_errlist[i] = errors.Wrap(perr, "**warn**14") // err top
 			agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, process_errlist[i], agentmanager.Topo.ErrCh, false)
 		}
+		process_errlist_string := []string{}
+		for _, e := range process_errlist {
+			process_errlist_string = append(process_errlist_string, e.Error())
+		}
+		return nil, nil, nil, errors.Errorf("process data failed: %+v **21", strings.Join(process_errlist_string, "/e/"))
 	}
 
 	if len(noderules) != 0 {
@@ -65,7 +77,7 @@ func DataProcessWorking(unixtime int64, agentnum int, graphdb dao.GraphdbIface, 
 			}
 		}
 
-		return nodes.Nodes, edges.Edges, combos
+		return nodes.Nodes, edges.Edges, combos, nil
 	}
 
 	for _, nodesByUUID := range nodes.LookupByUUID {
@@ -134,5 +146,5 @@ func DataProcessWorking(unixtime int64, agentnum int, graphdb dao.GraphdbIface, 
 	// fmt.Fprintf(agentmanager.Topo.Out, "\033[32mtopo server 数据库写入时间\033[0m: %v\n\n", elapse)
 	logger.Info("\033[32mtopo server 数据库写入时间\033[0m: %v\n\n", elapse)
 
-	return nil, nil, nil
+	return nil, nil, nil, nil
 }
