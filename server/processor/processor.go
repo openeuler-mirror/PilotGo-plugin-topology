@@ -263,8 +263,7 @@ func (d *DataProcesser) CustomCreateNodeEntities(agent *agentmanager.Agent_m, no
 	}
 
 	host_node.Tags = append(host_node.Tags, host_node.UUID, host_node.Type)
-	err := utils.TagInjection(host_node, tagrules)
-	if err != nil {
+	if err := utils.TagInjection(host_node, tagrules); err != nil {
 		atomic.AddInt32(&d.agent_node_count, int32(1))
 		return errors.Wrap(err, "**3")
 	}
@@ -275,13 +274,13 @@ func (d *DataProcesser) CustomCreateNodeEntities(agent *agentmanager.Agent_m, no
 		uuid := ""
 		for _, condition := range rules {
 			if condition.Rule_type == meta.FILTER_TYPE_HOST {
-				_uuid, ok := condition.Rule_condition["uuid"]
-				if !ok {
+				if _uuid, ok := condition.Rule_condition["uuid"]; !ok {
 					atomic.AddInt32(&d.agent_node_count, int32(1))
 					return errors.Errorf("there is no uuid field in node rule_condition: %+v **3", condition.Rule_condition)
+				} else {
+					uuid = _uuid
+					break
 				}
-				uuid = _uuid
-				break
 			}
 		}
 		if uuid != agent.UUID {
@@ -294,12 +293,10 @@ func (d *DataProcesser) CustomCreateNodeEntities(agent *agentmanager.Agent_m, no
 
 			case meta.FILTER_TYPE_PROCESS:
 				for _, process := range agent.Processes_2 {
-					_name, ok := condition.Rule_condition["name"]
-					if !ok {
+					if _name, ok := condition.Rule_condition["name"]; !ok {
 						atomic.AddInt32(&d.agent_node_count, int32(1))
 						return errors.Errorf("there is no name field in node rule_condition: %+v **3", condition.Rule_condition)
-					}
-					if _name == process.ExeName {
+					} else if _name == process.ExeName {
 						proc_node := &meta.Node{
 							ID:         fmt.Sprintf("%s_%s_%d", agent.UUID, meta.NODE_PROCESS, process.Pid),
 							Name:       process.ExeName,
@@ -311,8 +308,7 @@ func (d *DataProcesser) CustomCreateNodeEntities(agent *agentmanager.Agent_m, no
 						}
 
 						proc_node.Tags = append(proc_node.Tags, proc_node.UUID, proc_node.Type)
-						err := utils.TagInjection(proc_node, tagrules)
-						if err != nil {
+						if err := utils.TagInjection(proc_node, tagrules); err != nil {
 							atomic.AddInt32(&d.agent_node_count, int32(1))
 							return errors.Wrap(err, "**3")
 						}
@@ -324,12 +320,10 @@ func (d *DataProcesser) CustomCreateNodeEntities(agent *agentmanager.Agent_m, no
 				}
 			case meta.FILTER_TYPE_TAG:
 				for _, process := range agent.Processes_2 {
-					_tag, ok := condition.Rule_condition["tag_name"]
-					if !ok {
+					if _tag, ok := condition.Rule_condition["tag_name"]; !ok {
 						atomic.AddInt32(&d.agent_node_count, int32(1))
 						return errors.Errorf("there is no tag_name field in node rule_condition: %+v **3", condition.Rule_condition)
-					}
-					if _tag == process.ExeName {
+					} else if _tag == process.ExeName {
 						proc_node := &meta.Node{
 							ID:         fmt.Sprintf("%s_%s_%d", agent.UUID, meta.NODE_PROCESS, process.Pid),
 							Name:       process.ExeName,
@@ -341,8 +335,7 @@ func (d *DataProcesser) CustomCreateNodeEntities(agent *agentmanager.Agent_m, no
 						}
 
 						proc_node.Tags = append(proc_node.Tags, proc_node.UUID, proc_node.Type)
-						err := utils.TagInjection(proc_node, tagrules)
-						if err != nil {
+						if err := utils.TagInjection(proc_node, tagrules); err != nil {
 							atomic.AddInt32(&d.agent_node_count, int32(1))
 							return errors.Wrap(err, "**3")
 						}
@@ -365,8 +358,7 @@ func (d *DataProcesser) CustomCreateNodeEntities(agent *agentmanager.Agent_m, no
 					}
 
 					disk_node.Tags = append(disk_node.Tags, disk_node.UUID, disk_node.Type)
-					err := utils.TagInjection(disk_node, tagrules)
-					if err != nil {
+					if err := utils.TagInjection(disk_node, tagrules); err != nil {
 						atomic.AddInt32(&d.agent_node_count, int32(1))
 						return errors.Wrap(err, "")
 					}
@@ -386,8 +378,7 @@ func (d *DataProcesser) CustomCreateNodeEntities(agent *agentmanager.Agent_m, no
 					}
 
 					cpu_node.Tags = append(cpu_node.Tags, cpu_node.UUID, cpu_node.Type)
-					err := utils.TagInjection(cpu_node, tagrules)
-					if err != nil {
+					if err := utils.TagInjection(cpu_node, tagrules); err != nil {
 						atomic.AddInt32(&d.agent_node_count, int32(1))
 						return errors.Wrap(err, "**3")
 					}
@@ -407,8 +398,7 @@ func (d *DataProcesser) CustomCreateNodeEntities(agent *agentmanager.Agent_m, no
 					}
 
 					iface_node.Tags = append(iface_node.Tags, iface_node.UUID, iface_node.Type)
-					err := utils.TagInjection(iface_node, tagrules)
-					if err != nil {
+					if err := utils.TagInjection(iface_node, tagrules); err != nil {
 						atomic.AddInt32(&d.agent_node_count, int32(1))
 						return errors.Wrap(err, "**3")
 					}
