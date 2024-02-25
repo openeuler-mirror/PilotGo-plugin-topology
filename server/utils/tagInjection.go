@@ -36,19 +36,15 @@ func TagInjection(n *meta.Node, tags []meta.Tag_rule) error {
 				case meta.FILTER_TYPE_HOST:
 					continue
 				case meta.FILTER_TYPE_PROCESS:
-					_name, ok := condition.Rule_condition["name"]
-					if !ok {
+					if _name, ok := condition.Rule_condition["name"]; !ok {
 						return errors.Errorf("there is no name field in tag rule_condition: %+v **2", condition.Rule_condition)
-					}
-					if _name == n.Name {
+					} else if _name == n.Name {
 						n.Tags = append(n.Tags, tagrule.Tag_name)
 					}
 				case meta.FILTER_TYPE_TAG:
-					_tag, ok := condition.Rule_condition["tag_name"]
-					if !ok {
+					if _tag, ok := condition.Rule_condition["tag_name"]; !ok {
 						return errors.Errorf("there is no tag_name field in tag rule_condition: %+v **2", condition.Rule_condition)
-					}
-					if _tag == n.Name {
+					} else if _tag == n.Name {
 						n.Tags = append(n.Tags, tagrule.Tag_name)
 					}
 				case meta.FILTER_TYPE_RESOURCE:
