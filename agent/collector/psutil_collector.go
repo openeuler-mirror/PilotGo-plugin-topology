@@ -176,7 +176,9 @@ func (pc *PsutilCollector) Collect_process_instant_data() error {
 
 		iocounters, err := p0.IOCounters()
 		Echo_process_err("iocounters", err, p0.Pid)
-		p1.IOCounters = *iocounters
+		if iocounters != nil {
+			p1.IOCounters = *iocounters
+		}
 
 		p1.OpenFiles, err = p0.OpenFiles()
 		Echo_process_err("openfiles", err, p0.Pid)
@@ -186,15 +188,21 @@ func (pc *PsutilCollector) Collect_process_instant_data() error {
 
 		numctxswitches, err := p0.NumCtxSwitches()
 		Echo_process_err("numctxswitches", err, p0.Pid)
-		p1.NumCtxSwitches = *numctxswitches
+		if numctxswitches != nil {
+			p1.NumCtxSwitches = *numctxswitches
+		}
 
 		pagefaults, err := p0.PageFaults()
 		Echo_process_err("pagefaults", err, p0.Pid)
-		p1.PageFaults = *pagefaults
+		if pagefaults != nil {
+			p1.PageFaults = *pagefaults
+		}
 
 		memoryinfo, err := p0.MemoryInfo()
 		Echo_process_err("memoryinfo", err, p0.Pid)
-		p1.MemoryInfo = *memoryinfo
+		if memoryinfo != nil {
+			p1.MemoryInfo = *memoryinfo
+		}
 
 		p1.CPUPercent, err = p0.CPUPercent()
 		Echo_process_err("cpupercent", err, p0.Pid)

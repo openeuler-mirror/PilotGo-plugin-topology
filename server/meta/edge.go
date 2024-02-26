@@ -40,7 +40,7 @@ func (e *Edges) Add(edge *Edge) {
 		}
 
 		id_slice[0], id_slice[2] = id_slice[2], id_slice[0]
-		mirror_id := strings.Join(id_slice, "_")
+		mirror_id := strings.Join(id_slice, EDGE_CONNECTOR)
 
 		e.Lock.Lock()
 		if _, ok := e.Lookup.Load(mirror_id); !ok {
