@@ -33,7 +33,7 @@ type Edge struct {
 // 网络边镜像id检测：多个goruntine并发添加、访问、修改相同的edge实例
 func (e *Edges) Add(edge *Edge) {
 	if edge.Type == EDGE_TCP || edge.Type == EDGE_UDP {
-		id_slice := strings.Split(edge.ID, "_")
+		id_slice := strings.Split(edge.ID, EDGE_CONNECTOR)
 		if len(id_slice) != 3 {
 			logger.Error("can not generate mirror id of edge: %s, failed to add edge.", edge.ID)
 			return

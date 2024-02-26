@@ -24,9 +24,15 @@ const (
 	EDGE_UDP    = "udp"
 )
 
+const (
+	NODE_CONNECTOR = "_"
+	EDGE_CONNECTOR = "__"
+)
+
 func init() {
 	NODE_TYPES = []string{NODE_HOST, NODE_PROCESS, NODE_THREAD, NODE_NET, NODE_APP, NODE_RESOURCE}
 	EDGE_TYPES = []string{EDGE_BELONG, EDGE_SERVER, EDGE_CLIENT, EDGE_TCP, EDGE_UDP}
+
 	DEFAULT_TAGS = []string{
 		"redis-server",
 		"mysqld",
