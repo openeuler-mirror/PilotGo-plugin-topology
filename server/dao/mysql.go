@@ -112,10 +112,9 @@ func ensureDatabase(conf *conf.MysqlConf) error {
 	return nil
 }
 
-func (m *MysqlClient) QueryTopoConfiguration(tcid uint) (*meta.Topo_configuration_DB, error) {
+func (m *MysqlClient) QuerySingleTopoConfiguration(tcid uint) (*meta.Topo_configuration_DB, error) {
 	var tcdb *meta.Topo_configuration_DB = new(meta.Topo_configuration_DB)
-	err := m.db.Model(&meta.Topo_configuration_DB{}).Where("id=?", tcid).First(tcdb).Error
-	if err != nil {
+	if err := m.db.Model(&meta.Topo_configuration_DB{}).Where("id=?", tcid).First(tcdb).Error; err != nil {
 		err = errors.Errorf("query topo configuration failed: %s, %d", err.Error(), tcid)
 		return nil, err
 	}
@@ -123,22 +122,32 @@ func (m *MysqlClient) QueryTopoConfiguration(tcid uint) (*meta.Topo_configuratio
 	return tcdb, nil
 }
 
+func (m *MysqlClient) QueryTopoConfigurationList() ([]*meta.Topo_configuration_DB, error) {
+	tcdbs := make([]*meta.Topo_configuration_DB, 0)
+	if err := m.db.Find(&tcdbs).Error; err != nil {
+		err = errors.Errorf("query topo configuration list failed: %s", err.Error())
+		return nil, err
+	}
+
+	return tcdbs, nil
+}
+
 func (m *MysqlClient) AddTopoConfiguration(tc *meta.Topo_configuration_DB) error {
 	_tc := tc
-	err := m.db.Save(_tc).Error
-	if err != nil {
+	if err := m.db.Save(_tc).Error; err != nil {
 		err = errors.Errorf("add topo configuration failed: %s, %+v", err.Error(), tc)
 		return err
 	}
+
 	return nil
 }
 
 func (m *MysqlClient) DeleteTopoConfiguration(tcid uint) error {
-	err := m.db.Where("id = ?", tcid).Unscoped().Delete(meta.Topo_configuration_DB{}).Error
-	if err != nil {
+	if err := m.db.Where("id = ?", tcid).Unscoped().Delete(meta.Topo_configuration_DB{}).Error; err != nil {
 		err = errors.Errorf("delete topo configuration failed: %s, %d", err.Error(), tcid)
 		return err
 	}
+
 	return nil
 }
 
