@@ -69,7 +69,7 @@ const getTableData = () => {
   props.getData!({ page: page.currentPage, size: page.pageSize }).then(
     (res: { data: ResultData }) => {
       let result: ResultData = res.data;
-      if (result && result.code === 200) {
+      if (result && result.code === 0) {
         loading.value = false;
         tableData.value = result.data;
         currentNum.value = result.data.length;
