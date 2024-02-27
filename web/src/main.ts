@@ -1,4 +1,4 @@
-import './assets/main.css'
+import './styles/main.scss'
 
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
@@ -16,7 +16,7 @@ app.use(router)
 app.use(ElementPlus)
 app.use(VueGridLayout)
 for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
-    app.component(key, component)
+  app.component(key, component)
 }
 
 app.mount('#app')

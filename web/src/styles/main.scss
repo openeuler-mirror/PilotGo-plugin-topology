@@ -1,0 +1,11 @@
+@import 'init';
+.shadow {
+  box-shadow: 0 -3px 4px rgba(0, 0, 0, 0.05), 0 6px 10px 0 rgba(0, 0, 0, 0.1);
+}
+.flex {
+  display: flex;
+  align-items: center;
+}
+:root {
+  --active-color:rgb(241, 139, 14);
+}
