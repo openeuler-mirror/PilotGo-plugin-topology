@@ -53,3 +53,18 @@ func CustomTopoListService() ([]*meta.Topo_configuration, error) {
 
 	return tcs, nil
 }
+
+func CreateCustomTopoService(topoconfig *meta.Topo_configuration) error {
+	tcdb, err := dao.Global_mysql.TopoConfigurationToDB(topoconfig)
+	if err != nil {
+		return errors.Wrap(err, "**2")
+	}
+
+	tcdb.CreatedAt = time.Now().Format("2006-01-02 15:04:05")
+	tcdb.UpdatedAt = time.Now().Format("2006-01-02 15:04:05")
+	if err := dao.Global_mysql.AddTopoConfiguration(tcdb); err != nil {
+		return errors.Wrap(err, "**2")
+	}
+
+	return nil
+}
