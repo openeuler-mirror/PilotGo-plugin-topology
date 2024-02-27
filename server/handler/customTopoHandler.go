@@ -14,12 +14,22 @@ import (
 )
 
 func CustomTopoListHandle(ctx *gin.Context) {
-	custom_map := make(map[string]interface{})
+	tcs, err := service.CustomTopoListService()
+	if err != nil {
+		err = errors.Wrap(err, "**warn**2") // err top
+		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
+
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"code":  -1,
+			"error": err.Error(),
+			"data":  nil,
+		})
+	}
 
 	ctx.JSON(http.StatusOK, gin.H{
 		"code":  0,
 		"error": nil,
-		"data":  custom_map,
+		"data":  tcs,
 	})
 }
 
@@ -194,7 +204,7 @@ func RunCustomTopoHandle(ctx *gin.Context) {
 		return
 	}
 
-	nodes, edges, combos, err := service.CustomTopoService(uint(tcid_int))
+	nodes, edges, combos, err := service.RunCustomTopoService(uint(tcid_int))
 	if err != nil {
 		err = errors.Wrap(err, " **warn**2") // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
