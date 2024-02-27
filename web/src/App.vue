@@ -1,7 +1,11 @@
 <template>
   <div class="app">
     <el-config-provider :locale="zhCn">
-      <router-view></router-view>
+      <router-view v-slot="{ Component }">
+        <transition name="fade">
+          <component :is="Component" />
+        </transition>
+      </router-view>
     </el-config-provider>
   </div>
 </template>
@@ -20,5 +24,15 @@ const zhCn = ref(locale);
   height: 100%;
   width: 100%;
   background-color: #f5f5f9;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity .3s;
+}
+
+.fade-enter,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>
