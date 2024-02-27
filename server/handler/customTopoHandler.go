@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/agentmanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/dao"
@@ -49,22 +50,8 @@ func CreateCustomTopoHandle(ctx *gin.Context) {
 		return
 	}
 
-	tcdb, err := dao.Global_mysql.TopoConfigurationToDB(tc)
-	if err != nil {
-		err = errors.Wrap(err, "**warn**2") // err top
-		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
-
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"code":  -1,
-			"error": err.Error(),
-			"data":  nil,
-		})
-
-		return
-	}
-
-	if err := dao.Global_mysql.AddTopoConfiguration(tcdb); err != nil {
-		err = errors.Wrap(err, "**warn**2") // err top
+	if err := service.CreateCustomTopoService(tc); err != nil {
+		err = errors.Wrap(err, "**warn**1") // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 
 		ctx.JSON(http.StatusInternalServerError, gin.H{
@@ -153,6 +140,7 @@ func UpdateCustomTopoHandle(ctx *gin.Context) {
 		return
 	}
 
+	tcdb.UpdatedAt = time.Now().Format("2006-01-02 15:04:05")
 	if err := dao.Global_mysql.AddTopoConfiguration(tcdb); err != nil {
 		err = errors.Wrap(err, "**warn**2") // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)

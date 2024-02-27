@@ -166,6 +166,7 @@ func (m *MysqlClient) TopoConfigurationToDB(tc *meta.Topo_configuration) (*meta.
 	tcdb.Name = tc.Name
 	tcdb.Description = tc.Description
 	tcdb.CreatedAt = tc.CreatedAt
+	tcdb.UpdatedAt = tc.UpdatedAt
 	tcdb.Version = tc.Version
 	tcdb.Preserve = tc.Preserve
 	tcdb.Machines = string(machines_bytes)
@@ -190,6 +191,7 @@ func (m *MysqlClient) DBToTopoConfiguration(tcdb *meta.Topo_configuration_DB) (*
 	tc.Name = tcdb.Name
 	tc.Description = tcdb.Description
 	tc.CreatedAt = tcdb.CreatedAt
+	tc.UpdatedAt = tcdb.UpdatedAt
 	tc.Version = tcdb.Version
 	tc.Preserve = tcdb.Preserve
 
