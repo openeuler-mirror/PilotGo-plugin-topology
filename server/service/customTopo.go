@@ -10,8 +10,8 @@ import (
 	"github.com/pkg/errors"
 )
 
-func CustomTopoService(tcid uint) ([]*meta.Node, []*meta.Edge, []map[string]string, error) {
-	tcdb, err := dao.Global_mysql.QueryTopoConfiguration(tcid)
+func RunCustomTopoService(tcid uint) ([]*meta.Node, []*meta.Edge, []map[string]string, error) {
+	tcdb, err := dao.Global_mysql.QuerySingleTopoConfiguration(tcid)
 	if err != nil {
 		return nil, nil, nil, errors.Wrap(err, "**2")
 	}
@@ -32,4 +32,24 @@ func CustomTopoService(tcid uint) ([]*meta.Node, []*meta.Edge, []map[string]stri
 	}
 
 	return nodes, edges, combos, nil
+}
+
+func CustomTopoListService() ([]*meta.Topo_configuration, error) {
+	tcs := make([]*meta.Topo_configuration, 0)
+
+	tcdbs, err := dao.Global_mysql.QueryTopoConfigurationList()
+	if err != nil {
+		return nil, errors.Wrap(err, "**2")
+	}
+
+	for _, tcdb := range tcdbs {
+		tc, err := dao.Global_mysql.DBToTopoConfiguration(tcdb)
+		if err != nil {
+			return nil, errors.Wrap(err, "**2")
+		}
+
+		tcs = append(tcs, tc)
+	}
+
+	return tcs, nil
 }
