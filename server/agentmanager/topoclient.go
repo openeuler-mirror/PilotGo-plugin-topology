@@ -16,6 +16,7 @@ import (
 
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/conf"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/meta"
+	"gitee.com/openeuler/PilotGo/sdk/common"
 	"gitee.com/openeuler/PilotGo/sdk/logger"
 	"gitee.com/openeuler/PilotGo/sdk/plugin/client"
 	"gitee.com/openeuler/PilotGo/sdk/utils/httputils"
@@ -46,8 +47,21 @@ type Topoclient struct {
 
 func InitPluginClient() {
 	var errcondmu sync.Mutex
-	PluginInfo.Url = "http://" + conf.Config().Topo.Server_addr + "/plugin/topology"
+	// PluginInfo.Url = "http://" + conf.Config().Topo.Server_addr + "/plugin/topology"
+	PluginInfo.Url = "http://" + conf.Config().Topo.Server_addr
 	PluginClient := client.DefaultClient(PluginInfo)
+
+	// 注册插件扩展点
+	var ex []common.Extention
+	pe1 := &common.PageExtention{
+		Type:       common.ExtentionPage,
+		Name:       "配置列表",
+		URL:        "plugin/topology/cluster",
+		Permission: "plugin.topology.page/menu",
+	}
+
+	ex = append(ex, pe1)
+	PluginClient.RegisterExtention(ex)
 
 	Topo = &Topoclient{
 		Sdkmethod: PluginClient,
