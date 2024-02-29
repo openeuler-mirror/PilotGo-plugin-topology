@@ -9,6 +9,7 @@ import (
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/agentmanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/conf"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/meta"
+	"gitee.com/openeuler/PilotGo/sdk/response"
 	"github.com/pkg/errors"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -122,14 +123,19 @@ func (m *MysqlClient) QuerySingleTopoConfiguration(tcid uint) (*meta.Topo_config
 	return tcdb, nil
 }
 
-func (m *MysqlClient) QueryTopoConfigurationList() ([]*meta.Topo_configuration_DB, error) {
+func (m *MysqlClient) QueryTopoConfigurationList(query *response.PaginationQ) ([]*meta.Topo_configuration_DB, int, error) {
 	tcdbs := make([]*meta.Topo_configuration_DB, 0)
-	if err := m.db.Find(&tcdbs).Error; err != nil {
+	if err := m.db.Order("id desc").Limit(query.PageSize).Offset((query.Page - 1) * query.PageSize).Find(&tcdbs).Error; err != nil {
 		err = errors.Errorf("query topo configuration list failed: %s", err.Error())
-		return nil, err
+		return nil, 0, err
 	}
 
-	return tcdbs, nil
+	var total int64
+	if err := m.db.Model(&meta.Topo_configuration_DB{}).Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return tcdbs, int(total), nil
 }
 
 func (m *MysqlClient) AddTopoConfiguration(tc *meta.Topo_configuration_DB) error {

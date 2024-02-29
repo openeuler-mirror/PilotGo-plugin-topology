@@ -7,6 +7,7 @@ import (
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/dao"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/meta"
 	back "gitee.com/openeuler/PilotGo-plugin-topology-server/service/background"
+	"gitee.com/openeuler/PilotGo/sdk/response"
 	"github.com/pkg/errors"
 )
 
@@ -34,24 +35,24 @@ func RunCustomTopoService(tcid uint) ([]*meta.Node, []*meta.Edge, []map[string]s
 	return nodes, edges, combos, nil
 }
 
-func CustomTopoListService() ([]*meta.Topo_configuration, error) {
+func CustomTopoListService(query *response.PaginationQ) ([]*meta.Topo_configuration, int, error) {
 	tcs := make([]*meta.Topo_configuration, 0)
 
-	tcdbs, err := dao.Global_mysql.QueryTopoConfigurationList()
+	tcdbs, total, err := dao.Global_mysql.QueryTopoConfigurationList(query)
 	if err != nil {
-		return nil, errors.Wrap(err, "**2")
+		return nil, 0, errors.Wrap(err, "**2")
 	}
 
 	for _, tcdb := range tcdbs {
 		tc, err := dao.Global_mysql.DBToTopoConfiguration(tcdb)
 		if err != nil {
-			return nil, errors.Wrap(err, "**2")
+			return nil, 0, errors.Wrap(err, "**2")
 		}
 
 		tcs = append(tcs, tc)
 	}
 
-	return tcs, nil
+	return tcs, total, nil
 }
 
 func CreateCustomTopoService(topoconfig *meta.Topo_configuration) error {
