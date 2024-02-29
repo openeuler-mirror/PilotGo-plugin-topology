@@ -24,10 +24,9 @@
     </div>
     <!-- 分页 -->
     <div class="my_table_page">
-      <el-pagination v-model:current-page="page.currentPage" v-model:page-size="page.pageSize" popper-class="pagePopper"
-        :page-sizes="[10, 20, 25, 50, 75, 100]" :small="page.small" :background="page.background"
-        layout="total, sizes, prev, pager, next, jumper" :total="page.total" @size-change="getTableData"
-        @current-change="getTableData" />
+      <el-pagination :current-page="page.currentPage" :page-size="page.pageSize" :page-sizes="[10, 20, 25, 50, 75, 100]"
+        :small="page.small" :background="page.background" layout="total, sizes, prev, pager, next, jumper"
+        :total="page.total" @size-change="getTableData" @current-change="getTableData" />
     </div>
   </div>
 </template>
@@ -73,7 +72,7 @@ const getTableData = () => {
         loading.value = false;
         tableData.value = result.data;
         currentNum.value = result.data.length;
-        page.total = result.total;
+        page.total = Number(result.total);
       } else {
         loading.value = false;
         tableData.value = [];
