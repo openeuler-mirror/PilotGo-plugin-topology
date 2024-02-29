@@ -56,10 +56,9 @@ func InitPluginClient() {
 	pe1 := &common.PageExtention{
 		Type:       common.ExtentionPage,
 		Name:       "配置列表",
-		URL:        "plugin/topology/cluster",
+		URL:        "plugin/topology/topoList",
 		Permission: "plugin.topology.page/menu",
 	}
-
 	ex = append(ex, pe1)
 	PluginClient.RegisterExtention(ex)
 

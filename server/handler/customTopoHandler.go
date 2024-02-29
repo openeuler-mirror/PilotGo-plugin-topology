@@ -10,12 +10,26 @@ import (
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/dao"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/meta"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/service"
+	"gitee.com/openeuler/PilotGo/sdk/response"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 )
 
 func CustomTopoListHandle(ctx *gin.Context) {
-	tcs, err := service.CustomTopoListService()
+	query := &response.PaginationQ{}
+	err := ctx.ShouldBindQuery(query)
+	if err != nil {
+		err = errors.New("failed to load parameters in url **warn**2") // err top
+		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"code":  -1,
+			"error": err.Error(),
+			"data":  nil,
+		})
+		return
+	}
+
+	tcs, total, err := service.CustomTopoListService(query)
 	if err != nil {
 		err = errors.Wrap(err, "**warn**2") // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
@@ -25,13 +39,10 @@ func CustomTopoListHandle(ctx *gin.Context) {
 			"error": err.Error(),
 			"data":  nil,
 		})
+		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{
-		"code":  0,
-		"error": nil,
-		"data":  tcs,
-	})
+	response.DataPagination(ctx, tcs, total, query)
 }
 
 func CreateCustomTopoHandle(ctx *gin.Context) {
@@ -46,7 +57,6 @@ func CreateCustomTopoHandle(ctx *gin.Context) {
 			"error": err.Error(),
 			"data":  nil,
 		})
-
 		return
 	}
 
@@ -59,7 +69,6 @@ func CreateCustomTopoHandle(ctx *gin.Context) {
 			"error": err.Error(),
 			"data":  nil,
 		})
-
 		return
 	}
 
@@ -81,7 +90,6 @@ func UpdateCustomTopoHandle(ctx *gin.Context) {
 			"error": fmt.Errorf("id is nil"),
 			"data":  nil,
 		})
-
 		return
 	}
 
@@ -95,7 +103,6 @@ func UpdateCustomTopoHandle(ctx *gin.Context) {
 			"error": err.Error(),
 			"data":  nil,
 		})
-
 		return
 	}
 
@@ -109,7 +116,6 @@ func UpdateCustomTopoHandle(ctx *gin.Context) {
 			"error": err.Error(),
 			"data":  nil,
 		})
-
 		return
 	}
 
@@ -123,7 +129,6 @@ func UpdateCustomTopoHandle(ctx *gin.Context) {
 			"error": err.Error(),
 			"data":  nil,
 		})
-
 		return
 	}
 
@@ -136,7 +141,6 @@ func UpdateCustomTopoHandle(ctx *gin.Context) {
 			"error": err.Error(),
 			"data":  nil,
 		})
-
 		return
 	}
 
@@ -150,7 +154,6 @@ func UpdateCustomTopoHandle(ctx *gin.Context) {
 			"error": err.Error(),
 			"data":  nil,
 		})
-
 		return
 	}
 
@@ -174,7 +177,6 @@ func RunCustomTopoHandle(ctx *gin.Context) {
 			"error": fmt.Errorf("id is nil"),
 			"data":  nil,
 		})
-
 		return
 	}
 
@@ -188,7 +190,6 @@ func RunCustomTopoHandle(ctx *gin.Context) {
 			"error": err.Error(),
 			"data":  nil,
 		})
-
 		return
 	}
 
@@ -202,7 +203,6 @@ func RunCustomTopoHandle(ctx *gin.Context) {
 			"error": err.Error(),
 			"data":  nil,
 		})
-
 		return
 	}
 
@@ -215,7 +215,6 @@ func RunCustomTopoHandle(ctx *gin.Context) {
 			"error": err.Error(),
 			"data":  nil,
 		})
-
 		return
 	}
 
@@ -241,7 +240,6 @@ func DeleteCustomTopoHandle(ctx *gin.Context) {
 			"error": fmt.Errorf("id is nil"),
 			"data":  nil,
 		})
-
 		return
 	}
 
@@ -255,7 +253,6 @@ func DeleteCustomTopoHandle(ctx *gin.Context) {
 			"error": err.Error(),
 			"data":  nil,
 		})
-
 		return
 	}
 
@@ -268,7 +265,6 @@ func DeleteCustomTopoHandle(ctx *gin.Context) {
 			"error": err.Error(),
 			"data":  nil,
 		})
-
 		return
 	}
 
