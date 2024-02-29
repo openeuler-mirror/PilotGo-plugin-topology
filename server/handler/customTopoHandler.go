@@ -1,8 +1,6 @@
 package handler
 
 import (
-	"fmt"
-	"net/http"
 	"strconv"
 	"time"
 
@@ -21,11 +19,8 @@ func CustomTopoListHandle(ctx *gin.Context) {
 	if err != nil {
 		err = errors.New("failed to load parameters in url **warn**2") // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"code":  -1,
-			"error": err.Error(),
-			"data":  nil,
-		})
+
+		response.Fail(ctx, nil, err.Error())
 		return
 	}
 
@@ -34,11 +29,7 @@ func CustomTopoListHandle(ctx *gin.Context) {
 		err = errors.Wrap(err, "**warn**2") // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 
-		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"code":  -1,
-			"error": err.Error(),
-			"data":  nil,
-		})
+		response.Fail(ctx, nil, err.Error())
 		return
 	}
 
@@ -52,11 +43,7 @@ func CreateCustomTopoHandle(ctx *gin.Context) {
 		err = errors.Wrap(err, "**warn**1") // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"code":  -1,
-			"error": err.Error(),
-			"data":  nil,
-		})
+		response.Fail(ctx, nil, err.Error())
 		return
 	}
 
@@ -64,19 +51,11 @@ func CreateCustomTopoHandle(ctx *gin.Context) {
 		err = errors.Wrap(err, "**warn**1") // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 
-		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"code":  -1,
-			"error": err.Error(),
-			"data":  nil,
-		})
+		response.Fail(ctx, nil, err.Error())
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{
-		"code":  0,
-		"error": nil,
-		"data":  nil,
-	})
+	response.Success(ctx, nil, "successfully created action")
 }
 
 func UpdateCustomTopoHandle(ctx *gin.Context) {
@@ -85,11 +64,7 @@ func UpdateCustomTopoHandle(ctx *gin.Context) {
 		err := errors.New("id is nil **warn**1") // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"code":  -1,
-			"error": fmt.Errorf("id is nil"),
-			"data":  nil,
-		})
+		response.Fail(ctx, nil, err.Error())
 		return
 	}
 
@@ -98,11 +73,7 @@ func UpdateCustomTopoHandle(ctx *gin.Context) {
 		err = errors.Wrap(err, "**warn**2") // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"code":  -1,
-			"error": err.Error(),
-			"data":  nil,
-		})
+		response.Fail(ctx, nil, err.Error())
 		return
 	}
 
@@ -111,11 +82,7 @@ func UpdateCustomTopoHandle(ctx *gin.Context) {
 		err = errors.Wrap(err, "**warn**1") // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"code":  -1,
-			"error": err.Error(),
-			"data":  nil,
-		})
+		response.Fail(ctx, nil, err.Error())
 		return
 	}
 
@@ -124,11 +91,7 @@ func UpdateCustomTopoHandle(ctx *gin.Context) {
 		err = errors.Wrap(err, "**warn**2") // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"code":  -1,
-			"error": err.Error(),
-			"data":  nil,
-		})
+		response.Fail(ctx, nil, err.Error())
 		return
 	}
 
@@ -136,11 +99,7 @@ func UpdateCustomTopoHandle(ctx *gin.Context) {
 		err = errors.Wrap(err, "**warn**2") // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 
-		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"code":  -1,
-			"error": err.Error(),
-			"data":  nil,
-		})
+		response.Fail(ctx, nil, err.Error())
 		return
 	}
 
@@ -149,19 +108,11 @@ func UpdateCustomTopoHandle(ctx *gin.Context) {
 		err = errors.Wrap(err, "**warn**2") // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 
-		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"code":  -1,
-			"error": err.Error(),
-			"data":  nil,
-		})
+		response.Fail(ctx, nil, err.Error())
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{
-		"code":  0,
-		"error": nil,
-		"data":  nil,
-	})
+	response.Success(ctx, nil, "successfully updated action")
 }
 
 func RunCustomTopoHandle(ctx *gin.Context) {
@@ -172,11 +123,7 @@ func RunCustomTopoHandle(ctx *gin.Context) {
 		err := errors.New("id is nil **warn**2") // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"code":  -1,
-			"error": fmt.Errorf("id is nil"),
-			"data":  nil,
-		})
+		response.Fail(ctx, nil, err.Error())
 		return
 	}
 
@@ -185,11 +132,7 @@ func RunCustomTopoHandle(ctx *gin.Context) {
 		err = errors.Wrap(err, "**warn**2") // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"code":  -1,
-			"error": err.Error(),
-			"data":  nil,
-		})
+		response.Fail(ctx, nil, err.Error())
 		return
 	}
 
@@ -198,11 +141,7 @@ func RunCustomTopoHandle(ctx *gin.Context) {
 		err = errors.Wrap(err, " **warn**2") // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 
-		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"code":  -1,
-			"error": err.Error(),
-			"data":  nil,
-		})
+		response.Fail(ctx, nil, err.Error())
 		return
 	}
 
@@ -210,23 +149,15 @@ func RunCustomTopoHandle(ctx *gin.Context) {
 		err := errors.New("nodes list is null or edges list is null **warn**0") // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 
-		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"code":  -1,
-			"error": err.Error(),
-			"data":  nil,
-		})
+		response.Fail(ctx, nil, err.Error())
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{
-		"code":  0,
-		"error": nil,
-		"data": map[string]interface{}{
-			"nodes":  nodes,
-			"edges":  edges,
-			"combos": combos,
-		},
-	})
+	response.Success(ctx, map[string]interface{}{
+		"nodes":  nodes,
+		"edges":  edges,
+		"combos": combos,
+	}, "")
 }
 
 func DeleteCustomTopoHandle(ctx *gin.Context) {
@@ -235,11 +166,7 @@ func DeleteCustomTopoHandle(ctx *gin.Context) {
 		err := errors.New("id is nil **warn**1") // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"code":  -1,
-			"error": fmt.Errorf("id is nil"),
-			"data":  nil,
-		})
+		response.Fail(ctx, nil, err.Error())
 		return
 	}
 
@@ -248,11 +175,7 @@ func DeleteCustomTopoHandle(ctx *gin.Context) {
 		err = errors.Wrap(err, "**warn**2") // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"code":  -1,
-			"error": err.Error(),
-			"data":  nil,
-		})
+		response.Fail(ctx, nil, err.Error())
 		return
 	}
 
@@ -260,17 +183,9 @@ func DeleteCustomTopoHandle(ctx *gin.Context) {
 		err = errors.Wrap(err, "**warn**2") // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 
-		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"code":  -1,
-			"error": err.Error(),
-			"data":  nil,
-		})
+		response.Fail(ctx, nil, err.Error())
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{
-		"code":  0,
-		"error": nil,
-		"data":  nil,
-	})
+	response.Success(ctx, nil, "successfully deleted action")
 }

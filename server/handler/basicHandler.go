@@ -10,6 +10,7 @@ import (
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/dao"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/meta"
 	"gitee.com/openeuler/PilotGo/sdk/logger"
+	"gitee.com/openeuler/PilotGo/sdk/response"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 )
@@ -69,19 +70,11 @@ func TimestampsHandle(ctx *gin.Context) {
 		err = errors.Wrap(err, " **warn**2")
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 
-		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"code":  -1,
-			"error": fmt.Sprintf("%+v", err),
-			"data":  nil,
-		})
+		response.Fail(ctx, nil, err.Error())
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{
-		"code": 0,
-		"error": nil,
-		"data": times,
-	})
+	response.Success(ctx, times, "")
 }
 
 func AgentListHandle(ctx *gin.Context) {
@@ -96,11 +89,7 @@ func AgentListHandle(ctx *gin.Context) {
 		return true
 	})
 
-	ctx.JSON(http.StatusOK, gin.H{
-		"code":  0,
-		"error": nil,
-		"data": map[string]interface{}{
-			"agentlist": agentmap,
-		},
-	})
+	response.Success(ctx, map[string]interface{}{
+		"agentlist": agentmap,
+	}, "")
 }
