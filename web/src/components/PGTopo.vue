@@ -9,6 +9,7 @@ import server_logo from "@/assets/icon/server_blue.png";
 import process_logo from "@/assets/icon/process.png";
 import net_logo from "@/assets/icon/net.png";
 import resource_logo from "@/assets/icon/resource.png";
+import { useTopoStore } from '@/stores/topo';
 import { colorSets, graphInitOptions } from './PGOptions';
 
 const props = defineProps({
@@ -132,7 +133,9 @@ function initGraph(data: any) {
     const nodeItem = e.item;
     graph.setItemState(nodeItem, 'click', true);
 
-    // 展开抽屉组件逻辑
+    // 抽屉组件展示的节点数据
+    let selected_node = e.item._cfg;
+    useTopoStore().nodeData = selected_node;
   });
   // 节点悬浮高亮
   graph.on('node:mouseover', (e: any) => {
