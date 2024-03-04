@@ -2,6 +2,7 @@ import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 
 export const useTopoStore = defineStore('topo', () => {
-  const nodeData = ref({} as any)
-  return { nodeData }
+  const topo_data = ref({} as any);
+  const nodeData = ref({} as any);
+  return { nodeData, topo_data }
 })

@@ -12,6 +12,11 @@ const router = createRouter({
       name: 'topoList',
       component: () => import('../views/topoList.vue')
     },
+    {
+      path: '/topoDisplay',
+      name: 'topoDisplay',
+      component: () => import('../views/topoDisplay.vue')
+    }
   ]
 })
 
