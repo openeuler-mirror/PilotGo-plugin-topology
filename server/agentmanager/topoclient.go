@@ -6,13 +6,11 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"net/http"
 	"os"
 	"os/signal"
 	"strings"
 	"sync"
 	"syscall"
-	"time"
 
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/conf"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/meta"
@@ -72,16 +70,7 @@ func InitPluginClient() {
 }
 
 func (t *Topoclient) InitMachineList() {
-	for {
-		url := "http://" + conf.Config().Topo.Server_addr + "/plugin_manage/info"
-		resp, err := http.Get(url)
-
-		if err == nil && resp != nil && resp.StatusCode == http.StatusOK {
-			break
-		}
-		time.Sleep(100 * time.Millisecond)
-	}
-
+	Wait4TopoServerReady()
 	t.Sdkmethod.Wait4Bind()
 
 	url := "http://" + t.Sdkmethod.Server() + "/api/v1/pluginapi/machine_list"
@@ -115,6 +104,44 @@ func (t *Topoclient) InitMachineList() {
 		p.TAState = 0
 		t.AddAgent_P(p)
 	}
+}
+
+func (t *Topoclient) GetBatchList() ([]*common.BatchList, error) {
+	var batchlist []*common.BatchList = make([]*common.BatchList, 0)
+
+	Wait4TopoServerReady()
+	t.Sdkmethod.Wait4Bind()
+
+	url := "http://" + t.Sdkmethod.Server() + "/api/v1/pluginapi/batch_list"
+
+	resp, err := httputils.Get(url, nil)
+	if err != nil {
+		return nil, errors.Errorf("err-> %s (url-> %s) **fatal**2", err.Error(), url) 
+	}
+
+	statuscode := resp.StatusCode
+	if statuscode != 200 {
+		return nil, errors.Errorf("http返回状态码异常: %d, %s **fatal**2", statuscode, url)
+	}
+
+	result := &struct {
+		Code int         `json:"code"`
+		Data interface{} `json:"data"`
+		Msg  string      `json:"msg"`
+	}{}
+
+	err = json.Unmarshal(resp.Body, result)
+	if err != nil {
+		return nil, errors.Errorf("%s **fatal**2", err.Error())
+	}
+
+	for _, m := range result.Data.([]interface{}) {
+		p := &common.BatchList{}
+		mapstructure.Decode(m, p)
+		batchlist = append(batchlist, p)
+	}
+
+	return batchlist, nil
 }
 
 func (t *Topoclient) UpdateMachineList() {
