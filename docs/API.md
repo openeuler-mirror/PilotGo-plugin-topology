@@ -32,6 +32,10 @@
 - GET /plugin/topology/api/custom_topo_list
 ### 2.10 调用自定义拓扑配置
 - GET /plugin/topology/api/run_custom_topo?id=1
+### 2.11 获取batch批次列表
+- GET /plugin/topology/api/batch_list
+### 2.12 获取batch批次详情，机器uuid列表
+- GET /plugin/topology/api/batch_uuid?id=1
 
 ## 3. agent端 API接口
 ### 3.1 获取agent端采集数据

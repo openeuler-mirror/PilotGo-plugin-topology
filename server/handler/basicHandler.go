@@ -106,3 +106,18 @@ func BatchListHandle(ctx *gin.Context) {
 
 	response.Success(ctx, batchlist, "successfully get batch list")
 }
+
+func BatchMachineListHandle(ctx *gin.Context) {
+	BatchId := ctx.Query("batchId")
+
+	machine_uuids, err := agentmanager.Topo.GetBatchMachineList(BatchId)
+	if err != nil {
+		err = errors.Wrap(err, "**warn**2") // err top
+		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
+
+		response.Fail(ctx, nil, err.Error())
+		return
+	}
+
+	response.Success(ctx, machine_uuids, "successfully get batch list")
+}
