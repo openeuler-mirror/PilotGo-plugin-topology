@@ -1,10 +1,9 @@
 package handler
 
 import (
-	"net/http"
-
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/agentmanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/service"
+	"gitee.com/openeuler/PilotGo/sdk/response"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 )
@@ -54,11 +53,7 @@ func SingleHostTreeHandle(ctx *gin.Context) {
 		err = errors.Wrap(err, " **warn**2") // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 
-		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"code":  -1,
-			"error": err.Error(),
-			"data":  nil,
-		})
+		response.Fail(ctx, nil, err.Error())
 		return
 	}
 
@@ -66,11 +61,7 @@ func SingleHostTreeHandle(ctx *gin.Context) {
 		err := errors.New("node tree is null **warn**0") // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 
-		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"code":  -1,
-			"error": err.Error(),
-			"data":  nil,
-		})
+		response.Fail(ctx, nil, err.Error())
 		return
 	}
 
@@ -87,13 +78,9 @@ func SingleHostTreeHandle(ctx *gin.Context) {
 	// })
 	// os.Exit(1)
 
-	ctx.JSON(http.StatusOK, gin.H{
-		"code":  0,
-		"error": nil,
-		"data": map[string]interface{}{
-			"tree": nodes,
-		},
-	})
+	response.Success(ctx, map[string]interface{}{
+		"tree": nodes,
+	}, "")
 }
 
 func MultiHostHandle(ctx *gin.Context) {
@@ -102,11 +89,7 @@ func MultiHostHandle(ctx *gin.Context) {
 		err = errors.Wrap(err, " **warn**2") // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 
-		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"code":  -1,
-			"error": err.Error(),
-			"data":  nil,
-		})
+		response.Fail(ctx, nil, err.Error())
 		return
 	}
 
@@ -114,11 +97,7 @@ func MultiHostHandle(ctx *gin.Context) {
 		err := errors.New("nodes list is null or edges list is null **warn**0") // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 
-		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"code":  -1,
-			"error": err.Error(),
-			"data":  nil,
-		})
+		response.Fail(ctx, nil, err.Error())
 		return
 	}
 
@@ -137,13 +116,9 @@ func MultiHostHandle(ctx *gin.Context) {
 	// })
 	// os.Exit(1)
 
-	ctx.JSON(http.StatusOK, gin.H{
-		"code":  0,
-		"error": nil,
-		"data": map[string]interface{}{
-			"nodes":  nodes,
-			"edges":  edges,
-			"combos": combos,
-		},
-	})
+	response.Success(ctx, map[string]interface{}{
+		"nodes":  nodes,
+		"edges":  edges,
+		"combos": combos,
+	}, "")
 }
