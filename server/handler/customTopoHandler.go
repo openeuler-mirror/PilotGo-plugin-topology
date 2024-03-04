@@ -47,7 +47,8 @@ func CreateCustomTopoHandle(ctx *gin.Context) {
 		return
 	}
 
-	if err := service.CreateCustomTopoService(tc); err != nil {
+	tcdb_id, err := service.CreateCustomTopoService(tc)
+	if err != nil {
 		err = errors.Wrap(err, "**warn**1") // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 
@@ -55,7 +56,7 @@ func CreateCustomTopoHandle(ctx *gin.Context) {
 		return
 	}
 
-	response.Success(ctx, nil, "successfully created action")
+	response.Success(ctx, tcdb_id, "successfully created action")
 }
 
 func UpdateCustomTopoHandle(ctx *gin.Context) {
@@ -104,7 +105,8 @@ func UpdateCustomTopoHandle(ctx *gin.Context) {
 	}
 
 	tcdb.UpdatedAt = time.Now().Format("2006-01-02 15:04:05")
-	if err := dao.Global_mysql.AddTopoConfiguration(tcdb); err != nil {
+	tcdb_id, err := dao.Global_mysql.AddTopoConfiguration(tcdb)
+	if err != nil {
 		err = errors.Wrap(err, "**warn**2") // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 
@@ -112,7 +114,7 @@ func UpdateCustomTopoHandle(ctx *gin.Context) {
 		return
 	}
 
-	response.Success(ctx, nil, "successfully updated action")
+	response.Success(ctx, tcdb_id, "successfully updated action")
 }
 
 func RunCustomTopoHandle(ctx *gin.Context) {

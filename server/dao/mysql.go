@@ -138,14 +138,14 @@ func (m *MysqlClient) QueryTopoConfigurationList(query *response.PaginationQ) ([
 	return tcdbs, int(total), nil
 }
 
-func (m *MysqlClient) AddTopoConfiguration(tc *meta.Topo_configuration_DB) error {
+func (m *MysqlClient) AddTopoConfiguration(tc *meta.Topo_configuration_DB) (int, error) {
 	_tc := tc
 	if err := m.db.Save(_tc).Error; err != nil {
 		err = errors.Errorf("add topo configuration failed: %s, %+v", err.Error(), tc)
-		return err
+		return -1, err
 	}
 
-	return nil
+	return int(_tc.ID), nil
 }
 
 func (m *MysqlClient) DeleteTopoConfiguration(tcid uint) error {

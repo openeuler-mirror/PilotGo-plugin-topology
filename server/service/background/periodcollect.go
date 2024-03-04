@@ -101,11 +101,11 @@ func DataProcessWorking(unixtime int64, agentnum int, graphdb dao.GraphdbIface, 
 						for _, node := range _nodesbytype {
 							_node := node
 							if len(_node.Metrics) == 0 {
-								cqlIN = fmt.Sprintf("create (node:`%s` {unixtime:'%s', nid:'%s', name:'%s'} set node:'%s')",
-									_node.Type, _unixtime, _node.ID, _node.Name, _node.UUID)
+								cqlIN = fmt.Sprintf("create (node:`%s` {unixtime:'%s', nid:'%s', name:'%s', layoutattr:'%s', comboid:'%s'} set node:`%s`)",
+									_node.Type, _unixtime, _node.ID, _node.Name, _node.LayoutAttr, _node.ComboId, _node.UUID)
 							} else {
-								cqlIN = fmt.Sprintf("create (node:`%s` {unixtime:'%s', nid:'%s', name:'%s'}) set node:`%s`, node += $metrics",
-									_node.Type, _unixtime, _node.ID, _node.Name, _node.UUID)
+								cqlIN = fmt.Sprintf("create (node:`%s` {unixtime:'%s', nid:'%s', name:'%s', layoutattr:'%s', comboid:'%s'}) set node:`%s`, node += $metrics",
+									_node.Type, _unixtime, _node.ID, _node.Name, _node.LayoutAttr, _node.ComboId, _node.UUID)
 							}
 
 							err := graphdb.Node_create(_unixtime, _node)
