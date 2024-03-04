@@ -4,7 +4,7 @@
 
 <script setup lang="ts">
 import G6, { Graph } from '@antv/g6';
-import { ref, reactive, onMounted, watch } from "vue";
+import { ref, reactive, onMounted, watch, watchEffect } from "vue";
 import server_logo from "@/assets/icon/server_blue.png";
 import process_logo from "@/assets/icon/process.png";
 import net_logo from "@/assets/icon/net.png";
@@ -42,8 +42,8 @@ onMounted(() => {
   topoH.value = document.getElementById("topo-container")!.clientHeight;
 })
 
-const updateTopoData = () => {
-  topo_data = props.topo_data;
+const updateTopoData = (topoData: any) => {
+  topo_data = topoData;
 
   topo_data.edges.forEach((item: any) => {
     item.style = { lineWidth: 3 };
@@ -175,10 +175,14 @@ function refreshDragedNodePosition(e: any) {
   model.fy = e.y;
 }
 
-watch(() => props.topo_data, (newData) => {
-  if (newData) {
-    updateTopoData();
+watch(() => useTopoStore().topo_data, (newData) => {
+  if (newData.nodes) {
+    // 新复制一份数据，避免后续反复操作原数据造成引用超出
+    let topo_data = JSON.parse(JSON.stringify(newData))
+    updateTopoData(topo_data);
   }
+}, {
+  deep: true
 })
 
 watch(() => init_data, (newdata) => {
