@@ -107,10 +107,7 @@ func (t *Topoclient) InitMachineList() {
 }
 
 func (t *Topoclient) GetBatchList() ([]*common.BatchList, error) {
-	var batchlist []*common.BatchList = make([]*common.BatchList, 0)
-
-	Wait4TopoServerReady()
-	t.Sdkmethod.Wait4Bind()
+	var batch_list []*common.BatchList = make([]*common.BatchList, 0)
 
 	url := "http://" + t.Sdkmethod.Server() + "/api/v1/pluginapi/batch_list"
 
@@ -138,10 +135,43 @@ func (t *Topoclient) GetBatchList() ([]*common.BatchList, error) {
 	for _, m := range result.Data.([]interface{}) {
 		p := &common.BatchList{}
 		mapstructure.Decode(m, p)
-		batchlist = append(batchlist, p)
+		batch_list = append(batch_list, p)
 	}
 
-	return batchlist, nil
+	return batch_list, nil
+}
+
+func (t *Topoclient) GetBatchMachineList(batchid string) ([]string, error) {
+	var machine_list []string = make([]string, 0)
+
+	url := "http://" + t.Sdkmethod.Server() + "/api/v1/pluginapi/batch_uuid?batchId=" + batchid
+
+	resp, err := httputils.Get(url, nil)
+	if err != nil {
+		return nil, errors.Errorf("err-> %s (url-> %s) **fatal**2", err.Error(), url) 
+	}
+
+	statuscode := resp.StatusCode
+	if statuscode != 200 {
+		return nil, errors.Errorf("http返回状态码异常: %d, %s **fatal**2", statuscode, url)
+	}
+
+	result := &struct {
+		Code int         `json:"code"`
+		Data interface{} `json:"data"`
+		Msg  string      `json:"msg"`
+	}{}
+
+	err = json.Unmarshal(resp.Body, result)
+	if err != nil {
+		return nil, errors.Errorf("%s **fatal**2", err.Error())
+	}
+
+	for _, m := range result.Data.([]interface{}) {
+		machine_list = append(machine_list, m.(string))
+	}
+
+	return machine_list, nil
 }
 
 func (t *Topoclient) UpdateMachineList() {
