@@ -93,3 +93,16 @@ func AgentListHandle(ctx *gin.Context) {
 		"agentlist": agentmap,
 	}, "")
 }
+
+func BatchListHandle(ctx *gin.Context) {
+	batchlist, err := agentmanager.Topo.GetBatchList()
+	if err != nil {
+		err = errors.Wrap(err, "**warn**2") // err top
+		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
+
+		response.Fail(ctx, nil, err.Error())
+		return
+	}
+
+	response.Success(ctx, batchlist, "successfully get batch list")
+}

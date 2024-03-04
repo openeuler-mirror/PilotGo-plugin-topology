@@ -3,9 +3,11 @@ package agentmanager
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"time"
 
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/conf"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/meta"
 	"gitee.com/openeuler/PilotGo/sdk/plugin/client"
 )
@@ -36,6 +38,18 @@ func WaitingForHandshake() {
 			i = 0
 		}
 		time.Sleep(1 * time.Second)
+	}
+}
+
+func Wait4TopoServerReady() {
+	for {
+		url := "http://" + conf.Config().Topo.Server_addr + "/plugin_manage/info"
+		resp, err := http.Get(url)
+
+		if err == nil && resp != nil && resp.StatusCode == http.StatusOK {
+			break
+		}
+		time.Sleep(100 * time.Millisecond)
 	}
 }
 

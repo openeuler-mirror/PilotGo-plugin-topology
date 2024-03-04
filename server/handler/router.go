@@ -36,6 +36,7 @@ func InitRouter(router *gin.Engine) {
 		api.GET("/timestamps", TimestampsHandle)
 		api.GET("/agentlist", AgentListHandle)
 		api.GET("/custom_topo_list", CustomTopoListHandle)
+		api.GET("/batch_list", BatchListHandle)
 
 		// api.GET("/single_host/:uuid", SingleHostHandle)
 		api.GET("/single_host_tree/:uuid", SingleHostTreeHandle)
