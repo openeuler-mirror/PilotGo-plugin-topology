@@ -10,7 +10,7 @@ import process_logo from "@/assets/icon/process.png";
 import net_logo from "@/assets/icon/net.png";
 import resource_logo from "@/assets/icon/resource.png";
 import { useTopoStore } from '@/stores/topo';
-import { colorSets, graphInitOptions } from './PGOptions';
+import { colorSets, graphInitOptions, graphTreeInitOptions } from './PGOptions';
 
 const props = defineProps({
   topo_data: {
@@ -33,6 +33,7 @@ const props = defineProps({
 let graph: Graph;
 const init_data = ref(false);
 let topo_data = reactive<any>({});
+let topo_type = ref('comb');
 
 const topoW = ref(0);
 const topoH = ref(0);
@@ -118,13 +119,32 @@ function initGraph(data: any) {
     graph.destroy();
     // graph.refresh();
   }
-
-  graph = new G6.Graph({
+  let graphBox = {
     container: "topo-container",
     width: topoW.value,
     height: topoH.value,
-    ...graphInitOptions,
-  });
+  }
+
+  if (topo_type.value === 'comb') {
+    graph = new G6.Graph({
+      ...graphBox,
+      ...graphInitOptions,
+    });
+  } else {
+    graph = new G6.TreeGraph({
+      ...graphBox,
+      ...graphTreeInitOptions,
+    });
+    graph.node(function (node: any) {
+      return {
+        label: node.node.Type + ":" + node.node.name,
+        labelCfg: {
+          position: node.children && node.children.length > 0 ? 'left' : 'right',
+          offset: 5,
+        },
+      };
+    });
+  }
   // 节点点击事件
   graph.on('node:click', (e: any) => {
     graph.getNodes().forEach((node) => {
@@ -132,10 +152,13 @@ function initGraph(data: any) {
     });
     const nodeItem = e.item;
     graph.setItemState(nodeItem, 'click', true);
-
     // 抽屉组件展示的节点数据
     let selected_node = e.item._cfg;
-    useTopoStore().nodeData = selected_node;
+    if (topo_type.value === 'comb') {
+      useTopoStore().nodeData = selected_node.model;
+    } else {
+      useTopoStore().nodeData = selected_node.model.node;
+    }
   });
   // 节点悬浮高亮
   graph.on('node:mouseover', (e: any) => {
@@ -175,14 +198,16 @@ function refreshDragedNodePosition(e: any) {
   model.fy = e.y;
 }
 
-watch(() => useTopoStore().topo_data, (newData) => {
-  if (newData.nodes) {
-    // 新复制一份数据，避免后续反复操作原数据造成引用超出
-    let topo_data = JSON.parse(JSON.stringify(newData))
-    updateTopoData(topo_data);
+watchEffect(() => {
+  topo_type.value = useTopoStore().topo_type;
+  let topo_data = JSON.parse(JSON.stringify(useTopoStore().topo_data));
+  if (topo_data.tree || topo_data.nodes) {
+    if (topo_type.value === 'tree') {
+      initGraph(topo_data.tree);
+    } else {
+      updateTopoData(topo_data);
+    }
   }
-}, {
-  deep: true
 })
 
 watch(() => init_data, (newdata) => {

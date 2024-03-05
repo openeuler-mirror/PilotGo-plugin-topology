@@ -125,15 +125,15 @@ const grid = reactive({
 
 // 监听topo数据
 watch(() => useTopoStore().nodeData, (new_node_data, old_node_data) => {
-  if (new_node_data.model) {
-    let node_data = new_node_data.model;
+  if (new_node_data.id) {
+    let node_data = new_node_data;
     display_drawer.value = true;
     // 是否是host类型
     if (node_data.Type === 'host') {
       isHost.value = true;
       useMacStore().setMacIp(node_data.id.split("_")[2]);
     }
-    node.name = node_data.label;
+    node.name = node_data.label || node_data.name;
     node.type = node_data.Type;
     tags = node_data.tags;
     table_data = [];

@@ -28,6 +28,7 @@ const drawer = reactive({
 onMounted(async () => {
   let requst_type = history.state.type;
   let topoData = {};
+  useTopoStore().topo_type = 'comb';
   switch (requst_type) {
     case 'custom':
       await getCustomTopo({ id: history.state.id }).then(res => {
@@ -37,6 +38,7 @@ onMounted(async () => {
       })
       break;
     case 'single':
+      useTopoStore().topo_type = 'tree';
       await getUuidTopo({ uuid: history.state.id }).then(res => {
         if (res.data.code === 200) {
           topoData = res.data.data;
