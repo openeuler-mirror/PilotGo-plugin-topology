@@ -99,3 +99,24 @@ export const graphInitOptions = {
     default: ['drag-canvas', 'zoom-canvas', 'drag-combo', 'collapse-expand-combo', "drag-node"]
   },
 }
+
+export const graphTreeInitOptions = {
+  modes: {
+    default: ['drag-canvas', 'zoom-canvas', "click-select", "drag-node",
+      {
+        type: 'collapse-expand',
+        onChange: function onChange(item: any, collapsed: any) {
+          const data = item.getModel();
+          data.collapsed = collapsed;
+          return true;
+        },
+      },
+    ],
+  },
+  layout: {
+    type: 'dendrogram',
+    direction: 'LR',
+    nodeSep: 30,
+    rankSep: 100,
+  },
+}
