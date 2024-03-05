@@ -54,7 +54,7 @@ func InitPluginClient() {
 	pe1 := &common.PageExtention{
 		Type:       common.ExtentionPage,
 		Name:       "配置列表",
-		URL:        "plugin/topology/topoList",
+		URL:        "plugin/topology",
 		Permission: "plugin.topology.page/menu",
 	}
 	ex = append(ex, pe1)
@@ -113,7 +113,7 @@ func (t *Topoclient) GetBatchList() ([]*common.BatchList, error) {
 
 	resp, err := httputils.Get(url, nil)
 	if err != nil {
-		return nil, errors.Errorf("err-> %s (url-> %s) **fatal**2", err.Error(), url) 
+		return nil, errors.Errorf("err-> %s (url-> %s) **fatal**2", err.Error(), url)
 	}
 
 	statuscode := resp.StatusCode
@@ -148,7 +148,7 @@ func (t *Topoclient) GetBatchMachineList(batchid string) ([]string, error) {
 
 	resp, err := httputils.Get(url, nil)
 	if err != nil {
-		return nil, errors.Errorf("err-> %s (url-> %s) **fatal**2", err.Error(), url) 
+		return nil, errors.Errorf("err-> %s (url-> %s) **fatal**2", err.Error(), url)
 	}
 
 	statuscode := resp.StatusCode

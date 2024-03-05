@@ -108,7 +108,13 @@ func BatchListHandle(ctx *gin.Context) {
 }
 
 func BatchMachineListHandle(ctx *gin.Context) {
+	var machines []map[string]string = make([]map[string]string, 0)
+
 	BatchId := ctx.Query("batchId")
+	if BatchId == "" {
+		response.Fail(ctx, nil, "batchId is empty")
+		return
+	}
 
 	machine_uuids, err := agentmanager.Topo.GetBatchMachineList(BatchId)
 	if err != nil {
@@ -119,5 +125,20 @@ func BatchMachineListHandle(ctx *gin.Context) {
 		return
 	}
 
-	response.Success(ctx, machine_uuids, "successfully get batch list")
+	agentmanager.Topo.PAgentMap.Range(func(key, value interface{}) bool {
+		uuid := key.(string)
+		agent := value.(*agentmanager.Agent_m)
+		for _, _uuid := range machine_uuids {
+			if uuid == _uuid {
+				machines = append(machines, map[string]string{
+					"uuid": uuid,
+					"ip":   agent.IP,
+				})
+			}
+		}
+
+		return true
+	})
+
+	response.Success(ctx, machines, "successfully get batch list")
 }
