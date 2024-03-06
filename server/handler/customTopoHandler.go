@@ -2,7 +2,6 @@ package handler
 
 import (
 	"strconv"
-	"time"
 
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/agentmanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/dao"
@@ -60,56 +59,23 @@ func CreateCustomTopoHandle(ctx *gin.Context) {
 }
 
 func UpdateCustomTopoHandle(ctx *gin.Context) {
-	tcid_str := ctx.Query("id")
-	if tcid_str == "" {
-		err := errors.New("id is nil **warn**1") // err top
-		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
+	// var tc *meta.Topo_configuration = new(meta.Topo_configuration)
+	req_body := struct {
+		TC meta.Topo_configuration `json:"topo_configuration"`
+		ID int                     `json:"id"`
+	}{}
 
-		response.Fail(ctx, nil, err.Error())
-		return
-	}
-
-	tcid_int, err := strconv.Atoi(tcid_str)
-	if err != nil {
-		err = errors.Wrap(err, "**warn**2") // err top
-		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
-
-		response.Fail(ctx, nil, err.Error())
-		return
-	}
-
-	var tc *meta.Topo_configuration = new(meta.Topo_configuration)
-	if err := ctx.ShouldBindJSON(tc); err != nil {
+	if err := ctx.ShouldBindJSON(req_body); err != nil {
 		err = errors.Wrap(err, "**warn**1") // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
-
 		response.Fail(ctx, nil, err.Error())
 		return
 	}
 
-	tcdb, err := dao.Global_mysql.TopoConfigurationToDB(tc)
+	tcdb_id, err := service.UpdateCustomTopoService(&req_body.TC, req_body.ID)
 	if err != nil {
 		err = errors.Wrap(err, "**warn**2") // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
-
-		response.Fail(ctx, nil, err.Error())
-		return
-	}
-
-	if err := dao.Global_mysql.DeleteTopoConfiguration(uint(tcid_int)); err != nil {
-		err = errors.Wrap(err, "**warn**2") // err top
-		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
-
-		response.Fail(ctx, nil, err.Error())
-		return
-	}
-
-	tcdb.UpdatedAt = time.Now().Format("2006-01-02 15:04:05")
-	tcdb_id, err := dao.Global_mysql.AddTopoConfiguration(tcdb)
-	if err != nil {
-		err = errors.Wrap(err, "**warn**2") // err top
-		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
-
 		response.Fail(ctx, nil, err.Error())
 		return
 	}
