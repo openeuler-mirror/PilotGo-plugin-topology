@@ -24,9 +24,10 @@
     </div>
     <!-- 分页 -->
     <div class="my_table_page">
-      <el-pagination :current-page="page.currentPage" :page-size="page.pageSize" :page-sizes="[10, 20, 25, 50, 75, 100]"
-        :small="page.small" :background="page.background" layout="total, sizes, prev, pager, next, jumper"
-        :total="page.total" @size-change="getTableData" @current-change="getTableData" />
+      <el-pagination v-model:current-page="page.currentPage" v-model:page-size="page.pageSize"
+        :page-sizes="[20, 25, 50, 75, 100]" :small="page.small" :background="page.background"
+        layout="total, sizes, prev, pager, next, jumper" :total="page.total" @size-change="getTableData"
+        @current-change="getTableData" />
     </div>
   </div>
 </template>
@@ -54,7 +55,7 @@ const selectedRows = ref([] as Config[]);
 const page = reactive({
   total: 0,
   currentPage: 1,
-  pageSize: 10,
+  pageSize: 20,
   small: true,
   background: true,
 });
@@ -68,7 +69,7 @@ const getTableData = () => {
   props.getData!({ page: page.currentPage, size: page.pageSize }).then(
     (res: { data: ResultData }) => {
       let result: ResultData = res.data;
-      if (result && result.code === 0) {
+      if (result && result.code === 200) {
         loading.value = false;
         tableData.value = result.data;
         currentNum.value = result.data.length;
@@ -195,7 +196,7 @@ defineExpose({
   }
 
   &_page {
-    height: 30px;
+    height: 40px;
     padding: 0 4px;
     display: flex;
     justify-content: flex-end;

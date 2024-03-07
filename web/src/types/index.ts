@@ -85,3 +85,14 @@ export interface ResultData extends Result {
   size: number;
   total: number;
 }
+
+// topo
+export interface TopoCustomFormType {
+  conf_name: string;
+  conf_version: string;
+  conf_time: string;
+  batchId: number;
+  node_rules: [[{ rule_condition: any, rule_type: string }, { rule_condition: any, rule_type: string }]];
+  description: string;
+  [key: string]: unknown;
+}

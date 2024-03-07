@@ -1,10 +1,9 @@
 <template>
   <div class="topoContaint">
     <!-- 展示topo图 -->
-    <PGTopo v-model:selectedNode="selectedNode" :topo_data="topo_data" :graph_mode="graphMode"
-      :time_interval="timeInterval" />
+    <PGTopo style="width: 100%;height: 100%;" :graph_mode="graphMode" :time_interval="timeInterval" />
     <!-- 嵌套抽屉组件展示数据 -->
-    <nodeDetail :display_drawer="drawer.display" :node="selectedNode.model" />
+    <nodeDetail />
   </div>
 </template>
 
@@ -18,8 +17,6 @@ import { useTopoStore } from '@/stores/topo';
 
 const graphMode = ref('default');
 const timeInterval = ref('10');
-const topo_data = ref({});
-let selectedNode = reactive({ model: {} });
 
 const drawer = reactive({
   display: false,
