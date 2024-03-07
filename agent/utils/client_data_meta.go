@@ -50,7 +50,7 @@ type Process struct {
 	Nice   int32 `json:"nice"`
 	IOnice int32 `json:"ionice"`
 
-	Connections   []net.ConnectionStat `json:"connections"`
+	Connections   []Netconnection `json:"connections"`
 	NetIOCounters []net.IOCountersStat `json:"netiocounters"`
 
 	IOCounters process.IOCountersStat `json:"iocounters"`

@@ -26,6 +26,7 @@ type Node struct {
 	Tags       []string          `json:"tags"`
 	LayoutAttr string            `json:"layoutattr"`
 	ComboId    string            `json:"comboId"`
+	Network    []Netconnection   `json:"network"`
 	Metrics    map[string]string `json:"metrics"`
 }
 
