@@ -15,7 +15,11 @@ const router = createRouter({
     {
       path: '/topoDisplay',
       name: 'topoDisplay',
-      component: () => import('../views/topoDisplay.vue')
+      component: () => import('../views/TopoDisplay.vue')
+    }, {
+      path: '/customTopo',
+      name: 'customTopo',
+      component: () => import('../views/customTopo.vue')
     }
   ]
 })

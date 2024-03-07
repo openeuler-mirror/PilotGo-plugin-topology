@@ -1,5 +1,5 @@
 <template>
-  <div id="topo-container" class="container"></div>
+  <div v-loading="loading" id="topo-container" class="container"></div>
 </template>
 
 <script setup lang="ts">
@@ -13,11 +13,6 @@ import { useTopoStore } from '@/stores/topo';
 import { colorSets, graphInitOptions, graphTreeInitOptions } from './PGOptions';
 
 const props = defineProps({
-  topo_data: {
-    type: Object,
-    default: {},
-    require: true
-  },
   graph_mode: {
     type: String,
     default: 'default',
@@ -34,11 +29,13 @@ let graph: Graph;
 const init_data = ref(false);
 let topo_data = reactive<any>({});
 let topo_type = ref('comb');
+const loading = ref(false);
 
 const topoW = ref(0);
 const topoH = ref(0);
 
 onMounted(() => {
+  loading.value = true;
   topoW.value = document.getElementById("topo-container")!.clientWidth;
   topoH.value = document.getElementById("topo-container")!.clientHeight;
 })
@@ -188,7 +185,7 @@ function initGraph(data: any) {
       document.getElementById("topo-container")!.clientHeight)
     graph.fitCenter()
   }
-
+  loading.value = false;
   init_data.value = false
 }
 
@@ -199,6 +196,7 @@ function refreshDragedNodePosition(e: any) {
 }
 
 watchEffect(() => {
+  // 数据处理的入口
   topo_type.value = useTopoStore().topo_type;
   let topo_data = JSON.parse(JSON.stringify(useTopoStore().topo_data));
   if (topo_data.tree || topo_data.nodes) {

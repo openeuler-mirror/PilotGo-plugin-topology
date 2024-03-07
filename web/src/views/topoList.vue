@@ -42,15 +42,24 @@
       <el-table-column type="selection" width="55" />
       <el-table-column prop="id" label="编号" width="80" />
       <el-table-column prop="conf_name" label="配置名称" />
+      <el-table-column prop="conf_version" label="版本" />
       <el-table-column prop="create_time" label="创建时间" />
       <el-table-column prop="update_time" label="更新时间" />
       <el-table-column prop="description" label="描述" />
-      <el-table-column label="操作" width="160">
+      <el-table-column label="操作" width="240">
         <template #default="{ row }">
-          <el-button round size="small" @click="handleDetail(row)">详情</el-button>
+          <el-button round size="small" @click="handleDetail(row)">拓扑图</el-button>
+          <el-button round size="small" @click="handleConfig(row)">json配置</el-button>
+          <el-button round size="small" @click="handleEdit(row)">编辑</el-button>
         </template>
       </el-table-column>
     </my-table>
+    <!-- 配置json展示 -->
+    <el-dialog v-model="showDialog" title="配置详情" width="800">
+      <el-scrollbar height="600"> 
+        <vue-json-pretty :data="configJson" showLength/>
+      </el-scrollbar>
+    </el-dialog>
   </div>
 </template>
 
@@ -58,12 +67,17 @@
 import { onMounted, reactive, ref } from "vue";
 import myTable from '@/components/table.vue';
 import { getConfList, delConfig, getBatchList, getBatchDetail } from "@/request/api";
-import { type Config } from "@/types/index";
+import type{  Config, TopoCustomFormType } from "@/types/index";
 import { useRouter } from "vue-router";
+import { useConfigStore } from "@/stores/config";
+import VueJsonPretty from 'vue-json-pretty';
+import 'vue-json-pretty/lib/styles.css';
 const router = useRouter();
 const confRef = ref();
 const drawer = ref(false);
 const select_type = ref('single');
+const showDialog = ref(false);
+let configJson = reactive<TopoCustomFormType>;
 const formInline = reactive({
   batchId: null,
   uuid: '',
@@ -96,6 +110,18 @@ const handlebatchDetail = (batchId: number) => {
       hosts = res.data.data;
     }
   })
+}
+
+// 查看topo配置详情
+const handleConfig = (row:any) => {
+  showDialog.value = true;
+  configJson = row;
+}
+
+// 编辑配置文件
+const handleEdit = (row:any) => {
+  useConfigStore().topo_config = row;
+  router.push('customTopo');
 }
 
 // 关闭抽屉
