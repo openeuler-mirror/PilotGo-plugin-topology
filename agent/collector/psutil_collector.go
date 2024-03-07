@@ -164,12 +164,7 @@ func (pc *PsutilCollector) Collect_process_instant_data() error {
 
 		connections, err := p0.Connections()
 		Echo_process_err("connections", err, p0.Pid)
-		for _, c := range connections {
-			if c.Status == "NONE" {
-				continue
-			}
-			p1.Connections = append(p1.Connections, c)
-		}
+		p1.Connections = utils.GopsutilNetMeta2TopoNetMeta(connections)
 
 		p1.NetIOCounters, err = p0.NetIOCounters(true)
 		Echo_process_err("netiocounters", err, p0.Pid)
@@ -227,11 +222,15 @@ func (pc *PsutilCollector) Collect_netconnection_all_data() error {
 
 	for _, c := range connections {
 		c1 := &utils.Netconnection{}
-		if c.Status == "NONE" {
+		// if c.Status == "NONE" {
+		// 	continue
+		// }
+
+		if c.Laddr.Port == 22 || c.Raddr.Port == 22 {
 			continue
 		}
 
-		if c.Laddr.Port == 22 || c.Raddr.Port == 22 {
+		if c.Status != "ESTABLISHED" {
 			continue
 		}
 
