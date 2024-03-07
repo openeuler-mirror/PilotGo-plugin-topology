@@ -116,7 +116,7 @@ func (d *DataProcesser) ProcessData(agentnum int, tagrules []meta.Tag_rule, node
 						}
 					}
 				}
-			}(ctx1, agent, nodes, edges, tagrules, noderules)			
+			}(ctx1, agent, nodes, edges, tagrules, noderules)
 
 			return true
 		},
@@ -252,6 +252,11 @@ func (d *DataProcesser) CreateNodeEntities(agent *agentmanager.Agent_m, nodes *m
 }
 
 func (d *DataProcesser) CustomCreateNodeEntities(agent *agentmanager.Agent_m, nodes *meta.Nodes, tagrules []meta.Tag_rule, noderules [][]meta.Filter_rule) error {
+	allconnections := []meta.Netconnection{}
+	for _, net := range agent.Netconnections_2 {
+		allconnections = append(allconnections, *net)
+	}
+
 	host_node := &meta.Node{
 		ID:         fmt.Sprintf("%s%s%s%s%s", agent.UUID, meta.NODE_CONNECTOR, meta.NODE_HOST, meta.NODE_CONNECTOR, agent.IP),
 		Name:       agent.UUID,
@@ -259,6 +264,7 @@ func (d *DataProcesser) CustomCreateNodeEntities(agent *agentmanager.Agent_m, no
 		UUID:       agent.UUID,
 		LayoutAttr: "a",
 		ComboId:    agent.UUID,
+		Network:    allconnections,
 		Metrics:    *utils.HostToMap(agent.Host_2, &agent.AddrInterfaceMap_2),
 	}
 
@@ -278,7 +284,7 @@ func (d *DataProcesser) CustomCreateNodeEntities(agent *agentmanager.Agent_m, no
 					atomic.AddInt32(&d.agent_node_count, int32(1))
 					return errors.Errorf("there is no uuid field in node rule_condition: %+v **3", condition.Rule_condition)
 				} else {
-					uuid = _uuid
+					uuid = _uuid.(string)
 					break
 				}
 			}
@@ -296,7 +302,7 @@ func (d *DataProcesser) CustomCreateNodeEntities(agent *agentmanager.Agent_m, no
 					if _name, ok := condition.Rule_condition["name"]; !ok {
 						atomic.AddInt32(&d.agent_node_count, int32(1))
 						return errors.Errorf("there is no name field in node rule_condition: %+v **3", condition.Rule_condition)
-					} else if _name == process.ExeName {
+					} else if _name.(string) == process.ExeName {
 						proc_node := &meta.Node{
 							ID:         fmt.Sprintf("%s%s%s%s%d", agent.UUID, meta.NODE_CONNECTOR, meta.NODE_PROCESS, meta.NODE_CONNECTOR, process.Pid),
 							Name:       process.ExeName,
@@ -304,6 +310,7 @@ func (d *DataProcesser) CustomCreateNodeEntities(agent *agentmanager.Agent_m, no
 							UUID:       agent.UUID,
 							LayoutAttr: "b",
 							ComboId:    agent.UUID,
+							Network:    process.Connections,
 							Metrics:    *utils.ProcessToMap(process),
 						}
 
@@ -323,7 +330,7 @@ func (d *DataProcesser) CustomCreateNodeEntities(agent *agentmanager.Agent_m, no
 					if _tag, ok := condition.Rule_condition["tag_name"]; !ok {
 						atomic.AddInt32(&d.agent_node_count, int32(1))
 						return errors.Errorf("there is no tag_name field in node rule_condition: %+v **3", condition.Rule_condition)
-					} else if _tag == process.ExeName {
+					} else if _tag.(string) == process.ExeName {
 						proc_node := &meta.Node{
 							ID:         fmt.Sprintf("%s%s%s%s%d", agent.UUID, meta.NODE_CONNECTOR, meta.NODE_PROCESS, meta.NODE_CONNECTOR, process.Pid),
 							Name:       process.ExeName,
@@ -331,6 +338,7 @@ func (d *DataProcesser) CustomCreateNodeEntities(agent *agentmanager.Agent_m, no
 							UUID:       agent.UUID,
 							LayoutAttr: "b",
 							ComboId:    agent.UUID,
+							Network:    process.Connections,
 							Metrics:    *utils.ProcessToMap(process),
 						}
 
@@ -606,34 +614,23 @@ func (d *DataProcesser) CustomCreateEdgeEntities(agent *agentmanager.Agent_m, ed
 		}
 	}
 
-	// TODO: 暂定net节点关系的type均为server，暂时无法判断socket连接中的server端和agent端，需要借助其他网络工具
-	for _, sub := range nodes_map[meta.NODE_NET] {
-		for _, obj := range nodes_map[meta.NODE_PROCESS] {
-			if obj.Metrics["Pid"] == sub.Metrics["Pid"] {
-				server_edge := &meta.Edge{
-					ID:   fmt.Sprintf("%s%s%s%s%s", sub.ID, meta.EDGE_CONNECTOR, meta.EDGE_SERVER, meta.EDGE_CONNECTOR, obj.ID),
-					Type: meta.EDGE_SERVER,
-					Src:  sub.ID,
-					Dst:  obj.ID,
-					Dir:  "direct",
-				}
-
-				edges.Add(server_edge)
-			}
-		}
-	}
-
-	// 生成跨主机对等网络关系实例
+	// TODO: 生成跨主机对等网络关系实例, 暂时只考虑同一网段内的连接
 	for _, net := range agent.Netconnections_2 {
 		var peernode1 *meta.Node
 		var peernode2 *meta.Node
+		var net1 *meta.Netconnection
+		var net2 *meta.Netconnection
 
-		for _, netnode := range nodes_map[meta.NODE_NET] {
-			switch netnode.Metrics["Laddr"] {
-			case net.Laddr:
-				peernode1 = netnode
-			case net.Raddr:
-				peernode2 = netnode
+		for _, procn := range nodes_map[meta.NODE_PROCESS] {
+			for _, netc := range procn.Network {
+				switch netc.Laddr {
+				case net.Laddr:
+					peernode1 = procn
+					net1 = &netc
+				case net.Raddr:
+					peernode2 = procn
+					net2 = &netc
+				}
 			}
 
 			if peernode1 != nil && peernode2 != nil {
@@ -643,19 +640,29 @@ func (d *DataProcesser) CustomCreateEdgeEntities(agent *agentmanager.Agent_m, ed
 
 		if peernode1 != nil && peernode2 != nil {
 			var edgetype string
-			switch peernode1.Metrics["Type"] {
-			case "1":
+			switch net.Type {
+			case 1:
 				edgetype = meta.EDGE_TCP
-			case "2":
+			case 2:
 				edgetype = meta.EDGE_UDP
 			}
 
 			peernet_edge := &meta.Edge{
-				ID:   fmt.Sprintf("%s%s%s%s%s", peernode1.ID, meta.EDGE_CONNECTOR, edgetype, meta.EDGE_CONNECTOR, peernode2.ID),
-				Type: edgetype,
-				Src:  peernode1.ID,
-				Dst:  peernode2.ID,
-				Dir:  "undirect",
+				ID:       fmt.Sprintf("%s%s%s%s%s", peernode1.ID, meta.EDGE_CONNECTOR, edgetype, meta.EDGE_CONNECTOR, peernode2.ID),
+				Type:     edgetype,
+				Src:      peernode1.ID,
+				Dst:      peernode2.ID,
+				Dir:      "undirect",
+				Unixtime: peernode1.Unixtime,
+				Metrics: map[string]string{
+					"family": strconv.Itoa(int(net1.Family)),
+					"type":   strconv.Itoa(int(net1.Type)),
+					"laddr_src": net1.Laddr,
+					"raddr_src": net1.Raddr,
+					"laddr_dst": net2.Laddr,
+					"raddr_dst": net2.Raddr,
+					"status": net1.Status,
+				},
 			}
 
 			edges.Add(peernet_edge)
