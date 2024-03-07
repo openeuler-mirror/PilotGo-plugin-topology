@@ -61,18 +61,19 @@ func CreateCustomTopoHandle(ctx *gin.Context) {
 func UpdateCustomTopoHandle(ctx *gin.Context) {
 	// var tc *meta.Topo_configuration = new(meta.Topo_configuration)
 	req_body := struct {
-		TC meta.Topo_configuration `json:"topo_configuration"`
-		ID int                     `json:"id"`
+		TC *meta.Topo_configuration `json:"topo_configuration"`
+		ID *uint                    `json:"id"`
 	}{}
 
-	if err := ctx.ShouldBindJSON(req_body); err != nil {
+	// fmt.Printf("%+v\n", ctx.Request.Body)
+	if err := ctx.ShouldBindJSON(&req_body); err != nil {
 		err = errors.Wrap(err, "**warn**1") // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 		response.Fail(ctx, nil, err.Error())
 		return
 	}
 
-	tcdb_id, err := service.UpdateCustomTopoService(&req_body.TC, req_body.ID)
+	tcdb_id, err := service.UpdateCustomTopoService(req_body.TC, *req_body.ID)
 	if err != nil {
 		err = errors.Wrap(err, "**warn**2") // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)

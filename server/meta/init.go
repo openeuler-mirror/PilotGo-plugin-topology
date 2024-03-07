@@ -2,8 +2,8 @@
 package meta
 
 var (
-	NODE_TYPES []string
-	EDGE_TYPES []string
+	NODE_TYPES   []string
+	EDGE_TYPES   []string
 	DEFAULT_TAGS []string
 )
 
@@ -27,6 +27,7 @@ const (
 const (
 	NODE_CONNECTOR = "_"
 	EDGE_CONNECTOR = "__"
+	STR_CONNECTOR  = "___"
 )
 
 func init() {
@@ -46,4 +47,3 @@ func init() {
 		"kafka",
 	}
 }
-
