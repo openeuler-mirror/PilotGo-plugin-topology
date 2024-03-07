@@ -112,7 +112,7 @@ func (r *RedisClient) Delete(key string) error {
 }
 
 // 基于batch中的机器列表更新运行状态agent的TAgentMap
-func (r *RedisClient) UpdateTopoRunningAgentList(batch []string) int {
+func (r *RedisClient) UpdateTopoRunningAgentList(uuids []string) int {
 	var running_agent_num int
 	var once sync.Once
 
@@ -148,9 +148,9 @@ func (r *RedisClient) UpdateTopoRunningAgentList(batch []string) int {
 
 				agentvalue := v.(*meta.AgentHeartbeat)
 
-				if len(batch) != 0 {
+				if len(uuids) != 0 {
 					inbatch := false
-					for _, uuid := range batch {
+					for _, uuid := range uuids {
 						if agentvalue.UUID == uuid {
 							inbatch = true
 							break
@@ -162,6 +162,7 @@ func (r *RedisClient) UpdateTopoRunningAgentList(batch []string) int {
 					}
 				}
 
+				// 当agent满足：①心跳要求；②包含于pilotgo纳管的机器范围内；③包含于uuids批次机器内等条件时，则加入TAgentMap
 				if time.Since(agentvalue.Time) < 1*time.Second+time.Duration(agentvalue.HeartbeatInterval)*time.Second {
 					if agentp := agentmanager.Topo.GetAgent_P(agentvalue.UUID); agentp != nil {
 						agentmanager.Topo.AddAgent_T(agentp)

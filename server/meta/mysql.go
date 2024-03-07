@@ -15,7 +15,7 @@ type Topo_configuration struct {
 	CreatedAt   string          `gorm:"not null" json:"create_time"`
 	UpdatedAt   string          `gorm:"not null" json:"update_time"`
 	Preserve    uint            `gorm:"not null" json:"preserve"`
-	Machines    []string        `gorm:"not null;type:text" json:"machines"`
+	BatchId     uint            `gorm:"not null" json:"batchId"`
 	NodeRules   [][]Filter_rule `gorm:"type:text" json:"node_rules"`
 	TagRules    []Tag_rule      `gorm:"type:text" json:"tag_rules"`
 }
@@ -28,14 +28,14 @@ type Topo_configuration_DB struct {
 	CreatedAt   string `gorm:"not null" json:"create_time"`
 	UpdatedAt   string `gorm:"not null" json:"update_time"`
 	Preserve    uint   `gorm:"not null" json:"preserve"`
-	Machines    string `gorm:"not null;type:text" json:"machines"`
+	BatchId     uint   `gorm:"not null" json:"batchId"`
 	NodeRules   string `gorm:"type:text" json:"node_rules"`
 	TagRules    string `gorm:"type:text" json:"tag_rules"`
 }
 
 type Filter_rule struct {
-	Rule_type      string            `json:"rule_type"`
-	Rule_condition map[string]string `json:"rule_condition"`
+	Rule_type      string                 `json:"rule_type"`
+	Rule_condition map[string]interface{} `json:"rule_condition"`
 }
 
 type Tag_rule struct {
