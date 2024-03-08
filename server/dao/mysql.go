@@ -160,11 +160,10 @@ func (m *MysqlClient) DeleteTopoConfiguration(tcid uint) error {
 func (m *MysqlClient) TopoConfigurationToDB(tc *meta.Topo_configuration) (*meta.Topo_configuration_DB, error) {
 	var tcdb *meta.Topo_configuration_DB = new(meta.Topo_configuration_DB)
 
-	machines_bytes, machines_err := json.Marshal(tc.Machines)
 	noderules_bytes, noderules_err := json.Marshal(tc.NodeRules)
 	tagrules_bytes, tagrules_err := json.Marshal(tc.TagRules)
-	if machines_err != nil || noderules_err != nil || tagrules_err != nil {
-		err := errors.Errorf("json marshal error: machines(%s) noderules(%s) tagrules)%s **warn**4", machines_err, noderules_err, tagrules_err)
+	if noderules_err != nil || tagrules_err != nil {
+		err := errors.Errorf("json marshal error: noderules(%s) tagrules)%s **warn**4", noderules_err, tagrules_err)
 		return nil, err
 	}
 
@@ -175,7 +174,7 @@ func (m *MysqlClient) TopoConfigurationToDB(tc *meta.Topo_configuration) (*meta.
 	tcdb.UpdatedAt = tc.UpdatedAt
 	tcdb.Version = tc.Version
 	tcdb.Preserve = tc.Preserve
-	tcdb.Machines = string(machines_bytes)
+	tcdb.BatchId = tc.BatchId
 	tcdb.NodeRules = string(noderules_bytes)
 	tcdb.TagRules = string(tagrules_bytes)
 
@@ -185,11 +184,10 @@ func (m *MysqlClient) TopoConfigurationToDB(tc *meta.Topo_configuration) (*meta.
 func (m *MysqlClient) DBToTopoConfiguration(tcdb *meta.Topo_configuration_DB) (*meta.Topo_configuration, error) {
 	var tc *meta.Topo_configuration = new(meta.Topo_configuration)
 
-	machines_err := json.Unmarshal([]byte(tcdb.Machines), &tc.Machines)
 	noderules_err := json.Unmarshal([]byte(tcdb.NodeRules), &tc.NodeRules)
 	tagrules_err := json.Unmarshal([]byte(tcdb.TagRules), &tc.TagRules)
-	if machines_err != nil || noderules_err != nil || tagrules_err != nil {
-		err := errors.Errorf("json unmarshal error: machines(%s) noderules(%s) tagrules)%s **warn**4", machines_err, noderules_err, tagrules_err)
+	if noderules_err != nil || tagrules_err != nil {
+		err := errors.Errorf("json unmarshal error: noderules(%s) tagrules)%s **warn**4", noderules_err, tagrules_err)
 		return nil, err
 	}
 
@@ -200,6 +198,7 @@ func (m *MysqlClient) DBToTopoConfiguration(tcdb *meta.Topo_configuration_DB) (*
 	tc.UpdatedAt = tcdb.UpdatedAt
 	tc.Version = tcdb.Version
 	tc.Preserve = tcdb.Preserve
+	tc.BatchId = tcdb.BatchId
 
 	return tc, nil
 }
