@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"sync"
 	"syscall"
@@ -141,10 +142,10 @@ func (t *Topoclient) GetBatchList() ([]*common.BatchList, error) {
 	return batch_list, nil
 }
 
-func (t *Topoclient) GetBatchMachineList(batchid string) ([]string, error) {
+func (t *Topoclient) GetBatchMachineList(batchid uint) ([]string, error) {
 	var machine_list []string = make([]string, 0)
 
-	url := "http://" + t.Sdkmethod.Server() + "/api/v1/pluginapi/batch_uuid?batchId=" + batchid
+	url := "http://" + t.Sdkmethod.Server() + "/api/v1/pluginapi/batch_uuid?batchId=" + strconv.Itoa(int(batchid))
 
 	resp, err := httputils.Get(url, nil)
 	if err != nil {

@@ -22,10 +22,15 @@ func RunCustomTopoService(tcid uint) ([]*meta.Node, []*meta.Edge, []map[string]s
 		return nil, nil, nil, errors.Wrap(err, "**2")
 	}
 
+	machine_uuids, err := agentmanager.Topo.GetBatchMachineList(tc.BatchId)
+	if err != nil {
+		return nil, nil, nil, errors.Wrap(err, "**2")
+	}
+
 	// ctxv := context.WithValue(agentmanager.Topo.Tctx, "custom_name", "pilotgo-topo")
 
 	agentmanager.Topo.UpdateMachineList()
-	running_agent_num := dao.Global_redis.UpdateTopoRunningAgentList(tc.Machines)
+	running_agent_num := dao.Global_redis.UpdateTopoRunningAgentList(machine_uuids)
 	unixtime_now := time.Now().Unix()
 	nodes, edges, combos, err := back.DataProcessWorking(unixtime_now, running_agent_num, dao.Global_GraphDB, tc.TagRules, tc.NodeRules)
 	if err != nil {
@@ -71,20 +76,20 @@ func CreateCustomTopoService(topoconfig *meta.Topo_configuration) (int, error) {
 	return tcdb_id, nil
 }
 
-func UpdateCustomTopoService(tc *meta.Topo_configuration, tcdb_id_old int) (int, error) {
+func UpdateCustomTopoService(tc *meta.Topo_configuration, tcdb_id_old uint) (int, error) {
 	tcdb, err := dao.Global_mysql.TopoConfigurationToDB(tc)
 	if err != nil {
-		return -1, errors.Wrap(err, "**warn**2")
+		return -1, errors.Wrap(err, "**2")
 	}
 
-	if err := dao.Global_mysql.DeleteTopoConfiguration(uint(tcdb_id_old)); err != nil {
-		return -1, errors.Wrap(err, "**warn**1")
+	if err := dao.Global_mysql.DeleteTopoConfiguration(tcdb_id_old); err != nil {
+		return -1, errors.Wrap(err, "**1")
 	}
 
 	tcdb.UpdatedAt = time.Now().Format("2006-01-02 15:04:05")
 	tcdb_id_new, err := dao.Global_mysql.AddTopoConfiguration(tcdb)
 	if err != nil {
-		return -1, errors.Wrap(err, "**warn**2")
+		return -1, errors.Wrap(err, "**2")
 	}
 
 	return tcdb_id_new, nil
