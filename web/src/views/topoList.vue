@@ -14,12 +14,12 @@
             <el-form :inline="true" :model="formInline" class="demo-form-inline">
               <el-form-item label="批次">
                 <el-select v-model="formInline.batchId" placeholder="请选择批次" clearable @change="handlebatchDetail">
-                  <el-option v-for="item in batchs" :label="item.name" :value="item.id" />
+                  <el-option v-for="item in batchs" :key="item.id" :label="item.name" :value="item.id" />
                 </el-select>
               </el-form-item>
               <el-form-item label="主机">
                 <el-select v-model="formInline.uuid" placeholder="请选择主机" clearable>
-                  <el-option v-for="item in hosts" :label="item.ip" :value="item.uuid" />
+                  <el-option v-for="item in hosts" :key="item.uuid" :label="item.ip" :value="item.uuid" />
                 </el-select>
               </el-form-item>
             </el-form>

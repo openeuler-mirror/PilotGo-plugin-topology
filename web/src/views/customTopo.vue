@@ -37,6 +37,7 @@
                 <el-checkbox label="cpu" value="cpu" disabled checked/>
                 <el-checkbox label="disk" value="disk" disabled checked/>
                 <el-checkbox label="iface" value="iface" disabled checked/>
+                
               </el-checkbox-group>
               <el-button @click="delNodeRule(index)" link type="danger">- 删除规则</el-button>
 
@@ -78,7 +79,7 @@ import { useConfigStore } from '@/stores/config';
 const formRef = ref<FormInstance>()
 const graphMode = ref('default');
 const timeInterval = ref('10');
-const isEdit = ref(false); // 受否可编辑配置
+const isEdit = ref(false); // 是否可编辑配置
 const configId = ref(0); // 编辑文件接口参数
 const showTopo = ref(false);
 
@@ -170,7 +171,7 @@ const handlebatchDetail = (e: string) => {
     }
   })
 }
-// 市场农户规则
+// 删除规则
 const delNodeRule = (index: number) => {
      customForm.node_rules.splice(index, 1)
 }
