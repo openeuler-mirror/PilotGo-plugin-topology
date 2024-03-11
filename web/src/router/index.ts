@@ -1,7 +1,14 @@
 import { createRouter, createWebHistory } from 'vue-router'
+let baseRoute = '';
+if (window.__MICRO_APP_ENVIRONMENT__) {
+  console.log('在微前端环境中')
+  baseRoute = window.__MICRO_APP_BASE_ROUTE__ || '/';
+} else {
+  baseRoute = import.meta.env.BASE_URL;
+}
 
 const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
+  history: createWebHistory(baseRoute),
   routes: [
     {
       path: '/',

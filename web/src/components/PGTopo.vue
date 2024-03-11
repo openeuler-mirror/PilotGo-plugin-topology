@@ -211,7 +211,7 @@ watchEffect(() => {
 watch(() => init_data, (newdata) => {
   if (newdata) {
     initGraph(topo_data);
-    topo_data.combos.forEach((combo: any, i: any) => {
+    topo_data.combos.forEach((combo: any, _i: any) => {
       graph.collapseCombo(combo['id']);
     })
     graph.updateCombos();
