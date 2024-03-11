@@ -614,33 +614,46 @@ func (d *DataProcesser) CustomCreateEdgeEntities(agent *agentmanager.Agent_m, ed
 		}
 	}
 
-	// TODO: 生成跨主机对等网络关系实例, 暂时只考虑同一网段内的连接
-	for _, net := range agent.Netconnections_2 {
+	// TODO: 生成对等网络关系实例, 暂时只考虑同一网段内的连接
+	for _, global_net := range agent.Netconnections_2 {
 		var peernode1 *meta.Node
 		var peernode2 *meta.Node
 		var net1 *meta.Netconnection
 		var net2 *meta.Netconnection
 
 		for _, procn := range nodes_map[meta.NODE_PROCESS] {
-			for _, netc := range procn.Network {
-				switch netc.Laddr {
-				case net.Laddr:
+			// 全局连接local端
+			if agent.UUID == procn.UUID {
+				if strconv.Itoa(int(global_net.Pid)) == procn.Metrics["Pid"] {
 					peernode1 = procn
-					net1 = &netc
-				case net.Raddr:
-					peernode2 = procn
-					net2 = &netc
+					for _, proc_net := range procn.Network {
+						if proc_net.Laddr == global_net.Laddr && proc_net.Raddr == global_net.Raddr {
+							net1 = &proc_net
+							break
+						}
+					}
 				}
 			}
+			// 全局连接remote端，同网段
+			for _, proc_net := range procn.Network {
+				if proc_net.Laddr == global_net.Raddr && proc_net.Raddr == global_net.Laddr {
+					peernode2 = procn
+					net2 = &proc_net
+					break
+				}
+			}
+			// 全局连接remote端，跨网段，本机进程为client端
+
+			// 全局连接remote端，跨网段，本机进程为server端
 
 			if peernode1 != nil && peernode2 != nil {
 				break
 			}
 		}
 
-		if peernode1 != nil && peernode2 != nil {
+		if peernode1 != nil && peernode2 != nil && net1 != nil && net2 != nil {
 			var edgetype string
-			switch net.Type {
+			switch global_net.Type {
 			case 1:
 				edgetype = meta.EDGE_TCP
 			case 2:
@@ -655,13 +668,13 @@ func (d *DataProcesser) CustomCreateEdgeEntities(agent *agentmanager.Agent_m, ed
 				Dir:      "undirect",
 				Unixtime: peernode1.Unixtime,
 				Metrics: map[string]string{
-					"family": strconv.Itoa(int(net1.Family)),
-					"type":   strconv.Itoa(int(net1.Type)),
+					"family":    strconv.Itoa(int(net1.Family)),
+					"type":      strconv.Itoa(int(net1.Type)),
 					"laddr_src": net1.Laddr,
 					"raddr_src": net1.Raddr,
 					"laddr_dst": net2.Laddr,
 					"raddr_dst": net2.Raddr,
-					"status": net1.Status,
+					"status":    net1.Status,
 				},
 			}
 
