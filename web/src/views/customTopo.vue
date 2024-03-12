@@ -12,9 +12,6 @@
           <el-form-item prop="conf_name" label="配置名称：">
             <el-input v-model="customForm.conf_name" />
           </el-form-item>
-          <el-form-item prop="conf_version" label="配置版本：">
-            <el-input v-model="customForm.conf_version" />
-          </el-form-item>
           <el-form-item label="配置描述：">
             <el-input v-model="customForm.description" type="textarea" />
           </el-form-item>
@@ -92,7 +89,6 @@ const showTopo = ref(false);
 
 let customForm = reactive<TopoCustomFormType>({
   conf_name: '',
-  conf_version: '',
   conf_time: Date.now() + '',
   batchId: 0,
   batchName: '',
@@ -259,11 +255,10 @@ watch(() => useConfigStore().topo_config, (newConfig) => {
     isEdit.value = true;
     let currentConf = JSON.parse(JSON.stringify(newConfig));
     customForm.conf_name = currentConf.conf_name;
-    customForm.conf_version = currentConf.conf_version;
     customForm.batchId = currentConf.batchId;
     currentConf.node_rules.forEach((item: any, index: number) => {
       customForm.node_rules[index] = item;
-      customForm.node_rules[index][0].rule_condition.ip = item[0].rule_condition.IP;
+      customForm.node_rules[index][0].rule_condition.ip = item[0].rule_condition.ip;
     })
     customForm.description = currentConf.description;
     configId.value = currentConf.id;
