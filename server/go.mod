@@ -3,7 +3,7 @@ module gitee.com/openeuler/PilotGo-plugin-topology-server
 go 1.20
 
 require (
-	gitee.com/openeuler/PilotGo/sdk v0.0.0-20240129073732-887bc07ab69c
+	gitee.com/openeuler/PilotGo/sdk v0.0.0-20240308065623-e2784a98f4d0
 	github.com/gin-contrib/timeout v0.0.3
 	github.com/gin-gonic/gin v1.9.1
 	github.com/go-redis/redis/v8 v8.11.5
