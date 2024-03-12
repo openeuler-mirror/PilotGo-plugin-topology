@@ -55,10 +55,16 @@ func InitPluginClient() {
 	pe1 := &common.PageExtention{
 		Type:       common.ExtentionPage,
 		Name:       "配置列表",
-		URL:        "plugin/topology",
+		URL:        "/topoList",
 		Permission: "plugin.topology.page/menu",
 	}
-	ex = append(ex, pe1)
+	pe2 := &common.PageExtention{
+		Type:       common.ExtentionPage,
+		Name:       "创建配置",
+		URL:        "/customTopo",
+		Permission: "plugin.topology.page/menu",
+	}
+	ex = append(ex, pe1, pe2)
 	PluginClient.RegisterExtention(ex)
 
 	Topo = &Topoclient{
@@ -74,34 +80,61 @@ func (t *Topoclient) InitMachineList() {
 	Wait4TopoServerReady()
 	t.Sdkmethod.Wait4Bind()
 
-	url := "http://" + t.Sdkmethod.Server() + "/api/v1/pluginapi/machine_list"
+	// url := "http://" + t.Sdkmethod.Server() + "/api/v1/pluginapi/machine_list"
 
-	resp, err := httputils.Get(url, nil)
-	if err != nil {
-		err = errors.Errorf("err-> %s (url-> %s) **fatal**2", err.Error(), url) // err top
-		ErrorTransmit(t.Tctx, err, t.ErrCh, true)
-	}
+	// resp, err := httputils.Get(url, &httputils.Params{
+	// 	Cookie: map[string]string{
+	// 		client.TokenCookie: "",
+	// 	}})
+	// if err != nil {
+	// 	err = errors.Errorf("err-> %s (url-> %s) **fatal**2", err.Error(), url) // err top
+	// 	ErrorTransmit(t.Tctx, err, t.ErrCh, true)
+	// }
 
-	statuscode := resp.StatusCode
-	if statuscode != 200 {
-		err := errors.Errorf("http返回状态码异常: %d, %s **fatal**2", statuscode, url) // err top
-		ErrorTransmit(t.Tctx, err, t.ErrCh, true)
-	}
+	// statuscode := resp.StatusCode
+	// if statuscode != 200 {
+	// 	msg := ""
+	// 	resp_body := struct {
+	// 		Code int    `json:"code"`
+	// 		Msg  string `json:"msg"`
+	// 	}{}
+	// 	if len(resp.Body) != 0 {
+	// 		json.Unmarshal(resp.Body, &resp_body)
+	// 		msg = resp_body.Msg
+	// 	}
+	// 	err := errors.Errorf("http返回状态码异常: %d, %s, %s **fatal**2", statuscode, msg, url) // err top
+	// 	ErrorTransmit(t.Tctx, err, t.ErrCh, true)
+	// }
 
-	result := &struct {
-		Code int         `json:"code"`
-		Data interface{} `json:"data"`
-	}{}
+	// result := &struct {
+	// 	Code int         `json:"code"`
+	// 	Data interface{} `json:"data"`
+	// }{}
 
-	err = json.Unmarshal(resp.Body, result)
+	// err = json.Unmarshal(resp.Body, result)
+	// if err != nil {
+	// 	err = errors.Errorf("%s **fatal**2", err.Error()) // err top
+	// 	ErrorTransmit(t.Tctx, err, t.ErrCh, true)
+	// }
+
+	// for _, m := range result.Data.([]interface{}) {
+	// 	p := &Agent_m{}
+	// 	mapstructure.Decode(m, p)
+	// 	p.TAState = 0
+	// 	t.AddAgent_P(p)
+	// }
+
+	machine_list, err := t.Sdkmethod.MachineList()
 	if err != nil {
 		err = errors.Errorf("%s **fatal**2", err.Error()) // err top
 		ErrorTransmit(t.Tctx, err, t.ErrCh, true)
 	}
 
-	for _, m := range result.Data.([]interface{}) {
+	for _, m := range machine_list {
 		p := &Agent_m{}
-		mapstructure.Decode(m, p)
+		p.UUID = m.UUID
+		p.Departname = m.Department
+		p.IP = m.IP
 		p.TAState = 0
 		t.AddAgent_P(p)
 	}
@@ -176,32 +209,55 @@ func (t *Topoclient) GetBatchMachineList(batchid uint) ([]string, error) {
 }
 
 func (t *Topoclient) UpdateMachineList() {
-	var ip_port_pilotgo_server string
+	// var ip_port_pilotgo_server string
 
-	if Topo != nil && Topo.Sdkmethod != nil {
-		ip_port_pilotgo_server = Topo.Sdkmethod.Server()
-	}
+	// if Topo != nil && Topo.Sdkmethod != nil {
+	// 	ip_port_pilotgo_server = Topo.Sdkmethod.Server()
+	// }
 
-	url := "http://" + ip_port_pilotgo_server + "/api/v1/pluginapi/machine_list"
+	// url := "http://" + ip_port_pilotgo_server + "/api/v1/pluginapi/machine_list"
 
-	resp, err := httputils.Get(url, nil)
-	if err != nil {
-		err = errors.Errorf("%s **fatal**2", err.Error()) // err top
-		ErrorTransmit(t.Tctx, err, t.ErrCh, true)
-	}
+	// resp, err := httputils.Get(url, nil)
+	// if err != nil {
+	// 	err = errors.Errorf("%s **fatal**2", err.Error()) // err top
+	// 	ErrorTransmit(t.Tctx, err, t.ErrCh, true)
+	// }
 
-	statuscode := resp.StatusCode
-	if statuscode != 200 {
-		err = errors.Errorf("http返回状态码异常: %d **fatal**2", statuscode) // err top
-		ErrorTransmit(t.Tctx, err, t.ErrCh, true)
-	}
+	// statuscode := resp.StatusCode
+	// if statuscode != 200 {
+	// 	err = errors.Errorf("http返回状态码异常: %d **fatal**2", statuscode) // err top
+	// 	ErrorTransmit(t.Tctx, err, t.ErrCh, true)
+	// }
 
-	result := &struct {
-		Code int         `json:"code"`
-		Data interface{} `json:"data"`
-	}{}
+	// result := &struct {
+	// 	Code int         `json:"code"`
+	// 	Data interface{} `json:"data"`
+	// }{}
 
-	err = json.Unmarshal(resp.Body, result)
+	// err = json.Unmarshal(resp.Body, result)
+	// if err != nil {
+	// 	err = errors.Errorf("%s **fatal**2", err.Error()) // err top
+	// 	ErrorTransmit(t.Tctx, err, t.ErrCh, true)
+	// }
+
+	// if Topo != nil {
+	// 	Topo.PAgentMap.Range(func(key, value interface{}) bool {
+	// 		t.DeleteAgent_P(key.(string))
+	// 		return true
+	// 	})
+	// } else {
+	// 	err := errors.New("agentmanager.Topo is nil, can not clear Topo.PAgentMap **fatal**6") // err top
+	// 	ErrorTransmit(t.Tctx, err, t.ErrCh, true)
+	// }
+
+	// for _, m := range result.Data.([]interface{}) {
+	// 	p := &Agent_m{}
+	// 	mapstructure.Decode(m, p)
+	// 	p.TAState = 0
+	// 	t.AddAgent_P(p)
+	// }
+
+	machine_list, err := t.Sdkmethod.MachineList()
 	if err != nil {
 		err = errors.Errorf("%s **fatal**2", err.Error()) // err top
 		ErrorTransmit(t.Tctx, err, t.ErrCh, true)
@@ -217,34 +273,14 @@ func (t *Topoclient) UpdateMachineList() {
 		ErrorTransmit(t.Tctx, err, t.ErrCh, true)
 	}
 
-	for _, m := range result.Data.([]interface{}) {
+	for _, m := range machine_list {
 		p := &Agent_m{}
-		mapstructure.Decode(m, p)
+		p.UUID = m.UUID
+		p.Departname = m.Department
+		p.IP = m.IP
 		p.TAState = 0
 		t.AddAgent_P(p)
 	}
-
-	// for _, m := range result.Data.([]interface{}) {
-	// 	p := &Agent_m{}
-	// 	mapstructure.Decode(m, p)
-	// 	p.TAState = 0
-
-	// 	agent := t.GetAgent(p.UUID)
-	// 	if agent == nil {
-	// 		t.AddAgent(p)
-	// 		continue
-	// 	}
-
-	// 	agent.IP = p.IP
-	// 	agent.ID = p.ID
-	// 	agent.UUID = p.UUID
-	// 	agent.Port = p.Port
-	// 	agent.Departid = p.Departid
-	// 	agent.Departname = p.Departname
-	// 	agent.State = p.State
-	// 	agent.TAState = p.TAState
-	// 	t.AddAgent(agent)
-	// }
 }
 
 func (t *Topoclient) InitLogger() {

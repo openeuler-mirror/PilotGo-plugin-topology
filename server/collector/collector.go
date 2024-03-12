@@ -79,7 +79,7 @@ func (d *DataCollector) GetCollectDataFromTopoAgent(agent *agentmanager.Agent_m)
 		return errors.Errorf("%v, %s **2", resp.StatusCode, url)
 	}
 
-	results := &struct {
+	results := struct {
 		Code  int         `json:"code"`
 		Error string      `json:"error"`
 		Data  interface{} `json:"data"`

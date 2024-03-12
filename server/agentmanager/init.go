@@ -21,7 +21,7 @@ var PluginInfo = &client.PluginInfo{
 	Author:      "wangjunqi",
 	Email:       "wangjunqi@kylinos.cn",
 	Url:         "http://10.1.10.131:9991",
-	PluginType:  "iframe",
+	PluginType:  "micro-app",
 }
 
 func WaitingForHandshake() {
