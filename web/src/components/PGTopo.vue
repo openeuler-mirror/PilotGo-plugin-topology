@@ -1,5 +1,5 @@
 <template>
-  <div v-loading="loading" id="topo-container" class="container"></div>
+  <div id="topo-container" class="container"></div>
 </template>
 
 <script setup lang="ts">
@@ -29,13 +29,12 @@ let graph: Graph;
 const init_data = ref(false);
 let topo_data = reactive<any>({});
 let topo_type = ref('comb');
-const loading = ref(false);
 
 const topoW = ref(0);
 const topoH = ref(0);
 
 onMounted(() => {
-  loading.value = true;
+  init_data.value = false;
   topoW.value = document.getElementById("topo-container")!.clientWidth;
   topoH.value = document.getElementById("topo-container")!.clientHeight;
 })
@@ -185,7 +184,6 @@ function initGraph(data: any) {
       document.getElementById("topo-container")!.clientHeight)
     graph.fitCenter()
   }
-  loading.value = false;
   init_data.value = false
 }
 
@@ -195,18 +193,18 @@ function refreshDragedNodePosition(e: any) {
   model.fy = e.y;
 }
 
-watchEffect(() => {
-  // 数据处理的入口
-  topo_type.value = useTopoStore().topo_type;
-  let topo_data = JSON.parse(JSON.stringify(useTopoStore().topo_data));
-  if (topo_data.tree || topo_data.nodes) {
-    if (topo_type.value === 'tree') {
-      initGraph(topo_data.tree);
-    } else {
-      updateTopoData(topo_data);
-    }
+watch(() => useTopoStore().topo_data, (new_topo_data) => {
+  // 数据处理入口
+  topo_type.value = 'comb';
+  let topo_data = JSON.parse(JSON.stringify(new_topo_data));
+  if (topo_data.tree) {
+    topo_type.value = 'tree';
+    initGraph(topo_data.tree);
+  } else if (topo_data.nodes) {
+    updateTopoData(topo_data);
   }
-})
+}, { immediate: true, deep: true })
+
 
 watch(() => init_data, (newdata) => {
   if (newdata) {

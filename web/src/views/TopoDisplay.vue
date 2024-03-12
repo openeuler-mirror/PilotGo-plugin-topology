@@ -1,6 +1,6 @@
 <template>
 
-  <div class="topoContaint">
+  <div class="topoContaint" v-loading="loading">
     <el-page-header @back="goBack">
       <template #content>
         <span style="font-size: 14px;"> 拓扑图 </span>
@@ -14,7 +14,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, watchEffect } from 'vue';
+import { onMounted, reactive, ref, watch, watchEffect } from 'vue';
 import PGTopo from '@/components/PGTopo.vue';
 // import topodata from '@/utils/test.json';
 import nodeDetail from './nodeDetail.vue';
@@ -25,48 +25,57 @@ import router from '@/router';
 
 const graphMode = ref('default');
 const timeInterval = ref('10');
-const showTopo = ref(false)
-
+const showTopo = ref(false);
+const loading = ref(false);
 onMounted(() => {
-  useTopoStore().topo_type = 'comb';
+  loading.value = true;
 })
 
 const goBack = () => {
   router.push('topoList');
 }
 
-watchEffect(async () => {
+watchEffect(() => {
   let requst_type = useConfigStore().topo_request.type;
   let requst_id = useConfigStore().topo_request.id;
   let topoData = {};
   switch (requst_type) {
     case 'custom':
-      await getCustomTopo({ id: requst_id as number }).then(res => {
+      getCustomTopo({ id: requst_id as number }).then(res => {
         if (res.data.code === 200) {
           topoData = res.data.data;
+          useTopoStore().topo_data = topoData;
+          showTopo.value = true;
+          loading.value = false;
         }
       })
       break;
     case 'single':
-      useTopoStore().topo_type = 'tree';
-      await getUuidTopo({ uuid: requst_id as string }).then(res => {
+      getUuidTopo({ uuid: requst_id as string }).then(res => {
         if (res.data.code === 200) {
           topoData = res.data.data;
+          loading.value = false;
+          showTopo.value = true;
+          setTimeout(() => {
+            useTopoStore().topo_data = topoData;
+          }, 200)
         }
       })
       break;
 
     default:
-      await getTopoData().then(res => {
+      getTopoData().then(res => {
         if (res.data.code === 200) {
           topoData = res.data.data;
+          useTopoStore().topo_data = topoData;
+          showTopo.value = true;
+          loading.value = false;
         }
       })
       break;
   }
-  useTopoStore().topo_data = topoData;
-  showTopo.value = true;
 })
+
 
 </script>
 
