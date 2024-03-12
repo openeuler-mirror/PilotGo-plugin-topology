@@ -10,16 +10,16 @@
         <el-descriptions-item label="节点tags：">
           <el-scrollbar height="100px">
             <el-tag v-for="(tag, i) in tags" :key="i" effect="plain">{{
-              tag
-            }}</el-tag>
+    tag
+  }}</el-tag>
           </el-scrollbar>
         </el-descriptions-item>
       </el-descriptions>
 
       <el-button-group class="button">
         <el-tooltip v-for="(btn, index) in btns" :content="btn.label" placement="bottom" effect="light">
-          <el-button :icon="handleIcon(index)" color="#79bbff" @click="handleBtnClick(btn)" :disabled="btn.disabled" plain
-            circle />
+          <el-button :icon="handleIcon(index)" color="#79bbff" @click="handleBtnClick(btn)" :disabled="btn.disabled"
+            plain circle />
         </el-tooltip>
       </el-button-group>
     </div>
@@ -33,8 +33,8 @@
       <grid-layout :col-num="3" :is-draggable="grid.draggable" :is-resizable="grid.resizable" :layout.sync="layout"
         :row-height="100" :use-css-transforms="true" :vertical-compact="true" :responsive="true">
         <template v-for="(item, i) in layout">
-          <grid-item :key="i" :h="item.h" :i="item.i" :static="item.static" :w="item.w" :x="item.x" :y="item.y" :min-w="2"
-            :min-h="2" @resize="SizeAutoChange(item.i, item.query.isChart)" @resized="SizeAutoChange"
+          <grid-item :key="i" :h="item.h" :i="item.i" :static="item.static" :w="item.w" :x="item.x" :y="item.y"
+            :min-w="2" :min-h="2" @resize="SizeAutoChange(item.i, item.query.isChart)" @resized="SizeAutoChange"
             drag-allow-from=".drag" drag-ignore-from=".noDrag" v-if="item.display">
             <div class="drag">
               <span class="drag-title">{{ item.title }}</span>
@@ -128,6 +128,7 @@ watch(() => useTopoStore().nodeData, (new_node_data, old_node_data) => {
   if (new_node_data.id) {
     let node_data = new_node_data;
     display_drawer.value = true;
+    isHost.value = false;
     // 是否是host类型
     if (node_data.Type === 'host') {
       isHost.value = true;
