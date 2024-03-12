@@ -4,6 +4,16 @@ declare module '*.vue' {
   const component: DefineComponent<{}, {}, any>
   export default component
 }
+interface Window {
+    remount: any;
+    unmount: any;
+    readonly '__MICRO_APP_BASE_ROUTE__': string
+}
+declare module '*.png' {
+  const value: string;
+  export default value;
+}
+
 
 // fairy自定义
 declare module '*.scss';

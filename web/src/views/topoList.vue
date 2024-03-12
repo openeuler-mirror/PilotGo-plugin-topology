@@ -7,19 +7,19 @@
       <template #default>
         <div class="dra_content">
           <el-radio-group v-model="select_type">
-            <el-radio label="single" size="large">单机</el-radio>
-            <el-radio label="multi" size="large">多机</el-radio>
+            <el-radio value="single" size="large">单机</el-radio>
+            <el-radio value="multi" size="large">多机</el-radio>
           </el-radio-group>
           <div class="dra_content_select" v-show="select_type === 'single'">
-            <el-form :inline="true" :model="formInline" class="demo-form-inline">
-              <el-form-item label="批次">
+            <el-form :inline="true" :model="formInline" style="width: 60%;">
+              <el-form-item label="批次" style="width: 30%;">
                 <el-select v-model="formInline.batchId" placeholder="请选择批次" clearable @change="handlebatchDetail">
                   <el-option v-for="item in batchs" :key="item.id" :label="item.name" :value="item.id" />
                 </el-select>
               </el-form-item>
-              <el-form-item label="主机">
+              <el-form-item label="主机" style="width: 30%;">
                 <el-select v-model="formInline.uuid" placeholder="请选择主机" clearable>
-                  <el-option v-for="item in hosts" :key="item.uuid" :label="item.ip" :value="item.uuid" />
+                  <el-option v-for="item in hosts" :key="item.ip" :label="item.ip" :value="item.uuid" />
                 </el-select>
               </el-form-item>
             </el-form>
@@ -56,18 +56,18 @@
     </my-table>
     <!-- 配置json展示 -->
     <el-dialog v-model="showDialog" title="配置详情" width="800">
-      <el-scrollbar height="600"> 
-        <vue-json-pretty :data="configJson" showLength/>
+      <el-scrollbar height="600">
+        <vue-json-pretty :data="configJson" showLength />
       </el-scrollbar>
     </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref } from "vue";
+import { onMounted, reactive, ref, watch } from "vue";
 import myTable from '@/components/table.vue';
 import { getConfList, delConfig, getBatchList, getBatchDetail } from "@/request/api";
-import type{  Config, TopoCustomFormType } from "@/types/index";
+import type { Config, TopoCustomFormType } from "@/types/index";
 import { useRouter } from "vue-router";
 import { useConfigStore } from "@/stores/config";
 import VueJsonPretty from 'vue-json-pretty';
@@ -89,7 +89,7 @@ let batchs = reactive([
     name: ''
   }
 ]);
-let hosts = reactive([
+let hosts = ref([
   {
     uuid: '',
     ip: ''
@@ -103,23 +103,27 @@ onMounted(() => {
   })
 })
 
+
+
 // 选择主机
-const handlebatchDetail = (batchId: number) => {
-  getBatchDetail({ batchId: batchId }).then(res => {
+const handlebatchDetail = async (batchId: number) => {
+  let hostsData = [{ ip: '', uuid: '' }];
+  await getBatchDetail({ batchId: batchId }).then(res => {
     if (res.data.code === 200) {
-      hosts = res.data.data;
+      hostsData = res.data.data;
     }
   })
+  hosts.value = hostsData;
 }
 
 // 查看topo配置详情
-const handleConfig = (row:any) => {
+const handleConfig = (row: any) => {
   showDialog.value = true;
   configJson = row;
 }
 
 // 编辑配置文件
-const handleEdit = (row:any) => {
+const handleEdit = (row: any) => {
   useConfigStore().topo_config = row;
   router.push('customTopo');
 }
@@ -130,10 +134,8 @@ const handleClose = () => {
 }
 // 选中
 const handleConfirm = () => {
-  router.push({
-    name: 'topoDisplay',
-    state: { type: select_type.value, id: formInline.uuid }
-  });
+  useConfigStore().topo_request = { type: select_type.value, id: formInline.uuid }
+  router.push('topoDisplay');
 }
 // 删除
 const handleDelete = () => {
@@ -141,10 +143,8 @@ const handleDelete = () => {
 };
 // 查看topo图
 const handleDetail = (row: Config) => {
-  router.push({
-    name: 'topoDisplay',
-    state: { type: 'custom', id: row.id }
-  });
+  useConfigStore().topo_request = { type: 'custom', id: row.id }
+  router.push('topoDisplay');
 };
 </script>
 
