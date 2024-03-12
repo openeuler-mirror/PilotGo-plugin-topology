@@ -2,7 +2,7 @@ import { ref, computed, reactive } from 'vue'
 import { defineStore } from 'pinia'
 
 export const useConfigStore = defineStore('config', () => {
-  const topo_config = ref({});
+  const topo_config = ref({} as any);
   interface TopoRequest {
     type: string;
     id: string | number;
