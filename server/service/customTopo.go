@@ -1,6 +1,7 @@
 package service
 
 import (
+	"strconv"
 	"time"
 
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/agentmanager"
@@ -22,7 +23,7 @@ func RunCustomTopoService(tcid uint) ([]*meta.Node, []*meta.Edge, []map[string]s
 		return nil, nil, nil, errors.Wrap(err, "**2")
 	}
 
-	machine_uuids, err := agentmanager.Topo.GetBatchMachineList(tc.BatchId)
+	machine_uuids, err := agentmanager.Topo.Sdkmethod.BatchUUIDList(strconv.Itoa(int(tc.BatchId)))
 	if err != nil {
 		return nil, nil, nil, errors.Wrap(err, "**2")
 	}
@@ -82,15 +83,24 @@ func UpdateCustomTopoService(tc *meta.Topo_configuration, tcdb_id_old uint) (int
 		return -1, errors.Wrap(err, "**2")
 	}
 
-	if err := dao.Global_mysql.DeleteTopoConfiguration(tcdb_id_old); err != nil {
-		return -1, errors.Wrap(err, "**1")
-	}
-
-	tcdb.UpdatedAt = time.Now().Format("2006-01-02 15:04:05")
-	tcdb_id_new, err := dao.Global_mysql.AddTopoConfiguration(tcdb)
+	tcdb_old, err := dao.Global_mysql.QuerySingleTopoConfiguration(tcdb_id_old)
 	if err != nil {
 		return -1, errors.Wrap(err, "**2")
 	}
 
-	return tcdb_id_new, nil
+	tcdb_old.UpdatedAt = time.Now().Format("2006-01-02 15:04:05")
+	tcdb_old.BatchId = tcdb.BatchId
+	tcdb_old.TagRules = tcdb.TagRules
+	tcdb_old.NodeRules = tcdb.NodeRules
+	tcdb_old.Name = tcdb.Name
+	tcdb_old.Description = tcdb.Description
+	tcdb_old.Version = tcdb.Version
+	tcdb_old.Preserve = tcdb.Preserve
+
+	tcdb_old_id, err := dao.Global_mysql.AddTopoConfiguration(tcdb_old)
+	if err != nil {
+		return -1, errors.Wrap(err, "**2")
+	}
+
+	return tcdb_old_id, nil
 }
