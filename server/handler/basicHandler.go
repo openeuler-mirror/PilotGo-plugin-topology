@@ -95,11 +95,10 @@ func AgentListHandle(ctx *gin.Context) {
 }
 
 func BatchListHandle(ctx *gin.Context) {
-	batchlist, err := agentmanager.Topo.GetBatchList()
+	batchlist, err := agentmanager.Topo.Sdkmethod.BatchList()
 	if err != nil {
 		err = errors.Wrap(err, "**warn**2") // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
-
 		response.Fail(ctx, nil, err.Error())
 		return
 	}
@@ -116,15 +115,7 @@ func BatchMachineListHandle(ctx *gin.Context) {
 		return
 	}
 
-	batchid_int, err := strconv.Atoi(BatchId)
-	if err != nil {
-		err = errors.Errorf("failed to convert batchId to int: %s", BatchId)
-		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
-		response.Fail(ctx, nil, err.Error())
-		return
-	}
-
-	machine_uuids, err := agentmanager.Topo.GetBatchMachineList(uint(batchid_int))
+	machine_uuids, err := agentmanager.Topo.Sdkmethod.BatchUUIDList(BatchId)
 	if err != nil {
 		err = errors.Wrap(err, "**warn**2") // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
