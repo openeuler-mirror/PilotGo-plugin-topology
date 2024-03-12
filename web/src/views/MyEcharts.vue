@@ -3,7 +3,7 @@
     <div v-show="isChart" ref="chartDom" :style="{ 'width': '100%', 'height': '100%' }"></div>
   </div>
 </template>
-  
+
 <script setup lang='ts' scoped>
 import { ref, onMounted, reactive, watch, markRaw, nextTick, computed } from 'vue'
 import { getPromeCurrent, getPromeRange } from '@/request/prometheus';
@@ -68,7 +68,7 @@ onMounted(() => {
     macIp.value = useMacStore().macIp;
     getPromeData(props.query);
   }, 8) */
-  window.addEventListener("resize", () => {myChart.resize();})
+  window.addEventListener("resize", () => { myChart.value.resize(); })
   // window.addEventListener('resize', resize)
 })
 
@@ -405,7 +405,7 @@ defineExpose({
   resize
 })
 </script>
-  
+
 <style scoped>
 .echart {
   width: 100%;
@@ -418,14 +418,14 @@ defineExpose({
 }
 
 .text {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-weight: bold;
-    font-size: 20px;
-    color: #222;
-    user-select: none;
-  }
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+  font-size: 20px;
+  color: #222;
+  user-select: none;
+}
 </style>
