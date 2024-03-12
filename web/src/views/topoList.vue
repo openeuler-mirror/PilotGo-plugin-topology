@@ -42,7 +42,6 @@
       <el-table-column type="selection" width="55" />
       <el-table-column prop="id" label="编号" width="80" />
       <el-table-column prop="conf_name" label="配置名称" />
-      <el-table-column prop="conf_version" label="版本" />
       <el-table-column prop="create_time" label="创建时间" />
       <el-table-column prop="update_time" label="更新时间" />
       <el-table-column prop="description" label="描述" />
