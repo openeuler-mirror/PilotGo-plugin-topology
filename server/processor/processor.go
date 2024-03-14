@@ -661,7 +661,7 @@ func (d *DataProcesser) CustomCreateEdgeEntities(agent *agentmanager.Agent_m, ed
 			}
 
 			peernet_edge := &meta.Edge{
-				ID:       fmt.Sprintf("%s%s%s%s%s", peernode1.ID, meta.EDGE_CONNECTOR, edgetype, meta.EDGE_CONNECTOR, peernode2.ID),
+				ID:       fmt.Sprintf("%s%s%s%s%s%s%s", peernode1.ID, meta.EDGE_CONNECTOR, strings.Split(net1.Laddr, ":")[1], edgetype, strings.Split(net1.Raddr, ":")[1], meta.EDGE_CONNECTOR, peernode2.ID),
 				Type:     edgetype,
 				Src:      peernode1.ID,
 				Dst:      peernode2.ID,

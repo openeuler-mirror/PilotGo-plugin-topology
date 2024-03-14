@@ -104,3 +104,13 @@ func UpdateCustomTopoService(tc *meta.Topo_configuration, tcdb_id_old uint) (int
 
 	return tcdb_old_id, nil
 }
+
+func DeleteCustomTopoService(ids []uint) error {
+	for _, tcid := range ids {
+		if err := dao.Global_mysql.DeleteTopoConfiguration(tcid); err != nil {
+			return errors.Wrap(err, "**warn**2")
+		}
+	}
+
+	return nil
+}

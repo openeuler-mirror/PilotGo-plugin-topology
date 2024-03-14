@@ -4,7 +4,6 @@ import (
 	"strconv"
 
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/agentmanager"
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/dao"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/meta"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/service"
 	"gitee.com/openeuler/PilotGo/sdk/response"
@@ -18,7 +17,6 @@ func CustomTopoListHandle(ctx *gin.Context) {
 	if err != nil {
 		err = errors.New("failed to load parameters in url **warn**2") // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
-
 		response.Fail(ctx, nil, err.Error())
 		return
 	}
@@ -27,7 +25,6 @@ func CustomTopoListHandle(ctx *gin.Context) {
 	if err != nil {
 		err = errors.Wrap(err, "**warn**2") // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
-
 		response.Fail(ctx, nil, err.Error())
 		return
 	}
@@ -41,7 +38,6 @@ func CreateCustomTopoHandle(ctx *gin.Context) {
 	if err := ctx.ShouldBindJSON(tc); err != nil {
 		err = errors.Wrap(err, "**warn**1") // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
-
 		response.Fail(ctx, nil, err.Error())
 		return
 	}
@@ -50,7 +46,6 @@ func CreateCustomTopoHandle(ctx *gin.Context) {
 	if err != nil {
 		err = errors.Wrap(err, "**warn**1") // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
-
 		response.Fail(ctx, nil, err.Error())
 		return
 	}
@@ -91,7 +86,6 @@ func RunCustomTopoHandle(ctx *gin.Context) {
 	if tcid_str == "" {
 		err := errors.New("id is nil **warn**2") // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
-
 		response.Fail(ctx, nil, err.Error())
 		return
 	}
@@ -100,7 +94,6 @@ func RunCustomTopoHandle(ctx *gin.Context) {
 	if err != nil {
 		err = errors.Wrap(err, "**warn**2") // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
-
 		response.Fail(ctx, nil, err.Error())
 		return
 	}
@@ -109,7 +102,6 @@ func RunCustomTopoHandle(ctx *gin.Context) {
 	if err != nil {
 		err = errors.Wrap(err, " **warn**2") // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
-
 		response.Fail(ctx, nil, err.Error())
 		return
 	}
@@ -117,7 +109,6 @@ func RunCustomTopoHandle(ctx *gin.Context) {
 	if len(nodes) == 0 || len(edges) == 0 {
 		err := errors.New("nodes list is null or edges list is null **warn**0") // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
-
 		response.Fail(ctx, nil, err.Error())
 		return
 	}
@@ -130,28 +121,20 @@ func RunCustomTopoHandle(ctx *gin.Context) {
 }
 
 func DeleteCustomTopoHandle(ctx *gin.Context) {
-	tcid_str := ctx.Query("id")
-	if tcid_str == "" {
-		err := errors.New("id is nil **warn**1") // err top
-		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
+	req_body := struct {
+		IDs []uint `json:"ids"`
+	}{}
 
+	if err := ctx.ShouldBindJSON(&req_body); err != nil {
+		err = errors.New(err.Error() + "**warn**1") // err top
+		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 		response.Fail(ctx, nil, err.Error())
 		return
 	}
 
-	tcid_int, err := strconv.Atoi(tcid_str)
-	if err != nil {
-		err = errors.Wrap(err, "**warn**2") // err top
+	if err := service.DeleteCustomTopoService(req_body.IDs); err != nil {
+		err = errors.Wrap(err, "**warn**1") // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
-
-		response.Fail(ctx, nil, err.Error())
-		return
-	}
-
-	if err := dao.Global_mysql.DeleteTopoConfiguration(uint(tcid_int)); err != nil {
-		err = errors.Wrap(err, "**warn**2") // err top
-		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
-
 		response.Fail(ctx, nil, err.Error())
 		return
 	}
