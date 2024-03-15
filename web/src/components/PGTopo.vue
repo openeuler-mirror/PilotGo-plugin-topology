@@ -9,6 +9,7 @@ import server_logo from "@/assets/icon/server_blue.png";
 import process_logo from "@/assets/icon/process.png";
 import net_logo from "@/assets/icon/net.png";
 import resource_logo from "@/assets/icon/resource.png";
+import machine_logo from "@/assets/icon/machine.png";
 import { useTopoStore } from '@/stores/topo';
 import { colorSets, graphInitOptions, graphTreeInitOptions } from './PGOptions';
 
@@ -43,12 +44,37 @@ const updateTopoData = (topoData: any) => {
   topo_data = topoData;
 
   topo_data.edges.forEach((item: any) => {
-    item.style = { lineWidth: 3 };
-    if (item.Type === "belong") {
-      item.style = {
-        stroke: "red",
-        lineWidth: 1,
-      }
+    item.style = {
+       lineWidth: 3,
+       cursor: "all-scroll",
+    };
+    item.labelCfg = {
+      position: 'middle',
+      // offset: 2,
+      autoRotate: true,
+      style: {
+        fontSize: 12,
+        opacity: 0.5,
+      },
+    
+    };
+    switch (item.Type) {
+      case "belong":
+        item.style = {
+          stroke: "red",
+          lineWidth: 1,
+          cursor: "all-scroll",
+        };
+        // item.label = item.Type;
+        break;
+      case "tcp":
+        // item.label = item.id.split("__")[1];
+        item.label = item.Type;
+        break;
+      case "udp":
+        // item.label = item.id.split("__")[1];
+        item.label = item.Type;
+        break;
     }
   })
 
@@ -61,13 +87,17 @@ const updateTopoData = (topoData: any) => {
         item.size = 40;
         item.nodeStrength = -200;
         item.label = item.id.split("_").pop();
+        item.style = {
+          cursor: "all-scroll"
+        };
         break;
       case "process":
         item.img = process_logo;
         item.type = "image";
         item.label = item.name + ":" + item.metrics.Pid;
         item.style = {
-          stroke: '#7262FD'
+          stroke: '#7262FD',
+          cursor: "all-scroll"
         };
         item.labelCfg = {
           position: "right",
@@ -79,7 +109,8 @@ const updateTopoData = (topoData: any) => {
         item.type = "image";
         item.label = item.name;
         item.style = {
-          stroke: '#F6BD16'
+          stroke: '#F6BD16',
+          cursor: "all-scroll"
         };
         break;
       default:
@@ -88,7 +119,8 @@ const updateTopoData = (topoData: any) => {
         item.type = "image";
         item.label = item.name;
         item.style = {
-          stroke: '#78D3F8'
+          stroke: '#78D3F8',
+          cursor: "all-scroll"
         };
         item.labelCfg = {
           position: "left",
@@ -104,6 +136,12 @@ const updateTopoData = (topoData: any) => {
       fill: colorSets[i].mainFill,
       opacity: 0.8
     }
+    combo.collapsedSubstituteIcon = {
+        show: true,
+        img: machine_logo,
+        width: 50,
+        height: 50
+      }
   })
 
   // 数据处理完成，初始化图
@@ -156,14 +194,29 @@ function initGraph(data: any) {
       useTopoStore().nodeData = selected_node.model.node;
     }
   });
-  // 节点悬浮高亮
-  graph.on('node:mouseover', (e: any) => {
-    graph.setItemState(e.item, 'active', true);
+  // 边点击事件
+  graph.on('edge:click', (e: any) => {
+    graph.getEdges().forEach((edge) => {
+      graph.clearItemStates(edge);
+    });
+    const edgeItem = e.item;
+    graph.setItemState(edgeItem, 'click', true);
+    // 抽屉组件展示的边数据
+    let selected_edge = e.item._cfg;
+    if (topo_type.value === 'comb') {
+      useTopoStore().edgeData = selected_edge.model;
+    } else {
+      useTopoStore().edgeData = selected_edge.model.edge;
+    }
   });
-  // 节点鼠标移出后取消节点悬浮高亮
-  graph.on('node:mouseout', (e: any) => {
-    graph.setItemState(e.item, 'active', false);
-  });
+  // // 节点悬浮高亮
+  // graph.on('node:mouseover', (e: any) => {
+  //   graph.setItemState(e.item, 'active', true);
+  // });
+  // // 节点鼠标移出后取消节点悬浮高亮
+  // graph.on('node:mouseout', (e: any) => {
+  //   graph.setItemState(e.item, 'active', false);
+  // });
 
   graph.on('node:dragstart', (e) => {
     // graph.layout();

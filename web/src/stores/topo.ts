@@ -5,5 +5,6 @@ export const useTopoStore = defineStore('topo', () => {
 
   const topo_data = ref({} as any);
   const nodeData = ref({} as any);
-  return {nodeData, topo_data }
+  const edgeData = ref({} as any);
+  return {nodeData, topo_data, edgeData}
 })
