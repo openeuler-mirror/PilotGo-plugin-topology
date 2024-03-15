@@ -39,14 +39,14 @@ export const graphInitOptions = {
   },
   // 边状态样式,暂定,缺tooltip
   edgeStateStyles: {
-    click: {
-      stroke: '#0282FF',
-      shadowBlur: 0,
-      'text-shape': {
-        fill: "#0282FF",
-        fontWeight: 600,
-      }
-    }
+    // click: {
+    //   stroke: '#0282FF',
+    //   shadowBlur: 0,
+    //   'text-shape': {
+    //     fill: "#0282FF",
+    //     fontWeight: 600,
+    //   }
+    // }
   },
   // 节点状态样式
   nodeStateStyles: {
@@ -83,20 +83,32 @@ export const graphInitOptions = {
         return Math.min(nodeSize * 1.5, 700);
       }
     }),
-    innerLayout: new G6.Layout['radial']({
-      unitRadius: 150,
-      maxIteration: 300,
-      linkDistance: 10,
-      preventOverlap: true,
-      strictRadial: false,
-      // nodeSpacing: 40,
-      nodeSize: 30,
-      sortBy: 'layoutattr',
-      sortStrength: 50,
-    }),
+    // innerLayout: new G6.Layout['radial']({
+    //   unitRadius: 200,
+    //   maxIteration: 100,
+    //   linkDistance: 150,
+    //   preventOverlap: true,
+    //   strictRadial: false,
+    //   nodeSpacing: 200,
+    //   nodeSize: 30,
+    //   sortBy: 'layoutattr',
+    //   sortStrength: 100,
+    // }),
+    innerLayout: new G6.Layout['concentric']({
+      linkDistance: 200,       
+      preventOverlap: true,     
+      nodeSize: 30,        
+      // sweep: 20,             
+      equidistant: true,      
+      startAngle: 0,           
+      clockwise: false,        
+      maxLevelDiff: '5',         
+      sortBy: 'layoutattr',    
+      workerEnabled: true,    
+    }), 
   },
   modes: {
-    default: ['drag-canvas', 'zoom-canvas', 'drag-combo', 'collapse-expand-combo', "drag-node"]
+    default: ['drag-canvas', 'zoom-canvas', 'drag-combo', 'collapse-expand-combo', 'drag-node']
   },
 }
 
