@@ -5,13 +5,11 @@
     :before-close="handleClose" :modal="true" :append-to-body="false">
     <div class="drawer_top_div">
       <el-descriptions title="节点信息" :column="1" class="info">
-        <el-descriptions-item label="节点名称：">{{ node.name }}</el-descriptions-item>
-        <el-descriptions-item label="节点类型：">{{ node.type }}</el-descriptions-item>
-        <el-descriptions-item label="节点tags：">
+        <el-descriptions-item label="节点名称：">{{ node_or_edge.name }}</el-descriptions-item>
+        <el-descriptions-item label="节点类型：">{{ node_or_edge.type }}</el-descriptions-item>
+        <el-descriptions-item label="节点tags: ">
           <el-scrollbar height="100px">
-            <el-tag v-for="(tag, i) in tags" :key="i" effect="plain">{{
-    tag
-  }}</el-tag>
+            <el-tag v-for="(tag, i) in tags" :key="i" effect="plain">{{ tag }}</el-tag>
           </el-scrollbar>
         </el-descriptions-item>
       </el-descriptions>
@@ -78,10 +76,16 @@ const display_drawer = ref(false);
 const isHost = ref(false); // 节点类型是否为host
 const chart = ref([] as any);
 const icons = [More, Odometer, Files, Collection]
-// node 基本信息
-const node = reactive({
+
+// // node 基本信息
+// const node = reactive({
+//   type: '',
+//   name: '',
+// })
+// edge 基本信息
+const node_or_edge = reactive({
   type: '',
-  name: '',
+  name: '',  
 })
 // 内层抽屉
 const inner_drawer = reactive({
@@ -123,7 +127,7 @@ const grid = reactive({
   responsive: true,
 });
 
-// 监听topo数据
+// 监听点击节点的topo数据
 watch(() => useTopoStore().nodeData, (new_node_data, old_node_data) => {
   if (new_node_data.id) {
     let node_data = new_node_data;
@@ -134,11 +138,38 @@ watch(() => useTopoStore().nodeData, (new_node_data, old_node_data) => {
       isHost.value = true;
       useMacStore().setMacIp(node_data.id.split("_")[2]);
     }
-    node.name = node_data.label || node_data.name;
-    node.type = node_data.Type;
+    node_or_edge.name = node_data.label || node_data.name;
+    node_or_edge.type = node_data.Type;
     tags = node_data.tags;
     table_data = [];
     let metrics = node_data.metrics;
+    for (let key in metrics) {
+      table_data.push({
+        name: key,
+        value: metrics[key],
+      })
+    };
+  }
+}, {
+  immediate: true
+})
+
+// 监听点击边的topo数据
+watch(() => useTopoStore().edgeData, (new_edge_data, old_edge_data) => {
+  if (new_edge_data.id) {
+    let edge_data = new_edge_data;
+    display_drawer.value = true;
+    isHost.value = false;
+    // 是否是host类型
+    // if (node_data.Type === 'host') {
+    //   isHost.value = true;
+    //   useMacStore().setMacIp(node_data.id.split("_")[2]);
+    // }
+    node_or_edge.name = edge_data.id.split("__")[1];
+    node_or_edge.type = edge_data.Type;
+    tags = edge_data.tags;
+    table_data = [];
+    let metrics = edge_data.metrics;
     for (let key in metrics) {
       table_data.push({
         name: key,
@@ -162,6 +193,8 @@ const handleIcon = (index: number) => {
 
 function handleClose() {
   display_drawer.value = false;
+  useTopoStore().nodeData = {};
+  useTopoStore().edgeData = {};
 }
 
 // 选择展示时间范围
