@@ -137,7 +137,7 @@ func (d *DataProcesser) CreateNodeEntities(agent *agentmanager.Agent_m, nodes *m
 		Name:       agent.UUID,
 		Type:       meta.NODE_HOST,
 		UUID:       agent.UUID,
-		LayoutAttr: "a",
+		LayoutAttr: meta.INNER_LAYOUT_1,
 		ComboId:    agent.UUID,
 		Metrics:    *utils.HostToMap(agent.Host_2, &agent.AddrInterfaceMap_2),
 	}
@@ -150,7 +150,7 @@ func (d *DataProcesser) CreateNodeEntities(agent *agentmanager.Agent_m, nodes *m
 			Name:       process.ExeName,
 			Type:       meta.NODE_PROCESS,
 			UUID:       agent.UUID,
-			LayoutAttr: "b",
+			LayoutAttr: meta.INNER_LAYOUT_2,
 			ComboId:    agent.UUID,
 			Metrics:    *utils.ProcessToMap(process),
 		}
@@ -163,7 +163,7 @@ func (d *DataProcesser) CreateNodeEntities(agent *agentmanager.Agent_m, nodes *m
 				Name:       strconv.Itoa(int(thread.Tid)),
 				Type:       meta.NODE_THREAD,
 				UUID:       agent.UUID,
-				LayoutAttr: "c",
+				LayoutAttr: meta.INNER_LAYOUT_3,
 				ComboId:    agent.UUID,
 				Metrics:    *utils.ThreadToMap(&thread),
 			}
@@ -192,7 +192,7 @@ func (d *DataProcesser) CreateNodeEntities(agent *agentmanager.Agent_m, nodes *m
 				Name:       net.Laddr,
 				Type:       meta.NODE_NET,
 				UUID:       agent.UUID,
-				LayoutAttr: "d",
+				LayoutAttr: meta.INNER_LAYOUT_5,
 				ComboId:    agent.UUID,
 				Metrics:    *utils.NetToMap(net),
 			}
@@ -210,7 +210,7 @@ func (d *DataProcesser) CreateNodeEntities(agent *agentmanager.Agent_m, nodes *m
 			Name:       disk.Partition.Device,
 			Type:       meta.NODE_RESOURCE,
 			UUID:       agent.UUID,
-			LayoutAttr: "e",
+			LayoutAttr: meta.INNER_LAYOUT_4,
 			ComboId:    agent.UUID,
 			Metrics:    *utils.DiskToMap(disk),
 		}
@@ -224,7 +224,7 @@ func (d *DataProcesser) CreateNodeEntities(agent *agentmanager.Agent_m, nodes *m
 			Name:       "CPU" + strconv.Itoa(int(cpu.Info.CPU)),
 			Type:       meta.NODE_RESOURCE,
 			UUID:       agent.UUID,
-			LayoutAttr: "e",
+			LayoutAttr: meta.INNER_LAYOUT_4,
 			ComboId:    agent.UUID,
 			Metrics:    *utils.CpuToMap(cpu),
 		}
@@ -238,7 +238,7 @@ func (d *DataProcesser) CreateNodeEntities(agent *agentmanager.Agent_m, nodes *m
 			Name:       "NC" + ifaceio.Name,
 			Type:       meta.NODE_RESOURCE,
 			UUID:       agent.UUID,
-			LayoutAttr: "e",
+			LayoutAttr: meta.INNER_LAYOUT_4,
 			ComboId:    agent.UUID,
 			Metrics:    *utils.InterfaceToMap(ifaceio),
 		}
@@ -262,7 +262,7 @@ func (d *DataProcesser) CustomCreateNodeEntities(agent *agentmanager.Agent_m, no
 		Name:       agent.UUID,
 		Type:       meta.NODE_HOST,
 		UUID:       agent.UUID,
-		LayoutAttr: "a",
+		LayoutAttr: meta.INNER_LAYOUT_1,
 		ComboId:    agent.UUID,
 		Network:    allconnections,
 		Metrics:    *utils.HostToMap(agent.Host_2, &agent.AddrInterfaceMap_2),
@@ -308,7 +308,7 @@ func (d *DataProcesser) CustomCreateNodeEntities(agent *agentmanager.Agent_m, no
 							Name:       process.ExeName,
 							Type:       meta.NODE_PROCESS,
 							UUID:       agent.UUID,
-							LayoutAttr: "b",
+							LayoutAttr: meta.INNER_LAYOUT_2,
 							ComboId:    agent.UUID,
 							Network:    process.Connections,
 							Metrics:    *utils.ProcessToMap(process),
@@ -336,7 +336,7 @@ func (d *DataProcesser) CustomCreateNodeEntities(agent *agentmanager.Agent_m, no
 							Name:       process.ExeName,
 							Type:       meta.NODE_PROCESS,
 							UUID:       agent.UUID,
-							LayoutAttr: "b",
+							LayoutAttr: meta.INNER_LAYOUT_2,
 							ComboId:    agent.UUID,
 							Network:    process.Connections,
 							Metrics:    *utils.ProcessToMap(process),
@@ -360,7 +360,7 @@ func (d *DataProcesser) CustomCreateNodeEntities(agent *agentmanager.Agent_m, no
 						Name:       disk.Partition.Device,
 						Type:       meta.NODE_RESOURCE,
 						UUID:       agent.UUID,
-						LayoutAttr: "e",
+						LayoutAttr: meta.INNER_LAYOUT_4,
 						ComboId:    agent.UUID,
 						Metrics:    *utils.DiskToMap(disk),
 					}
@@ -380,7 +380,7 @@ func (d *DataProcesser) CustomCreateNodeEntities(agent *agentmanager.Agent_m, no
 						Name:       "CPU" + strconv.Itoa(int(cpu.Info.CPU)),
 						Type:       meta.NODE_RESOURCE,
 						UUID:       agent.UUID,
-						LayoutAttr: "e",
+						LayoutAttr: meta.INNER_LAYOUT_4,
 						ComboId:    agent.UUID,
 						Metrics:    *utils.CpuToMap(cpu),
 					}
@@ -400,7 +400,7 @@ func (d *DataProcesser) CustomCreateNodeEntities(agent *agentmanager.Agent_m, no
 						Name:       "NC" + ifaceio.Name,
 						Type:       meta.NODE_RESOURCE,
 						UUID:       agent.UUID,
-						LayoutAttr: "e",
+						LayoutAttr: meta.INNER_LAYOUT_4,
 						ComboId:    agent.UUID,
 						Metrics:    *utils.InterfaceToMap(ifaceio),
 					}
@@ -582,21 +582,21 @@ func (d *DataProcesser) CustomCreateEdgeEntities(agent *agentmanager.Agent_m, ed
 		}
 	}
 
-	for _, sub := range nodes_map[meta.NODE_HOST] {
-		for _, obj := range nodes_map[meta.NODE_RESOURCE] {
-			if sub.UUID == obj.UUID {
-				belong_edge := &meta.Edge{
-					ID:   fmt.Sprintf("%s%s%s%s%s", obj.ID, meta.EDGE_CONNECTOR, meta.EDGE_BELONG, meta.EDGE_CONNECTOR, sub.ID),
-					Type: meta.EDGE_BELONG,
-					Src:  obj.ID,
-					Dst:  sub.ID,
-					Dir:  "direct",
-				}
+	// for _, sub := range nodes_map[meta.NODE_HOST] {
+	// 	for _, obj := range nodes_map[meta.NODE_RESOURCE] {
+	// 		if sub.UUID == obj.UUID {
+	// 			belong_edge := &meta.Edge{
+	// 				ID:   fmt.Sprintf("%s%s%s%s%s", obj.ID, meta.EDGE_CONNECTOR, meta.EDGE_BELONG, meta.EDGE_CONNECTOR, sub.ID),
+	// 				Type: meta.EDGE_BELONG,
+	// 				Src:  obj.ID,
+	// 				Dst:  sub.ID,
+	// 				Dir:  "direct",
+	// 			}
 
-				edges.Add(belong_edge)
-			}
-		}
-	}
+	// 			edges.Add(belong_edge)
+	// 		}
+	// 	}
+	// }
 
 	for _, sub := range nodes_map[meta.NODE_PROCESS] {
 		for _, obj := range nodes_map[meta.NODE_PROCESS] {
