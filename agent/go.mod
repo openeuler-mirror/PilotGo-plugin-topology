@@ -3,7 +3,7 @@ module gitee.com/openeuler/PilotGo-plugin-topology-agent
 go 1.17
 
 require (
-	gitee.com/openeuler/PilotGo/sdk v0.0.0-20231228023148-140210b10465
+	gitee.com/openeuler/PilotGo/sdk v0.0.0-20240308065623-e2784a98f4d0
 	github.com/gin-gonic/gin v1.9.1
 	github.com/pkg/errors v0.9.1
 	github.com/shirou/gopsutil v3.21.11+incompatible
