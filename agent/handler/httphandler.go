@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"net/http"
 
+	"gitee.com/openeuler/PilotGo-plugin-topology-agent/conf"
 	"gitee.com/openeuler/PilotGo-plugin-topology-agent/service"
+	"gitee.com/openeuler/PilotGo/sdk/response"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 )
@@ -30,4 +32,14 @@ func Raw_metric_data(ctx *gin.Context) {
 		"error": nil,
 		"data":  data,
 	})
+}
+
+func HealthCheckHandle(ctx *gin.Context) {
+	agentinfo := struct {
+		Interval int `json:"interval"`
+	}{
+		Interval: conf.Config().Topo.Heartbeat,
+	}
+
+	response.Success(ctx, agentinfo, fmt.Sprintf("agent %s is running", conf.Config().Topo.Agent_addr))
 }
