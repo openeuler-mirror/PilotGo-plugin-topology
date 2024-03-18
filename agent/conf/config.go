@@ -13,6 +13,7 @@ import (
 
 type TopoConf struct {
 	Agent_addr  string `yaml:"agent_addr"`
+	Agent_port  string `yaml:"agent_port"`
 	Server_addr string `yaml:"server_addr"`
 	Datasource  string `yaml:"datasource"`
 	Heartbeat   int    `yaml:"heartbeat"`

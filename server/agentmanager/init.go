@@ -45,7 +45,6 @@ func Wait4TopoServerReady() {
 	for {
 		url := "http://" + conf.Config().Topo.Server_addr + "/plugin_manage/info"
 		resp, err := http.Get(url)
-
 		if err == nil && resp != nil && resp.StatusCode == http.StatusOK {
 			break
 		}

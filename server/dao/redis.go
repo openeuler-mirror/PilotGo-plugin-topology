@@ -9,8 +9,10 @@ import (
 	"time"
 
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/agentmanager"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/conf"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/meta"
 	"gitee.com/openeuler/PilotGo/sdk/logger"
+	"gitee.com/openeuler/PilotGo/sdk/utils/httputils"
 	"github.com/go-redis/redis/v8"
 	"github.com/pkg/errors"
 )
@@ -186,4 +188,53 @@ func (r *RedisClient) UpdateTopoRunningAgentList(uuids []string) int {
 	logger.Info("running agent number: %d", running_agent_num)
 
 	return running_agent_num
+}
+
+// server端对agent端的健康监测
+func (r *RedisClient) ActiveHeartbeatDetection(uuids []string) {
+	activeHeartbeatDetection := func(agent *agentmanager.Agent_m) {
+		url := "http://" + agent.IP + ":" + conf.Config().Topo.Agent_port + "/plugin/topology/api/health"
+		if resp, err := httputils.Get(url, nil); err == nil && resp != nil && resp.StatusCode == 200 {
+			agentinfo := struct {
+				Interval int `json:"interval"`
+			}{}
+
+			err = json.Unmarshal(resp.Body, &agentinfo)
+			if err != nil {
+				err = errors.Errorf("%+v **2", err.Error()) // err top
+				agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
+			}
+
+			key := "heartbeat-topoagent-" + agent.UUID
+			value := meta.AgentHeartbeat{
+				UUID:              agent.UUID,
+				Addr:              agent.IP + ":" + conf.Config().Topo.Agent_port,
+				HeartbeatInterval: agentinfo.Interval,
+				Time:              time.Now(),
+			}
+
+			err := Global_redis.Set(key, value)
+			if err != nil {
+				err = errors.Wrap(err, " **warn**2") // err top
+				agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
+			}
+		}
+	}
+
+	if len(uuids) == 0 {
+		agentmanager.Topo.PAgentMap.Range(func(key, value interface{}) bool {
+			agent := value.(*agentmanager.Agent_m)
+			activeHeartbeatDetection(agent)
+			return true
+		})
+		return
+	}
+
+	for _, uuid := range uuids {
+		agent := agentmanager.Topo.GetAgent_P(uuid)
+		if agent == nil {
+			continue
+		}
+		activeHeartbeatDetection(agent)
+	}
 }

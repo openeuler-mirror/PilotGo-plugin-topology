@@ -6,6 +6,7 @@ import (
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/agentmanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/dao"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/handler"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/meta"
 	service "gitee.com/openeuler/PilotGo-plugin-topology-server/service/background"
 	// "github.com/pyroscope-io/pyroscope/pkg/agent/profiler"
 )
@@ -57,7 +58,7 @@ func main() {
 		topo插件自身数据采集模块周期性数据采集: 全局网络拓扑、单机拓扑
 	*/
 	// ttcode: 测试自定义拓扑采集，临时注释
-	// service.PeriodCollectWorking([]string{}, [][]meta.Filter_rule{})
+	service.PeriodCollectWorking([]string{}, [][]meta.Filter_rule{})
 
 	/*
 		终止进程信号监听
