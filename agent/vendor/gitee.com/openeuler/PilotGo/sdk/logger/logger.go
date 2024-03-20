@@ -112,6 +112,10 @@ func Error(format string, args ...interface{}) {
 	logrus.Errorf(format, args...)
 }
 
+func ErrorStack(msg string, err error) {
+	logrus.Errorf(msg+"\n%+v", err)
+}
+
 func Fatal(format string, args ...interface{}) {
 	logrus.Fatalf(format, args...)
 }
@@ -143,7 +147,7 @@ func RequestLogger() gin.HandlerFunc {
 		clientIP := c.ClientIP()
 
 		// 日志格式
-		if reqUri != "/api/v1/pluginapi/heartbeat" {
+		if reqUri != "/api/v1/pluginapi/heartbeat" && reqUri != "/plugin/prometheus/target" {
 			Debug("status_code:%d latency_time:%s client_ip:%s req_method:%s req_uri:%s",
 				statusCode,
 				latencyTime,
