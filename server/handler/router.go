@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"net/http"
 	"time"
 
@@ -15,7 +16,6 @@ import (
 func InitWebServer() {
 	go func() {
 		engine := gin.Default()
-		// engine.Use(TimeoutMiddleware())
 		gin.SetMode(gin.ReleaseMode)
 		agentmanager.Topo.Sdkmethod.RegisterHandlers(engine)
 		InitRouter(engine)
@@ -45,23 +45,48 @@ func InitRouter(router *gin.Engine) {
 		api.POST("/create_custom_topo", CreateCustomTopoHandle)
 		api.DELETE("/delete_custom_topo", DeleteCustomTopoHandle)
 		api.PUT("/update_custom_topo", UpdateCustomTopoHandle)
-		api.GET("/run_custom_topo", RunCustomTopoHandle)
 
+	}
+
+	timeoutapi := router.Group("/plugin/topology/api")
+	timeoutapi.Use(TimeoutMiddleware2(15 * time.Second))
+	{
+		timeoutapi.GET("/run_custom_topo", RunCustomTopoHandle)
 	}
 }
 
 func TimeoutMiddleware() gin.HandlerFunc {
 	return timeout.New(
-		timeout.WithTimeout(600*time.Second),
+		timeout.WithTimeout(12*time.Second),
 		timeout.WithHandler(func(ctx *gin.Context) {
 			ctx.Next()
 		}),
 		timeout.WithResponse(func(ctx *gin.Context) {
 			ctx.JSON(http.StatusGatewayTimeout, gin.H{
-				"code":  http.StatusGatewayTimeout,
-				"error": "timeout",
-				"data":  nil,
+				"code": http.StatusGatewayTimeout,
+				"msg":  "server response timeout",
+				"data": nil,
 			})
 		}),
 	)
+}
+
+// 服务器响应超时中间件
+func TimeoutMiddleware2(timeout time.Duration) func(c *gin.Context) {
+	return func(c *gin.Context) {
+		// 用超时context wrap request的context
+		ctx, cancel := context.WithTimeout(c.Request.Context(), timeout)
+		defer func() {
+			// 检查是否超时
+			if !c.GetBool("write") && ctx.Err() == context.DeadlineExceeded {
+				c.Writer.WriteHeader(http.StatusGatewayTimeout)
+				c.Abort()
+			}
+			//清理资源
+			cancel()
+		}()
+		// 替换
+		c.Request = c.Request.WithContext(ctx)
+		c.Next()
+	}
 }
