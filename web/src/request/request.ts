@@ -5,7 +5,7 @@ import router from '@/router';
 // 1.创建axios实例
 const request: AxiosInstance = axios.create({
   baseURL: '',
-  timeout: 10000,
+  timeout: 15000,
   headers: {
     // 设置后端需要的传参类型
     'Content-Type': 'application/json',
