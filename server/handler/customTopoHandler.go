@@ -15,7 +15,7 @@ func CustomTopoListHandle(ctx *gin.Context) {
 	query := &response.PaginationQ{}
 	err := ctx.ShouldBindQuery(query)
 	if err != nil {
-		err = errors.New("failed to load parameters in url **warn**2") // err top
+		err = errors.New("failed to load parameters in url **errstack**2") // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 		response.Fail(ctx, nil, err.Error())
 		return
@@ -23,7 +23,7 @@ func CustomTopoListHandle(ctx *gin.Context) {
 
 	tcs, total, err := service.CustomTopoListService(query)
 	if err != nil {
-		err = errors.Wrap(err, "**warn**2") // err top
+		err = errors.Wrap(err, "**errstack**2") // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 		response.Fail(ctx, nil, err.Error())
 		return
@@ -36,7 +36,7 @@ func CreateCustomTopoHandle(ctx *gin.Context) {
 	var tc *meta.Topo_configuration = new(meta.Topo_configuration)
 
 	if err := ctx.ShouldBindJSON(tc); err != nil {
-		err = errors.Wrap(err, "**warn**1") // err top
+		err = errors.Wrap(err, "**errstack**1") // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 		response.Fail(ctx, nil, err.Error())
 		return
@@ -44,7 +44,7 @@ func CreateCustomTopoHandle(ctx *gin.Context) {
 
 	tcdb_id, err := service.CreateCustomTopoService(tc)
 	if err != nil {
-		err = errors.Wrap(err, "**warn**1") // err top
+		err = errors.Wrap(err, "**errstack**1") // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 		response.Fail(ctx, nil, err.Error())
 		return
@@ -62,7 +62,7 @@ func UpdateCustomTopoHandle(ctx *gin.Context) {
 
 	// fmt.Printf("%+v\n", ctx.Request.Body)
 	if err := ctx.ShouldBindJSON(&req_body); err != nil {
-		err = errors.Wrap(err, "**warn**1") // err top
+		err = errors.Wrap(err, "**errstack**1") // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 		response.Fail(ctx, nil, err.Error())
 		return
@@ -70,7 +70,7 @@ func UpdateCustomTopoHandle(ctx *gin.Context) {
 
 	tcdb_id, err := service.UpdateCustomTopoService(req_body.TC, *req_body.ID)
 	if err != nil {
-		err = errors.Wrap(err, "**warn**2") // err top
+		err = errors.Wrap(err, "**errstack**2") // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 		response.Fail(ctx, nil, err.Error())
 		return
@@ -93,7 +93,7 @@ func RunCustomTopoHandle(ctx *gin.Context) {
 
 		tcid_str := ctx.Query("id")
 		if tcid_str == "" {
-			err := errors.New("id is nil **warn**2") // err top
+			err := errors.New("id is nil **errstack**2") // err top
 			agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 			response.Fail(ctx, nil, err.Error())
 			return
@@ -101,7 +101,7 @@ func RunCustomTopoHandle(ctx *gin.Context) {
 
 		tcid_int, err := strconv.Atoi(tcid_str)
 		if err != nil {
-			err = errors.Wrap(err, "**warn**2") // err top
+			err = errors.Wrap(err, "**errstack**2") // err top
 			agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 			response.Fail(ctx, nil, err.Error())
 			return
@@ -109,14 +109,14 @@ func RunCustomTopoHandle(ctx *gin.Context) {
 
 		topodata.Nodes, topodata.Edges, topodata.Combos, err = service.RunCustomTopoService(uint(tcid_int))
 		if err != nil {
-			err = errors.Wrap(err, " **warn**2") // err top
+			err = errors.Wrap(err, " **errstack**2") // err top
 			agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 			response.Fail(ctx, nil, err.Error())
 			return
 		}
 
 		if len(topodata.Nodes) == 0 || len(topodata.Edges) == 0 {
-			err := errors.New("nodes list is null or edges list is null **warn**0") // err top
+			err := errors.New("nodes list is null or edges list is null **errstack**0") // err top
 			agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 			response.Fail(ctx, nil, err.Error())
 			return
@@ -143,14 +143,14 @@ func DeleteCustomTopoHandle(ctx *gin.Context) {
 	}{}
 
 	if err := ctx.ShouldBindJSON(&req_body); err != nil {
-		err = errors.New(err.Error() + "**warn**1") // err top
+		err = errors.New(err.Error() + "**errstack**1") // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 		response.Fail(ctx, nil, err.Error())
 		return
 	}
 
 	if err := service.DeleteCustomTopoService(req_body.IDs); err != nil {
-		err = errors.Wrap(err, "**warn**1") // err top
+		err = errors.Wrap(err, "**errstack**1") // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 		response.Fail(ctx, nil, err.Error())
 		return

@@ -14,18 +14,18 @@ import (
 
 // 	if len(collect_errlist) != 0 || len(process_errlist) != 0 {
 // 		for i, cerr := range collect_errlist {
-// 			collect_errlist[i] = errors.Wrap(cerr, "**warn**4") // err top
+// 			collect_errlist[i] = errors.Wrap(cerr, "**errstack**4") // err top
 // 			agentmanager.Topo.ErrCh <- collect_errlist[i]
 // 		}
 
 // 		for i, perr := range process_errlist {
-// 			process_errlist[i] = errors.Wrap(perr, "**warn**10") // err top
+// 			process_errlist[i] = errors.Wrap(perr, "**errstack**10") // err top
 // 			agentmanager.Topo.ErrCh <- process_errlist[i]
 // 		}
 // 	}
 
 // 	if len(nodes) == 0 || len(edges) == 0 {
-// 		err := errors.New("nodes list is null or edges list is null **warn**0") // err top
+// 		err := errors.New("nodes list is null or edges list is null **errstack**0") // err top
 // 		agentmanager.Topo.ErrCh <- err
 
 // 		ctx.JSON(http.StatusBadRequest, gin.H{
@@ -50,7 +50,7 @@ func SingleHostTreeHandle(ctx *gin.Context) {
 	uuid := ctx.Param("uuid")
 	nodes, err := service.SingleHostTreeService(uuid)
 	if err != nil {
-		err = errors.Wrap(err, " **warn**2") // err top
+		err = errors.Wrap(err, " **errstack**2") // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 
 		response.Fail(ctx, nil, err.Error())
@@ -58,7 +58,7 @@ func SingleHostTreeHandle(ctx *gin.Context) {
 	}
 
 	if nodes == nil {
-		err := errors.New("node tree is null **warn**0") // err top
+		err := errors.New("node tree is null **errstack**0") // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 
 		response.Fail(ctx, nil, err.Error())
@@ -86,7 +86,7 @@ func SingleHostTreeHandle(ctx *gin.Context) {
 func MultiHostHandle(ctx *gin.Context) {
 	nodes, edges, combos, err := service.MultiHostService()
 	if err != nil {
-		err = errors.Wrap(err, " **warn**2") // err top
+		err = errors.Wrap(err, " **errstack**2") // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 
 		response.Fail(ctx, nil, err.Error())
@@ -94,7 +94,7 @@ func MultiHostHandle(ctx *gin.Context) {
 	}
 
 	if len(nodes) == 0 || len(edges) == 0 {
-		err := errors.New("nodes list is null or edges list is null **warn**0") // err top
+		err := errors.New("nodes list is null or edges list is null **errstack**0") // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 
 		response.Fail(ctx, nil, err.Error())

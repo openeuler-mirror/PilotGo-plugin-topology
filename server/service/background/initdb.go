@@ -30,7 +30,7 @@ func initGraphDB() {
 	case "otherDB":
 
 	default:
-		err := errors.Errorf("unknown database in topo_server.yaml: %s **fatal**4", conf.Global_config.Topo.GraphDB) // err top
+		err := errors.Errorf("unknown database in topo_server.yaml: %s **errstackfatal**4", conf.Global_config.Topo.GraphDB) // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, true)
 	}
 

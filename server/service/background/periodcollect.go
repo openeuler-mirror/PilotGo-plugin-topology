@@ -45,7 +45,7 @@ func DataProcessWorking(unixtime int64, agentnum int, graphdb dao.GraphdbIface, 
 	nodes, edges, collect_errlist, process_errlist := dataprocesser.ProcessData(agentnum, tagrules, noderules)
 	if len(collect_errlist) != 0 {
 		for i, cerr := range collect_errlist {
-			collect_errlist[i] = errors.Wrap(cerr, "**warn**3") // err top
+			collect_errlist[i] = errors.Wrap(cerr, "**errstack**3") // err top
 			agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, collect_errlist[i], agentmanager.Topo.ErrCh, false)
 		}
 		collect_errlist_string := []string{}
@@ -56,7 +56,7 @@ func DataProcessWorking(unixtime int64, agentnum int, graphdb dao.GraphdbIface, 
 	}
 	if len(process_errlist) != 0 {
 		for i, perr := range process_errlist {
-			process_errlist[i] = errors.Wrap(perr, "**warn**14") // err top
+			process_errlist[i] = errors.Wrap(perr, "**errstack**14") // err top
 			agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, process_errlist[i], agentmanager.Topo.ErrCh, false)
 		}
 		process_errlist_string := []string{}
@@ -111,7 +111,7 @@ func DataProcessWorking(unixtime int64, agentnum int, graphdb dao.GraphdbIface, 
 
 							err := graphdb.Node_create(_unixtime, _node)
 							if err != nil {
-								err = errors.Wrapf(err, "create neo4j node failed; %s **warn**2", cqlIN) // err top
+								err = errors.Wrapf(err, "create neo4j node failed; %s **errstack**2", cqlIN) // err top
 								agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 							}
 						}
@@ -134,7 +134,7 @@ func DataProcessWorking(unixtime int64, agentnum int, graphdb dao.GraphdbIface, 
 				for _, _edge := range ___edges {
 					err := graphdb.Edge_create(_unixtime, _edge)
 					if err != nil {
-						err = errors.Wrapf(err, "create neo4j edge failed **warn**2") // err top
+						err = errors.Wrapf(err, "create neo4j edge failed **errstack**2") // err top
 						agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 					}
 				}

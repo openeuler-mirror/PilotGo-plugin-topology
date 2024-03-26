@@ -9,7 +9,6 @@ import (
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/agentmanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/dao"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/meta"
-	"gitee.com/openeuler/PilotGo/sdk/logger"
 	"gitee.com/openeuler/PilotGo/sdk/response"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -31,10 +30,8 @@ func HeartbeatHandle(ctx *gin.Context) {
 	}
 
 	if agentmanager.Topo.GetAgent_P(uuid) == nil {
-		// err := errors.Errorf("unknown agent's heartbeat: %s, %s **warn**1", uuid, addr) // err top
-		// agentmanager.Topo.ErrCh <- err
-
-		logger.Warn("unknown agent's heartbeat: %s, %s", uuid, addr)
+		err := errors.Errorf("unknown agent's heartbeat: %s, %s **warn**1", uuid, addr) // err top
+		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 
 		ctx.JSON(http.StatusUnauthorized, gin.H{
 			"code":  -1,
@@ -46,7 +43,7 @@ func HeartbeatHandle(ctx *gin.Context) {
 
 	err := dao.Global_redis.Set(key, value)
 	if err != nil {
-		err = errors.Wrap(err, " **warn**2") // err top
+		err = errors.Wrap(err, " **errstack**2") // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 
 		ctx.JSON(http.StatusInternalServerError, gin.H{
@@ -67,7 +64,7 @@ func HeartbeatHandle(ctx *gin.Context) {
 func TimestampsHandle(ctx *gin.Context) {
 	times, err := dao.Global_GraphDB.Timestamps_query()
 	if err != nil {
-		err = errors.Wrap(err, " **warn**2")
+		err = errors.Wrap(err, " **errstack**2")
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 
 		response.Fail(ctx, nil, err.Error())
@@ -97,7 +94,7 @@ func AgentListHandle(ctx *gin.Context) {
 func BatchListHandle(ctx *gin.Context) {
 	batchlist, err := agentmanager.Topo.Sdkmethod.BatchList()
 	if err != nil {
-		err = errors.Wrap(err, "**warn**2") // err top
+		err = errors.Wrap(err, "**errstack**2") // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 		response.Fail(ctx, nil, err.Error())
 		return
@@ -117,7 +114,7 @@ func BatchMachineListHandle(ctx *gin.Context) {
 
 	machine_uuids, err := agentmanager.Topo.Sdkmethod.BatchUUIDList(BatchId)
 	if err != nil {
-		err = errors.Wrap(err, "**warn**2") // err top
+		err = errors.Wrap(err, "**errstack**2") // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 		response.Fail(ctx, nil, err.Error())
 		return
