@@ -22,7 +22,7 @@ func MultiHostService() ([]*meta.Node, []*meta.Edge, []map[string]string, error)
 	combos := make([]map[string]string, 0)
 
 	if dao.Global_GraphDB == nil {
-		err := errors.New("dao.global_graphdb is nil **warn**1")
+		err := errors.New("dao.global_graphdb is nil **errstack**1")
 		return nil, nil, nil, err
 	}
 
@@ -39,7 +39,7 @@ func MultiHostService() ([]*meta.Node, []*meta.Edge, []map[string]string, error)
 			latest = times[len(times)-2]
 		}
 	} else {
-		err := errors.New("the number of timestamp is zero **warn**0")
+		err := errors.New("the number of timestamp is zero **errstack**0")
 		return nil, nil, nil, err
 	}
 

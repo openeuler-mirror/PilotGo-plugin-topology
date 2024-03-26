@@ -147,12 +147,12 @@ func (t *Topoclient) GetBatchList() ([]*common.BatchList, error) {
 
 	resp, err := httputils.Get(url, nil)
 	if err != nil {
-		return nil, errors.Errorf("err-> %s (url-> %s) **fatal**2", err.Error(), url)
+		return nil, errors.Errorf("err-> %s (url-> %s) **errstackfatal**2", err.Error(), url)
 	}
 
 	statuscode := resp.StatusCode
 	if statuscode != 200 {
-		return nil, errors.Errorf("http返回状态码异常: %d, %s **fatal**2", statuscode, url)
+		return nil, errors.Errorf("http返回状态码异常: %d, %s **errstackfatal**2", statuscode, url)
 	}
 
 	result := &struct {
@@ -163,7 +163,7 @@ func (t *Topoclient) GetBatchList() ([]*common.BatchList, error) {
 
 	err = json.Unmarshal(resp.Body, result)
 	if err != nil {
-		return nil, errors.Errorf("%s **fatal**2", err.Error())
+		return nil, errors.Errorf("%s **errstackfatal**2", err.Error())
 	}
 
 	for _, m := range result.Data.([]interface{}) {
@@ -182,12 +182,12 @@ func (t *Topoclient) GetBatchMachineList(batchid uint) ([]string, error) {
 
 	resp, err := httputils.Get(url, nil)
 	if err != nil {
-		return nil, errors.Errorf("err-> %s (url-> %s) **fatal**2", err.Error(), url)
+		return nil, errors.Errorf("err-> %s (url-> %s) **errstackfatal**2", err.Error(), url)
 	}
 
 	statuscode := resp.StatusCode
 	if statuscode != 200 {
-		return nil, errors.Errorf("http返回状态码异常: %d, %s **fatal**2", statuscode, url)
+		return nil, errors.Errorf("http返回状态码异常: %d, %s **errstackfatal**2", statuscode, url)
 	}
 
 	result := &struct {
@@ -198,7 +198,7 @@ func (t *Topoclient) GetBatchMachineList(batchid uint) ([]string, error) {
 
 	err = json.Unmarshal(resp.Body, result)
 	if err != nil {
-		return nil, errors.Errorf("%s **fatal**2", err.Error())
+		return nil, errors.Errorf("%s **errstackfatal**2", err.Error())
 	}
 
 	for _, m := range result.Data.([]interface{}) {
@@ -286,7 +286,7 @@ func (t *Topoclient) UpdateMachineList() {
 func (t *Topoclient) InitLogger() {
 	err := logger.Init(conf.Config().Logopts)
 	if err != nil {
-		err = errors.Errorf("%s **fatal**2", err.Error()) // err top
+		err = errors.Errorf("%s **errstackfatal**2", err.Error()) // err top
 		ErrorTransmit(t.Tctx, err, t.ErrCh, true)
 	}
 }
@@ -311,17 +311,21 @@ func (t *Topoclient) InitErrorControl(errch <-chan *meta.Topoerror) {
 			}
 
 			if topoerr.Err != nil {
-				errarr := strings.Split(topoerr.Err.Error(), "**")
+				errarr := strings.Split(errors.Cause(topoerr.Err).Error(), "**")
 				switch errarr[1] {
-				case "warn":
+				case "debug": // 只打印最底层error的message，不展开错误链的调用栈
+					logger.Debug("%+v\n", errors.Cause(topoerr.Err).Error())
+				case "warn": // 只打印最底层error的message，不展开错误链的调用栈
+					logger.Warn("%+v\n", errors.Cause(topoerr.Err).Error())
+				case "errstack": // 打印错误链的调用栈
 					fmt.Fprintf(t.Out, "%+v\n", topoerr.Err)
 					// errors.EORE(err)
-				case "fatal":
+				case "errstackfatal": // 打印错误链的调用栈，并结束程序
 					fmt.Fprintf(t.Out, "%+v\n", topoerr.Err)
 					// errors.EORE(err)
 					topoerr.Cancel()
 				default:
-					fmt.Printf("only support warn and fatal error type: %+v\n", topoerr.Err)
+					fmt.Printf("only support \"info warn fatal\" error type: %+v\n", topoerr.Err)
 					os.Exit(1)
 				}
 			}

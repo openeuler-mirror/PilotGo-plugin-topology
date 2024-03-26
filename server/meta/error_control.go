@@ -1,8 +1,10 @@
 package meta
 
-import "context"
+import (
+	"context"
+)
 
 type Topoerror struct {
-	Err error
+	Err    error
 	Cancel context.CancelFunc
 }

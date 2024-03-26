@@ -23,7 +23,7 @@ func InitWebServer() {
 
 		err := engine.Run(conf.Config().Topo.Server_addr)
 		if err != nil {
-			err = errors.Errorf("%s **fatal**2", err.Error()) // err top
+			err = errors.Errorf("%s **errstackfatal**2", err.Error()) // err top
 			agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, true)
 		}
 	}()

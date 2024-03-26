@@ -199,7 +199,7 @@ func (d *DataProcesser) CreateNodeEntities(agent *agentmanager.Agent_m, nodes *m
 
 			nodes.Add(net_node)
 		} else {
-			err := errors.Errorf("syntax error: %s **warn**13", net.Laddr) // err top
+			err := errors.Errorf("syntax error: %s **errstack**13", net.Laddr) // err top
 			agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 		}
 	}
@@ -282,7 +282,7 @@ func (d *DataProcesser) CustomCreateNodeEntities(agent *agentmanager.Agent_m, no
 			if condition.Rule_type == meta.FILTER_TYPE_HOST {
 				if _uuid, ok := condition.Rule_condition["uuid"]; !ok {
 					atomic.AddInt32(&d.agent_node_count, int32(1))
-					return errors.Errorf("there is no uuid field in node rule_condition: %+v **3", condition.Rule_condition)
+					return errors.Errorf("there is no uuid field in node host rule_condition: %+v **3", condition.Rule_condition)
 				} else {
 					uuid = _uuid.(string)
 					break

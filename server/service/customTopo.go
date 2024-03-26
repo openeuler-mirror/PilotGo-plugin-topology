@@ -31,6 +31,7 @@ func RunCustomTopoService(tcid uint) ([]*meta.Node, []*meta.Edge, []map[string]s
 	// ctxv := context.WithValue(agentmanager.Topo.Tctx, "custom_name", "pilotgo-topo")
 
 	agentmanager.Topo.UpdateMachineList()
+	dao.Global_redis.ActiveHeartbeatDetection([]string{})
 	running_agent_num := dao.Global_redis.UpdateTopoRunningAgentList(machine_uuids)
 	unixtime_now := time.Now().Unix()
 	nodes, edges, combos, err := back.DataProcessWorking(unixtime_now, running_agent_num, dao.Global_GraphDB, tc.TagRules, tc.NodeRules)
@@ -108,7 +109,7 @@ func UpdateCustomTopoService(tc *meta.Topo_configuration, tcdb_id_old uint) (int
 func DeleteCustomTopoService(ids []uint) error {
 	for _, tcid := range ids {
 		if err := dao.Global_mysql.DeleteTopoConfiguration(tcid); err != nil {
-			return errors.Wrap(err, "**warn**2")
+			return errors.Wrap(err, "**errstack**2")
 		}
 	}
 

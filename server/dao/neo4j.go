@@ -38,7 +38,7 @@ func Neo4jInit(url, user, pass, db string) *Neo4jClient {
 		config.MaxConnectionLifetime = 1 * time.Hour
 	})
 	if err != nil {
-		err := errors.Errorf("create neo4j driver failed: %s **fatal**2", err.Error()) // err top
+		err := errors.Errorf("create neo4j driver failed: %s **errstackfatal**2", err.Error()) // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, true)
 	}
 

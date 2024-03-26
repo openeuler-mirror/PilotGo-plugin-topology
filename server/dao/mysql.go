@@ -30,7 +30,7 @@ type MysqlClient struct {
 func MysqldbInit(conf *conf.MysqlConf) *MysqlClient {
 	err := ensureDatabase(conf)
 	if err != nil {
-		err = errors.Wrapf(err, "**fatal**2") // err top
+		err = errors.Wrapf(err, "**errstackfatal**2") // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, true)
 	}
 
@@ -50,13 +50,13 @@ func MysqldbInit(conf *conf.MysqlConf) *MysqlClient {
 		},
 	})
 	if err != nil {
-		err := errors.Errorf("mysql connect failed: %s(url: %s) **fatal**2", err.Error(), url) // err top
+		err := errors.Errorf("mysql connect failed: %s(url: %s) **errstackfatal**2", err.Error(), url) // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, true)
 	}
 
 	var db *sql.DB
 	if db, err = m.db.DB(); err != nil {
-		err = errors.Errorf("get mysql sql.db failed: %s **fatal**2", err.Error()) // err top
+		err = errors.Errorf("get mysql sql.db failed: %s **errstackfatal**2", err.Error()) // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, true)
 	}
 
@@ -66,7 +66,7 @@ func MysqldbInit(conf *conf.MysqlConf) *MysqlClient {
 	// mysql 模型迁移
 	err = m.db.AutoMigrate(&meta.Topo_configuration_DB{})
 	if err != nil {
-		err = errors.Errorf("mysql automigrate failed: %s **fatal**2", err.Error()) // err top
+		err = errors.Errorf("mysql automigrate failed: %s **errstackfatal**2", err.Error()) // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, true)
 	}
 
@@ -75,18 +75,18 @@ func MysqldbInit(conf *conf.MysqlConf) *MysqlClient {
 
 func ensureDatabase(conf *conf.MysqlConf) error {
 	if conf == nil {
-		err := errors.New("mysql config error **fatal**1")
+		err := errors.New("mysql config error **errstackfatal**1")
 		return err
 	}
 
 	if conf.Addr == "" || conf.Username == "" || conf.Password == "" || conf.DB == "" {
-		err := errors.Errorf("mysql config error: addr(%s) username(%s) password(%s) db(%s) **fatal**1", conf.Addr, conf.Username, conf.Password, conf.DB)
+		err := errors.Errorf("mysql config error: addr(%s) username(%s) password(%s) db(%s) **errstackfatal**1", conf.Addr, conf.Username, conf.Password, conf.DB)
 		return err
 	}
 
 	addr_arr := strings.Split(conf.Addr, ":")
 	if len(addr_arr) != 2 {
-		err := errors.Errorf("mysql addr error: %s **fatal**2", conf.Addr)
+		err := errors.Errorf("mysql addr error: %s **errstackfatal**2", conf.Addr)
 		return err
 	}
 
@@ -94,7 +94,7 @@ func ensureDatabase(conf *conf.MysqlConf) error {
 
 	db, err := gorm.Open(mysql.Open(url))
 	if err != nil {
-		err := errors.Errorf("mysql connect failed: %s **fatal**2", err.Error())
+		err := errors.Errorf("mysql connect failed: %s **errstackfatal**2", err.Error())
 		return err
 	}
 
@@ -103,11 +103,11 @@ func ensureDatabase(conf *conf.MysqlConf) error {
 
 	d, err := db.DB()
 	if err != nil {
-		err = errors.Errorf("get mysql sql.db failed: %s **fatal**2", err.Error())
+		err = errors.Errorf("get mysql sql.db failed: %s **errstackfatal**2", err.Error())
 		return err
 	}
 	if err = d.Close(); err != nil {
-		err = errors.Errorf("close mysql sql.db failed: %s **fatal**2", err.Error())
+		err = errors.Errorf("close mysql sql.db failed: %s **errstackfatal**2", err.Error())
 		return err
 	}
 	return nil
@@ -163,7 +163,7 @@ func (m *MysqlClient) TopoConfigurationToDB(tc *meta.Topo_configuration) (*meta.
 	noderules_bytes, noderules_err := json.Marshal(tc.NodeRules)
 	tagrules_bytes, tagrules_err := json.Marshal(tc.TagRules)
 	if noderules_err != nil || tagrules_err != nil {
-		err := errors.Errorf("json marshal error: noderules(%s) tagrules)%s **warn**4", noderules_err, tagrules_err)
+		err := errors.Errorf("json marshal error: noderules(%s) tagrules)%s **errstack**4", noderules_err, tagrules_err)
 		return nil, err
 	}
 
@@ -187,7 +187,7 @@ func (m *MysqlClient) DBToTopoConfiguration(tcdb *meta.Topo_configuration_DB) (*
 	noderules_err := json.Unmarshal([]byte(tcdb.NodeRules), &tc.NodeRules)
 	tagrules_err := json.Unmarshal([]byte(tcdb.TagRules), &tc.TagRules)
 	if noderules_err != nil || tagrules_err != nil {
-		err := errors.Errorf("json unmarshal error: noderules(%s) tagrules)%s **warn**4", noderules_err, tagrules_err)
+		err := errors.Errorf("json unmarshal error: noderules(%s) tagrules)%s **errstack**4", noderules_err, tagrules_err)
 		return nil, err
 	}
 

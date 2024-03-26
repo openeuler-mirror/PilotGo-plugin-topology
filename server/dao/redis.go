@@ -44,7 +44,7 @@ func RedisInit(url, pass string, db int, dialTimeout time.Duration) *RedisClient
 	defer cancelFunc()
 	_, err := r.Client.Ping(timeoutCtx).Result()
 	if err != nil {
-		err = errors.Errorf("redis connection timeout: %s **fatal**2", err.Error()) // err top
+		err = errors.Errorf("redis connection timeout: %s **errstackfatal**2", err.Error()) // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, true)
 	}
 
@@ -63,7 +63,7 @@ func (r *RedisClient) Set(key string, value interface{}) error {
 		return nil
 	}
 
-	err := errors.New("global_redis is nil **warn**11")
+	err := errors.New("global_redis is nil **errstack**11")
 	return err
 }
 
@@ -78,7 +78,7 @@ func (r *RedisClient) Get(key string, obj interface{}) (interface{}, error) {
 		return obj, nil
 	}
 
-	err := errors.New("global_redis is nil **warn**11")
+	err := errors.New("global_redis is nil **errstack**11")
 	return nil, err
 }
 
@@ -95,7 +95,7 @@ func (r *RedisClient) Scan(key string) ([]string, error) {
 		return keys, nil
 	}
 
-	err := errors.New("global_redis is nil **warn**11")
+	err := errors.New("global_redis is nil **errstack**11")
 	return nil, err
 }
 
@@ -109,11 +109,11 @@ func (r *RedisClient) Delete(key string) error {
 		return nil
 	}
 
-	err := errors.New("global_redis is nil **warn**11")
+	err := errors.New("global_redis is nil **errstack**11")
 	return err
 }
 
-// 基于batch中的机器列表更新运行状态agent的TAgentMap
+// 基于batch中的机器列表和PAgentMap更新TAgentMap中运行状态的agent
 func (r *RedisClient) UpdateTopoRunningAgentList(uuids []string) int {
 	var running_agent_num int
 	var once sync.Once
@@ -134,7 +134,7 @@ func (r *RedisClient) UpdateTopoRunningAgentList(uuids []string) int {
 	for {
 		agent_keys, err := r.Scan("heartbeat-topoagent*")
 		if err != nil {
-			err = errors.Wrap(err, "**warn**2") // err top
+			err = errors.Wrap(err, "**errstack**2") // err top
 			agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 			continue
 		}
@@ -143,7 +143,7 @@ func (r *RedisClient) UpdateTopoRunningAgentList(uuids []string) int {
 			for _, agentkey := range agent_keys {
 				v, err := r.Get(agentkey, &meta.AgentHeartbeat{})
 				if err != nil {
-					err = errors.Wrap(err, "**warn**2") // err top
+					err = errors.Wrap(err, "**errstack**2") // err top
 					agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 					continue
 				}
@@ -190,7 +190,7 @@ func (r *RedisClient) UpdateTopoRunningAgentList(uuids []string) int {
 	return running_agent_num
 }
 
-// server端对agent端的健康监测
+// server端对agent端的主动健康监测，更新agent心跳信息
 func (r *RedisClient) ActiveHeartbeatDetection(uuids []string) {
 	activeHeartbeatDetection := func(agent *agentmanager.Agent_m) {
 		url := "http://" + agent.IP + ":" + conf.Config().Topo.Agent_port + "/plugin/topology/api/health"
@@ -215,7 +215,7 @@ func (r *RedisClient) ActiveHeartbeatDetection(uuids []string) {
 
 			err := Global_redis.Set(key, value)
 			if err != nil {
-				err = errors.Wrap(err, " **warn**2") // err top
+				err = errors.Wrap(err, " **errstack**2") // err top
 				agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 			}
 		}
