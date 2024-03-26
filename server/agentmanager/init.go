@@ -52,6 +52,15 @@ func Wait4TopoServerReady() {
 	}
 }
 
+/*
+@ctx:	插件客户端初始上下文（默认为agentmanager.Topo.Tctx）
+
+@err:	最终生成的error
+
+@ch: 	传输error的channel（默认为agentmanager.Topo.ErrCh）
+
+@exit_after_print: 打印完错误链信息后是否结束主程序
+*/
 func ErrorTransmit(ctx context.Context, err error, ch chan *meta.Topoerror, exit_after_print bool) {
 	if exit_after_print {
 		cctx, cancelF := context.WithCancel(ctx)
