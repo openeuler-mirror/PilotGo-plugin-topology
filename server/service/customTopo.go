@@ -31,8 +31,12 @@ func RunCustomTopoService(tcid uint) ([]*meta.Node, []*meta.Edge, []map[string]s
 	// ctxv := context.WithValue(agentmanager.Topo.Tctx, "custom_name", "pilotgo-topo")
 
 	agentmanager.Topo.UpdateMachineList()
-	dao.Global_redis.ActiveHeartbeatDetection([]string{})
-	running_agent_num := dao.Global_redis.UpdateTopoRunningAgentList(machine_uuids)
+	dao.Global_redis.ActiveHeartbeatDetection(machine_uuids)
+	running_agent_num := dao.Global_redis.UpdateTopoRunningAgentList(machine_uuids, true)
+	if running_agent_num == 0 {
+		return nil, nil, nil, errors.Errorf("no running agent for custom id %d **errstack**2", tc.ID)
+	}
+
 	unixtime_now := time.Now().Unix()
 	nodes, edges, combos, err := back.DataProcessWorking(unixtime_now, running_agent_num, dao.Global_GraphDB, tc.TagRules, tc.NodeRules)
 	if err != nil {

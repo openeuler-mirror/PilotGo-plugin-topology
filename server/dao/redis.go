@@ -6,11 +6,13 @@ import (
 	"fmt"
 	"os"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/agentmanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/conf"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/meta"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/utils"
 	"gitee.com/openeuler/PilotGo/sdk/logger"
 	"gitee.com/openeuler/PilotGo/sdk/utils/httputils"
 	"github.com/go-redis/redis/v8"
@@ -114,9 +116,10 @@ func (r *RedisClient) Delete(key string) error {
 }
 
 // 基于batch中的机器列表和PAgentMap更新TAgentMap中运行状态的agent
-func (r *RedisClient) UpdateTopoRunningAgentList(uuids []string) int {
-	var running_agent_num int
+func (r *RedisClient) UpdateTopoRunningAgentList(uuids []string, updateonce bool) int {
+	var running_agent_num int32
 	var once sync.Once
+	var wg sync.WaitGroup
 
 	if agentmanager.Topo == nil {
 		err := errors.New("agentmanager.Topo is not initialized!") // err top
@@ -141,37 +144,53 @@ func (r *RedisClient) UpdateTopoRunningAgentList(uuids []string) int {
 
 		if len(agent_keys) != 0 {
 			for _, agentkey := range agent_keys {
-				v, err := r.Get(agentkey, &meta.AgentHeartbeat{})
-				if err != nil {
-					err = errors.Wrap(err, "**errstack**2") // err top
-					agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
-					continue
-				}
+				wg.Add(1)
+				go func(key string) {
+					defer wg.Done()
+					v, err := r.Get(key, &meta.AgentHeartbeat{})
+					if err != nil {
+						err = errors.Wrap(err, "**errstack**2") // err top
+						agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
+						return
+					}
 
-				agentvalue := v.(*meta.AgentHeartbeat)
+					agentvalue := v.(*meta.AgentHeartbeat)
 
-				if len(uuids) != 0 {
-					inbatch := false
-					for _, uuid := range uuids {
-						if agentvalue.UUID == uuid {
-							inbatch = true
-							break
+					if len(uuids) != 0 {
+						inbatch := false
+						for _, uuid := range uuids {
+							if agentvalue.UUID == uuid {
+								inbatch = true
+								break
+							}
+						}
+
+						if !inbatch {
+							return
 						}
 					}
 
-					if !inbatch {
-						continue
-					}
-				}
+					// 当agent满足：①心跳要求；②包含于pilotgo纳管的机器范围内；③包含于uuids批次机器内；④agent的IP:PORT可连通等条件时，则加入TAgentMap
+					if time.Since(agentvalue.Time) < 1*time.Second+time.Duration(agentvalue.HeartbeatInterval)*time.Second {
+						agentp := agentmanager.Topo.GetAgent_P(agentvalue.UUID)
+						if agentp == nil {
+							return
+						}
 
-				// 当agent满足：①心跳要求；②包含于pilotgo纳管的机器范围内；③包含于uuids批次机器内等条件时，则加入TAgentMap
-				if time.Since(agentvalue.Time) < 1*time.Second+time.Duration(agentvalue.HeartbeatInterval)*time.Second {
-					if agentp := agentmanager.Topo.GetAgent_P(agentvalue.UUID); agentp != nil {
+						if ok, err := utils.IsIPandPORTValid(agentp.IP, agentmanager.Topo.AgentPort); !ok {
+							err := errors.Errorf("%s:%s is unreachable (%s) %s **warn**1", agentp.IP, agentmanager.Topo.AgentPort, err.Error(), agentp.UUID) // err top
+							agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
+							return
+						}
 						agentmanager.Topo.AddAgent_T(agentp)
-						running_agent_num += 1
+
+						atomic.AddInt32(&running_agent_num, int32(1))
 					}
-				}
+				}(agentkey)
+
 			}
+
+			wg.Wait()
 
 			if running_agent_num > 0 {
 				break
@@ -179,19 +198,26 @@ func (r *RedisClient) UpdateTopoRunningAgentList(uuids []string) int {
 		}
 
 		once.Do(func() {
-			logger.Warn("no running agent......")
+			err := errors.New("no running agent...... **warn**0") // err top
+			agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 		})
+
+		if updateonce {
+			return 0
+		}
 
 		time.Sleep(1 * time.Second)
 	}
 
 	logger.Info("running agent number: %d", running_agent_num)
 
-	return running_agent_num
+	return int(running_agent_num)
 }
 
 // server端对agent端的主动健康监测，更新agent心跳信息
 func (r *RedisClient) ActiveHeartbeatDetection(uuids []string) {
+	var wg sync.WaitGroup
+
 	activeHeartbeatDetection := func(agent *agentmanager.Agent_m) {
 		url := "http://" + agent.IP + ":" + conf.Config().Topo.Agent_port + "/plugin/topology/api/health"
 		if resp, err := httputils.Get(url, nil); err == nil && resp != nil && resp.StatusCode == 200 {
@@ -224,17 +250,45 @@ func (r *RedisClient) ActiveHeartbeatDetection(uuids []string) {
 	if len(uuids) == 0 {
 		agentmanager.Topo.PAgentMap.Range(func(key, value interface{}) bool {
 			agent := value.(*agentmanager.Agent_m)
-			activeHeartbeatDetection(agent)
+			wg.Add(1)
+			go func(a *agentmanager.Agent_m) {
+				defer wg.Done()
+
+				if ok, _ := utils.IsIPandPORTValid(a.IP, agentmanager.Topo.AgentPort); !ok {
+					// err := errors.Errorf("%s:%s is unreachable (%s) %s **warn**1", a.IP, agentmanager.Topo.AgentPort, err.Error(), a.UUID) // err top
+					// agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
+					return
+				}
+
+				activeHeartbeatDetection(agent)
+			}(agent)
 			return true
 		})
+
+		wg.Wait()
+
 		return
 	}
 
 	for _, uuid := range uuids {
-		agent := agentmanager.Topo.GetAgent_P(uuid)
-		if agent == nil {
-			continue
-		}
-		activeHeartbeatDetection(agent)
+		wg.Add(1)
+		go func(_uuid string) {
+			defer wg.Done()
+
+			agent := agentmanager.Topo.GetAgent_P(_uuid)
+			if agent == nil {
+				return
+			}
+
+			if ok, _ := utils.IsIPandPORTValid(agent.IP, agentmanager.Topo.AgentPort); !ok {
+				// err := errors.Errorf("%s:%s is unreachable (%s) %s **warn**1", agent.IP, agentmanager.Topo.AgentPort, err.Error(), agent.UUID) // err top
+				// agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
+				return
+			}
+
+			activeHeartbeatDetection(agent)
+		}(uuid)
 	}
+
+	wg.Wait()
 }
