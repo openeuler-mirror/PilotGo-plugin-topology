@@ -15,7 +15,6 @@ import (
 
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/conf"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/meta"
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/utils"
 	"gitee.com/openeuler/PilotGo/sdk/common"
 	"gitee.com/openeuler/PilotGo/sdk/logger"
 	"gitee.com/openeuler/PilotGo/sdk/plugin/client"
@@ -43,6 +42,8 @@ type Topoclient struct {
 	Out io.Writer
 
 	Tctx context.Context
+
+	AgentPort string
 }
 
 func InitPluginClient() {
@@ -74,13 +75,12 @@ func InitPluginClient() {
 		cond:      sync.NewCond(&errcondmu),
 		ErrCh:     make(chan *meta.Topoerror, 10),
 		Tctx:      context.Background(),
+		AgentPort: conf.Config().Topo.Agent_port,
 	}
 }
 
 // 初始化PAgentMap中的agent
 func (t *Topoclient) InitMachineList() {
-	var wg sync.WaitGroup
-
 	Wait4TopoServerReady()
 	t.Sdkmethod.Wait4Bind()
 
@@ -91,31 +91,17 @@ func (t *Topoclient) InitMachineList() {
 	}
 
 	for _, m := range machine_list {
-		wg.Add(1)
-		go func(mnode *common.MachineNode) {
-			defer wg.Done()
-			topoagent_port := conf.Config().Topo.Agent_port
-			if ok, err := utils.IsIPandPORTValid(mnode.IP, topoagent_port); !ok {
-				err := errors.Errorf("%s:%s is unreachable (%s) %s **warn**1", mnode.IP, topoagent_port, err.Error(), mnode.UUID) // err top
-				ErrorTransmit(t.Tctx, err, t.ErrCh, false)
-				return
-			}
-			p := &Agent_m{}
-			p.UUID = mnode.UUID
-			p.Departname = mnode.Department
-			p.IP = mnode.IP
-			p.TAState = 0
-			t.AddAgent_P(p)
-		}(m)
+		p := &Agent_m{}
+		p.UUID = m.UUID
+		p.Departname = m.Department
+		p.IP = m.IP
+		p.TAState = 0
+		t.AddAgent_P(p)
 	}
-
-	wg.Wait()
 }
 
 // 更新PAgentMap中的agent
 func (t *Topoclient) UpdateMachineList() {
-	var wg sync.WaitGroup
-
 	machine_list, err := t.Sdkmethod.MachineList()
 	if err != nil {
 		err = errors.Errorf("%s **errstackfatal**2", err.Error()) // err top
@@ -133,25 +119,13 @@ func (t *Topoclient) UpdateMachineList() {
 	}
 
 	for _, m := range machine_list {
-		wg.Add(1)
-		go func(mnode *common.MachineNode) {
-			defer wg.Done()
-			topoagent_port := conf.Config().Topo.Agent_port
-			if ok, err := utils.IsIPandPORTValid(mnode.IP, topoagent_port); !ok {
-				err = errors.Errorf("%s:%s is unreachable (%s) %s **warn**1", mnode.IP, topoagent_port, err.Error(), mnode.UUID) // err top
-				ErrorTransmit(t.Tctx, err, t.ErrCh, false)
-				return
-			}
-			p := &Agent_m{}
-			p.UUID = mnode.UUID
-			p.Departname = mnode.Department
-			p.IP = mnode.IP
-			p.TAState = 0
-			t.AddAgent_P(p)
-		}(m)
+		p := &Agent_m{}
+		p.UUID = m.UUID
+		p.Departname = m.Department
+		p.IP = m.IP
+		p.TAState = 0
+		t.AddAgent_P(p)
 	}
-
-	wg.Wait()
 }
 
 func (t *Topoclient) GetBatchList() ([]*common.BatchList, error) {
@@ -253,9 +227,9 @@ func (t *Topoclient) InitErrorControl(errch <-chan *meta.Topoerror) {
 				errarr := strings.Split(errors.Cause(topoerr.Err).Error(), "**")
 				switch errarr[1] {
 				case "debug": // 只打印最底层error的message，不展开错误链的调用栈
-					logger.Debug("%+v\n", errors.Cause(topoerr.Err).Error())
+					logger.Debug("%+v\n", strings.Split(errors.Cause(topoerr.Err).Error(), "**")[0])
 				case "warn": // 只打印最底层error的message，不展开错误链的调用栈
-					logger.Warn("%+v\n", errors.Cause(topoerr.Err).Error())
+					logger.Warn("%+v\n", strings.Split(errors.Cause(topoerr.Err).Error(), "**")[0])
 				case "errstack": // 打印错误链的调用栈
 					fmt.Fprintf(t.Out, "%+v\n", topoerr.Err)
 					// errors.EORE(err)

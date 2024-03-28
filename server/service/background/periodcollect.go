@@ -25,7 +25,7 @@ func PeriodCollectWorking(batch []string, noderules [][]meta.Filter_rule) {
 	go func(_interval int64, _gdb dao.GraphdbIface, _noderules [][]meta.Filter_rule) {
 		for {
 			dao.Global_redis.ActiveHeartbeatDetection(batch)
-			running_agent_num := dao.Global_redis.UpdateTopoRunningAgentList(batch)
+			running_agent_num := dao.Global_redis.UpdateTopoRunningAgentList(batch, false)
 			unixtime_now := time.Now().Unix()
 			DataProcessWorking(unixtime_now, running_agent_num, _gdb, nil, _noderules)
 			time.Sleep(time.Duration(_interval) * time.Second)
