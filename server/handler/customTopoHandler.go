@@ -2,6 +2,7 @@ package handler
 
 import (
 	"strconv"
+	"strings"
 
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/agentmanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/meta"
@@ -95,6 +96,7 @@ func RunCustomTopoHandle(ctx *gin.Context) {
 		if tcid_str == "" {
 			err := errors.New("id is nil **errstack**2") // err top
 			agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
+			doneChan <- topodata
 			response.Fail(ctx, nil, err.Error())
 			return
 		}
@@ -103,6 +105,7 @@ func RunCustomTopoHandle(ctx *gin.Context) {
 		if err != nil {
 			err = errors.Wrap(err, "**errstack**2") // err top
 			agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
+			doneChan <- topodata
 			response.Fail(ctx, nil, err.Error())
 			return
 		}
@@ -111,13 +114,15 @@ func RunCustomTopoHandle(ctx *gin.Context) {
 		if err != nil {
 			err = errors.Wrap(err, " **errstack**2") // err top
 			agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
-			response.Fail(ctx, nil, err.Error())
+			doneChan <- topodata
+			response.Fail(ctx, nil, strings.Split(errors.Cause(err).Error(), "**")[0])
 			return
 		}
 
 		if len(topodata.Nodes) == 0 || len(topodata.Edges) == 0 {
 			err := errors.New("nodes list is null or edges list is null **errstack**0") // err top
 			agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
+			doneChan <- topodata
 			response.Fail(ctx, nil, err.Error())
 			return
 		}
@@ -129,11 +134,13 @@ func RunCustomTopoHandle(ctx *gin.Context) {
 	case <-ctx.Request.Context().Done():
 		return
 	case res := <-doneChan:
-		response.Success(ctx, map[string]interface{}{
-			"nodes":  res.Nodes,
-			"edges":  res.Edges,
-			"combos": res.Combos,
-		}, "")
+		if len(res.Combos) != 0 && len(res.Edges) != 0 && len(res.Nodes) != 0 {
+			response.Success(ctx, map[string]interface{}{
+				"nodes":  res.Nodes,
+				"edges":  res.Edges,
+				"combos": res.Combos,
+			}, "")
+		}
 	}
 }
 
