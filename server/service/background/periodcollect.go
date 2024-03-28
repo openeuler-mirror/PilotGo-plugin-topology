@@ -52,7 +52,7 @@ func DataProcessWorking(unixtime int64, agentnum int, graphdb dao.GraphdbIface, 
 		for _, e := range collect_errlist {
 			collect_errlist_string = append(collect_errlist_string, e.Error())
 		}
-		return nil, nil, nil, errors.Errorf("collect data failed: %+v **10", strings.Join(collect_errlist_string, "/e/"))
+		return nil, nil, nil, errors.Errorf("collect data failed: %+v **errstack**10", strings.Join(collect_errlist_string, "/e/"))
 	}
 	if len(process_errlist) != 0 {
 		for i, perr := range process_errlist {
@@ -63,7 +63,7 @@ func DataProcessWorking(unixtime int64, agentnum int, graphdb dao.GraphdbIface, 
 		for _, e := range process_errlist {
 			process_errlist_string = append(process_errlist_string, e.Error())
 		}
-		return nil, nil, nil, errors.Errorf("process data failed: %+v **21", strings.Join(process_errlist_string, "/e/"))
+		return nil, nil, nil, errors.Errorf("process data failed: %+v **errstack**21", strings.Join(process_errlist_string, "/e/"))
 	}
 
 	if len(noderules) != 0 {

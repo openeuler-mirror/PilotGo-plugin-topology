@@ -62,4 +62,4 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 )
 
-// replace github.com/pkg/errors v0.9.1 => /home/wjq/桌面/study/tool/errors@v1.2.3
+// replace github.com/pkg/errors v0.9.1 => /home/wjq/local/errors@v1.2.3

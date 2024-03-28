@@ -75,5 +75,5 @@ func (ns *Nodes) Remove(node *Node) error {
 		return nil
 	}
 
-	return errors.New(fmt.Sprintf("node %s not found**9", node.ID))
+	return errors.New(fmt.Sprintf("node %s not found**errstack**9", node.ID))
 }
