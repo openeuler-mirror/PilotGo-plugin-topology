@@ -14,8 +14,10 @@
 </template>
 
 <script setup lang="ts">
+import { ElMessage } from 'element-plus'
 import { onMounted, reactive, ref, watch, watchEffect } from 'vue';
 import PGTopo from '@/components/PGTopo.vue';
+import topodata from '@/assets/cluster2024-3-15.json'
 // import topodata from '@/utils/test.json';
 import nodeDetail from './nodeDetail.vue';
 import { getCustomTopo, getTopoData, getUuidTopo } from "@/request/api";
@@ -41,12 +43,20 @@ watchEffect(() => {
   let topoData = {};
   switch (requst_type) {
     case 'custom':
+      // ttcode
+      // useTopoStore().topo_data = topodata.data;
+      // showTopo.value = true;
+      // loading.value = false;
+
       getCustomTopo({ id: requst_id as number }).then(res => {
         if (res.data.code === 200) {
           topoData = res.data.data;
           useTopoStore().topo_data = topoData;
           showTopo.value = true;
           loading.value = false;
+        } else {
+            ElMessage.error(res.data.msg);
+            router.push('topoList');
         }
       })
       break;
@@ -59,6 +69,9 @@ watchEffect(() => {
           setTimeout(() => {
             useTopoStore().topo_data = topoData;
           }, 200)
+        } else {
+            ElMessage.error(res.data.msg);
+            router.push('topoList');
         }
       })
       break;
