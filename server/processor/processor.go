@@ -27,7 +27,6 @@ func CreateDataProcesser() *DataProcesser {
 }
 
 func (d *DataProcesser) ProcessData(agentnum int, tagrules []meta.Tag_rule, noderules [][]meta.Filter_rule) (*meta.Nodes, *meta.Edges, []error, []error) {
-	start := time.Now()
 	nodes := &meta.Nodes{
 		Lock:         sync.Mutex{},
 		Lookup:       make(map[string]*meta.Node, 0),
@@ -62,6 +61,8 @@ func (d *DataProcesser) ProcessData(agentnum int, tagrules []meta.Tag_rule, node
 		}
 	}
 
+	start := time.Now()
+	
 	ctx1, cancel1 := context.WithCancel(agentmanager.Topo.Tctx)
 	go func(cancelfunc context.CancelFunc) {
 		for {
