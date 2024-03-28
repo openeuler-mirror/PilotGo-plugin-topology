@@ -66,11 +66,11 @@ func (e *Edges) Remove(id string) error {
 		}
 		e.Edges = append(e.Edges[:i], e.Edges[i+1:]...)
 		if _, ok := e.Lookup.LoadAndDelete(id); !ok {
-			return errors.Errorf("edge %+v not fount in sync.map**1", id)
+			return errors.Errorf("edge %+v not fount in sync.map**errstack**1", id)
 		}
 
 		return nil
 	}
 
-	return errors.Errorf("edge %+v not fount in slice**12", id)
+	return errors.Errorf("edge %+v not fount in slice**errstack**12", id)
 }

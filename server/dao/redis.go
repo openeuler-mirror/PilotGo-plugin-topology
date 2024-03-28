@@ -58,7 +58,7 @@ func (r *RedisClient) Set(key string, value interface{}) error {
 		bytes, _ := json.Marshal(value)
 		err := Global_redis.Client.Set(agentmanager.Topo.Tctx, key, string(bytes), 0).Err()
 		if err != nil {
-			err = errors.Errorf("failed to set key-value: %s **2", err.Error())
+			err = errors.Errorf("failed to set key-value: %s **errstack**2", err.Error())
 			return err
 		}
 
@@ -73,7 +73,7 @@ func (r *RedisClient) Get(key string, obj interface{}) (interface{}, error) {
 	if agentmanager.Topo != nil && Global_redis != nil {
 		data, err := Global_redis.Client.Get(agentmanager.Topo.Tctx, key).Result()
 		if err != nil {
-			err = errors.Errorf("failed to get value: %s, %s **2", key, err.Error())
+			err = errors.Errorf("failed to get value: %s, %s **errstack**2", key, err.Error())
 			return nil, err
 		}
 		json.Unmarshal([]byte(data), obj)
@@ -105,7 +105,7 @@ func (r *RedisClient) Delete(key string) error {
 	if agentmanager.Topo != nil && Global_redis != nil {
 		err := Global_redis.Client.Del(agentmanager.Topo.Tctx, key).Err()
 		if err != nil {
-			err = errors.Errorf("failed to del key-value: %s **2", err.Error())
+			err = errors.Errorf("failed to del key-value: %s **errstack**2", err.Error())
 			return err
 		}
 		return nil
@@ -227,8 +227,9 @@ func (r *RedisClient) ActiveHeartbeatDetection(uuids []string) {
 
 			err = json.Unmarshal(resp.Body, &agentinfo)
 			if err != nil {
-				err = errors.Errorf("%+v **2", err.Error()) // err top
+				err = errors.Errorf("%+v **errstack**2", err.Error()) // err top
 				agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
+				return
 			}
 
 			key := "heartbeat-topoagent-" + agent.UUID
@@ -243,6 +244,7 @@ func (r *RedisClient) ActiveHeartbeatDetection(uuids []string) {
 			if err != nil {
 				err = errors.Wrap(err, " **errstack**2") // err top
 				agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
+				return
 			}
 		}
 	}

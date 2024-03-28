@@ -26,7 +26,7 @@ func CreatePrometheus(url string) *Prometheus {
 func (p *Prometheus) CreateAPI() error {
 	client, err := api.NewClient(api.Config{Address: p.addr})
 	if err != nil {
-		err = errors.Errorf("failed to create prometheus client: %s **2", err.Error())
+		err = errors.Errorf("failed to create prometheus client: %s **errstack**2", err.Error())
 		return err
 	}
 
@@ -41,7 +41,7 @@ func (p *Prometheus) GetTargets() ([]map[string]string, error) {
 
 	result, err := p.Api.Targets(p.Ctx)
 	if err != nil {
-		err = errors.Errorf("failed to get prometheus targets: %s **2", err.Error())
+		err = errors.Errorf("failed to get prometheus targets: %s **errstack**2", err.Error())
 		return nil, err
 	}
 
@@ -60,7 +60,7 @@ func (p *Prometheus) GetMetrics() ([]string, error) {
 
 	result, err := p.Api.Metadata(p.Ctx, "", "")
 	if err != nil {
-		err = errors.Errorf("failed to get prometheus metric list: %s **2", err.Error())
+		err = errors.Errorf("failed to get prometheus metric list: %s **errstack**2", err.Error())
 		return nil, err
 	}
 

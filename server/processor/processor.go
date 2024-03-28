@@ -283,7 +283,7 @@ func (d *DataProcesser) CustomCreateNodeEntities(agent *agentmanager.Agent_m, no
 			if condition.Rule_type == meta.FILTER_TYPE_HOST {
 				if _uuid, ok := condition.Rule_condition["uuid"]; !ok {
 					atomic.AddInt32(&d.agent_node_count, int32(1))
-					return errors.Errorf("there is no uuid field in node host rule_condition: %+v **3", condition.Rule_condition)
+					return errors.Errorf("there is no uuid field in node host rule_condition: %+v **errstack**3", condition.Rule_condition)
 				} else {
 					uuid = _uuid.(string)
 					break
@@ -302,7 +302,7 @@ func (d *DataProcesser) CustomCreateNodeEntities(agent *agentmanager.Agent_m, no
 				for _, process := range agent.Processes_2 {
 					if _name, ok := condition.Rule_condition["name"]; !ok {
 						atomic.AddInt32(&d.agent_node_count, int32(1))
-						return errors.Errorf("there is no name field in node rule_condition: %+v **3", condition.Rule_condition)
+						return errors.Errorf("there is no name field in node rule_condition: %+v **errstack**3", condition.Rule_condition)
 					} else if _name.(string) == process.ExeName {
 						proc_node := &meta.Node{
 							ID:         fmt.Sprintf("%s%s%s%s%d", agent.UUID, meta.NODE_CONNECTOR, meta.NODE_PROCESS, meta.NODE_CONNECTOR, process.Pid),
@@ -330,7 +330,7 @@ func (d *DataProcesser) CustomCreateNodeEntities(agent *agentmanager.Agent_m, no
 				for _, process := range agent.Processes_2 {
 					if _tag, ok := condition.Rule_condition["tag_name"]; !ok {
 						atomic.AddInt32(&d.agent_node_count, int32(1))
-						return errors.Errorf("there is no tag_name field in node rule_condition: %+v **3", condition.Rule_condition)
+						return errors.Errorf("there is no tag_name field in node rule_condition: %+v **errstack**3", condition.Rule_condition)
 					} else if _tag.(string) == process.ExeName {
 						proc_node := &meta.Node{
 							ID:         fmt.Sprintf("%s%s%s%s%d", agent.UUID, meta.NODE_CONNECTOR, meta.NODE_PROCESS, meta.NODE_CONNECTOR, process.Pid),
