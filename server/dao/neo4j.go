@@ -9,7 +9,6 @@ import (
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/agentmanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/meta"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/utils"
-	"gitee.com/openeuler/PilotGo/sdk/logger"
 	"github.com/neo4j/neo4j-go-driver/v4/neo4j"
 	"github.com/pkg/errors"
 )
@@ -49,6 +48,10 @@ func Neo4jInit(url, user, pass, db string) *Neo4jClient {
 func (n *Neo4jClient) Node_create(unixtime string, node *meta.Node) error {
 	var cqlIN string
 
+	if Global_Neo4j == nil {
+		return errors.New("neo4j client not init **errstack**1")
+	}
+
 	if len(node.Metrics) == 0 {
 		cqlIN = fmt.Sprintf("create (node:`%s` {unixtime:'%s', nid:'%s', name:'%s', layoutattr:'%s', comboid:'%s'} set node:`%s`)",
 			node.Type, unixtime, node.ID, node.Name, node.LayoutAttr, node.ComboId, node.UUID)
@@ -81,6 +84,10 @@ func (n *Neo4jClient) Node_create(unixtime string, node *meta.Node) error {
 
 func (n *Neo4jClient) Edge_create(unixtime string, edge *meta.Edge) error {
 	var cqlIN string
+
+	if Global_Neo4j == nil {
+		return errors.New("neo4j client not init **errstack**1")
+	}
 
 	if len(edge.Metrics) == 0 {
 		cqlIN = fmt.Sprintf("match (src {unixtime:'%s', nid:'%s'}), (dst {unixtime:'%s', nid:'%s'}) create (src)-[r:`%s` {unixtime:'%s', rid:'%s', dir:'%s', src:'%s', dst:'%s'}]->(dst)",
@@ -115,11 +122,14 @@ func (n *Neo4jClient) Edge_create(unixtime string, edge *meta.Edge) error {
 func (n *Neo4jClient) Timestamps_query() ([]string, error) {
 	var cqlOUT string
 	var varia string
-
 	cqlOUT = "match (n:host) return collect(distinct n.unixtime) as times"
 	varia = "times"
-
 	var list []string
+
+	if Global_Neo4j == nil {
+		return nil, errors.New("neo4j client not init **errstack**1")
+	}
+
 	session := n.Driver.NewSession(neo4j.SessionConfig{AccessMode: neo4j.AccessModeRead, DatabaseName: n.DB})
 	defer session.Close()
 	_, err := session.ReadTransaction(func(tx neo4j.Transaction) (interface{}, error) {
@@ -160,9 +170,12 @@ func (n *Neo4jClient) Timestamps_query() ([]string, error) {
 func (n *Neo4jClient) SingleHost_node_query(uuid string, unixtime string) ([]*meta.Node, error) {
 	var cqlOUT string
 	var varia string
-
 	cqlOUT = fmt.Sprintf("match (nodes:`%s`) where nodes.unixtime='%s' return nodes", uuid, unixtime)
 	varia = "nodes"
+
+	if Global_Neo4j == nil {
+		return nil, errors.New("neo4j client not init **errstack**1")
+	}
 
 	return n.Node_query(cqlOUT, varia)
 }
@@ -170,9 +183,12 @@ func (n *Neo4jClient) SingleHost_node_query(uuid string, unixtime string) ([]*me
 func (n *Neo4jClient) MultiHost_node_query(unixtime string) ([]*meta.Node, error) {
 	var cqlOUT string
 	var varia string
-
 	cqlOUT = fmt.Sprintf("match (nodes) where nodes.unixtime='%s' return nodes", unixtime)
 	varia = "nodes"
+
+	if Global_Neo4j == nil {
+		return nil, errors.New("neo4j client not init **errstack**1")
+	}
 
 	return n.Node_query(cqlOUT, varia)
 }
@@ -213,9 +229,12 @@ func (n *Neo4jClient) Node_query(cypher string, varia string) ([]*meta.Node, err
 func (n *Neo4jClient) MultiHost_relation_query(unixtime string) ([]*meta.Edge, error) {
 	var cqlOUT string
 	var varia string
-
 	cqlOUT = fmt.Sprintf("match ()-[relas]->() where relas.unixtime='%s' return relas", unixtime)
 	varia = "relas"
+
+	if Global_Neo4j == nil {
+		return nil, errors.New("neo4j client not init **errstack**1")
+	}
 
 	return n.Relation_query(cqlOUT, varia)
 }
@@ -252,6 +271,12 @@ func (n *Neo4jClient) Relation_query(cypher string, varia string) ([]*meta.Edge,
 }
 
 func (n *Neo4jClient) ClearExpiredData(retention int64) {
+	if Global_Neo4j == nil {
+		err := errors.New("neo4j client not init **errstack**1") // err top
+		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
+		return
+	}
+
 	current := time.Now()
 	timepoint := current.Add(-time.Duration(retention) * time.Hour).Unix()
 	cqlIN := `match (n) where n.unixtime < $timepoint detach delete n`
@@ -264,15 +289,18 @@ func (n *Neo4jClient) ClearExpiredData(retention int64) {
 
 	result, err := session.Run(cqlIN, params)
 	if err != nil {
-		logger.Error("ClearExpiredData failed: %s, %s", err.Error(), cqlIN)
+		err = errors.Errorf("ClearExpiredData failed: %s, %s **warn**1", err.Error(), cqlIN) // err top
+		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 		return
 	}
 
 	summary, err := result.Consume()
 	if err != nil {
-		logger.Error("failed to consume ClearExpiredData result: %s, %s", err.Error(), cqlIN)
+		err = errors.Errorf("failed to consume ClearExpiredData result: %s, %s **warn**2", err.Error(), cqlIN) // err top
+		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 		return
 	}
 
-	logger.Debug("delete %d nodes\n", summary.Counters().NodesDeleted())
+	err = errors.Errorf("delete %d nodes **debug**0", summary.Counters().NodesDeleted()) // err top
+	agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 }

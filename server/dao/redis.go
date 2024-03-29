@@ -54,6 +54,10 @@ func RedisInit(url, pass string, db int, dialTimeout time.Duration) *RedisClient
 }
 
 func (r *RedisClient) Set(key string, value interface{}) error {
+	if Global_redis == nil {
+		return errors.New("redis client not init **errstack**1")
+	}
+
 	if agentmanager.Topo != nil && Global_redis != nil {
 		bytes, _ := json.Marshal(value)
 		err := Global_redis.Client.Set(agentmanager.Topo.Tctx, key, string(bytes), 0).Err()
@@ -70,6 +74,10 @@ func (r *RedisClient) Set(key string, value interface{}) error {
 }
 
 func (r *RedisClient) Get(key string, obj interface{}) (interface{}, error) {
+	if Global_redis == nil {
+		return nil, errors.New("redis client not init **errstack**1")
+	}
+
 	if agentmanager.Topo != nil && Global_redis != nil {
 		data, err := Global_redis.Client.Get(agentmanager.Topo.Tctx, key).Result()
 		if err != nil {
@@ -80,12 +88,15 @@ func (r *RedisClient) Get(key string, obj interface{}) (interface{}, error) {
 		return obj, nil
 	}
 
-	err := errors.New("global_redis is nil **errstack**11")
-	return nil, err
+	return nil, errors.New("global_redis is nil **errstack**11")
 }
 
 func (r *RedisClient) Scan(key string) ([]string, error) {
 	keys := []string{}
+
+	if Global_redis == nil {
+		return nil, errors.New("redis client not init **errstack**1")
+	}
 
 	if agentmanager.Topo != nil && Global_redis != nil {
 		iterator := Global_redis.Client.Scan(agentmanager.Topo.Tctx, 0, key, 0).Iterator()
@@ -102,6 +113,10 @@ func (r *RedisClient) Scan(key string) ([]string, error) {
 }
 
 func (r *RedisClient) Delete(key string) error {
+	if Global_redis == nil {
+		return errors.New("redis client not init **errstack**1")
+	}
+
 	if agentmanager.Topo != nil && Global_redis != nil {
 		err := Global_redis.Client.Del(agentmanager.Topo.Tctx, key).Err()
 		if err != nil {
@@ -125,6 +140,10 @@ func (r *RedisClient) UpdateTopoRunningAgentList(uuids []string, updateonce bool
 		err := errors.New("agentmanager.Topo is not initialized!") // err top
 		fmt.Printf("%+v\n", err)
 		os.Exit(1)
+	}
+
+	if Global_redis == nil {
+		return -1
 	}
 
 	// 重置TAgentMap
@@ -217,6 +236,12 @@ func (r *RedisClient) UpdateTopoRunningAgentList(uuids []string, updateonce bool
 // server端对agent端的主动健康监测，更新agent心跳信息
 func (r *RedisClient) ActiveHeartbeatDetection(uuids []string) {
 	var wg sync.WaitGroup
+
+	if Global_redis == nil {
+		err := errors.New("redis client not init **errstack**1")
+		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
+		return
+	}
 
 	activeHeartbeatDetection := func(agent *agentmanager.Agent_m) {
 		url := "http://" + agent.IP + ":" + conf.Config().Topo.Agent_port + "/plugin/topology/api/health"
