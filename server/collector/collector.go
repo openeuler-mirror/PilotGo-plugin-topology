@@ -1,8 +1,10 @@
 package collector
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"sync"
 	"time"
@@ -40,6 +42,8 @@ func (d *DataCollector) CollectInstantData() []error {
 
 			go func() {
 				defer wg.Done()
+				// ttcode
+				temp_start := time.Now()
 				agent := value.(*agentmanager.Agent_m)
 				agent.Port = conf.Config().Topo.Agent_port
 				err := d.GetCollectDataFromTopoAgent(agent)
@@ -49,6 +53,9 @@ func (d *DataCollector) CollectInstantData() []error {
 					errorlist_rwlock.Unlock()
 				}
 				agentmanager.Topo.AddAgent_T(agent)
+				// ttcode
+				temp_elapse := time.Since(temp_start)
+				logger.Info("\033[32mtopo server 采集数据获取时间\033[0m: %s, %v, total\n", agent.UUID, temp_elapse)
 			}()
 
 			return true
@@ -72,11 +79,19 @@ func (d *DataCollector) GetCollectDataFromTopoAgent(agent *agentmanager.Agent_m)
 
 	resp, err := httputils.Get(url, nil)
 	if err != nil {
-		return errors.Errorf("%s, %s **2", url, err.Error())
+		return errors.Errorf("%s, %s **errstack**2", url, err.Error())
 	}
 
+	// ttcode
+	tmpfile, _ := os.CreateTemp("", "response")
+	defer os.Remove(tmpfile.Name())
+	reader := bytes.NewReader(resp.Body)
+	io.Copy(tmpfile, reader)
+	fileInfo, _ := tmpfile.Stat()
+	logger.Info("\033[32mtopo server 采集数据大小\033[0m: %s, %d kb\n", agent.UUID, fileInfo.Size()/1024)
+
 	if statuscode := resp.StatusCode; statuscode != 200 {
-		return errors.Errorf("%v, %s **2", resp.StatusCode, url)
+		return errors.Errorf("%v, %s **errstack**2", resp.StatusCode, url)
 	}
 
 	results := struct {
@@ -87,7 +102,7 @@ func (d *DataCollector) GetCollectDataFromTopoAgent(agent *agentmanager.Agent_m)
 
 	err = json.Unmarshal(resp.Body, &results)
 	if err != nil {
-		return errors.Errorf("%s **2", err.Error())
+		return errors.Errorf("%s **errstack**2", err.Error())
 	}
 
 	collectdata := &struct {
