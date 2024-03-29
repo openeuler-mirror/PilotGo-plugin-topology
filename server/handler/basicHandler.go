@@ -94,7 +94,7 @@ func AgentListHandle(ctx *gin.Context) {
 func BatchListHandle(ctx *gin.Context) {
 	batchlist, err := agentmanager.Topo.Sdkmethod.BatchList()
 	if err != nil {
-		err = errors.Wrap(err, "**errstack**2") // err top
+		err = errors.Errorf("%+v **errstack**2", err.Error()) // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 		response.Fail(ctx, nil, err.Error())
 		return
@@ -114,7 +114,7 @@ func BatchMachineListHandle(ctx *gin.Context) {
 
 	machine_uuids, err := agentmanager.Topo.Sdkmethod.BatchUUIDList(BatchId)
 	if err != nil {
-		err = errors.Wrap(err, "**errstack**2") // err top
+		err = errors.Errorf("%+v **errstack**2", err.Error()) // err top
 		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 		response.Fail(ctx, nil, err.Error())
 		return

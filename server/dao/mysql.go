@@ -115,6 +115,11 @@ func ensureDatabase(conf *conf.MysqlConf) error {
 
 func (m *MysqlClient) QuerySingleTopoConfiguration(tcid uint) (*meta.Topo_configuration_DB, error) {
 	var tcdb *meta.Topo_configuration_DB = new(meta.Topo_configuration_DB)
+
+	if Global_mysql == nil {
+		return nil, errors.New("mysql client not init **errstack**1")
+	}
+
 	if err := m.db.Model(&meta.Topo_configuration_DB{}).Where("id=?", tcid).First(tcdb).Error; err != nil {
 		err = errors.Errorf("query topo configuration failed: %s, %d **errstack**0", err.Error(), tcid)
 		return nil, err
@@ -124,10 +129,13 @@ func (m *MysqlClient) QuerySingleTopoConfiguration(tcid uint) (*meta.Topo_config
 }
 
 func (m *MysqlClient) QueryTopoConfigurationList(query *response.PaginationQ) ([]*meta.Topo_configuration_DB, int, error) {
+	if Global_mysql == nil {
+		return nil, 0, errors.New("mysql client not init **errstack**1")
+	}
+
 	tcdbs := make([]*meta.Topo_configuration_DB, 0)
 	if err := m.db.Order("id desc").Limit(query.PageSize).Offset((query.Page - 1) * query.PageSize).Find(&tcdbs).Error; err != nil {
-		err = errors.Errorf("query topo configuration list failed: %s **errstack**0", err.Error())
-		return nil, 0, err
+		return nil, 0, errors.Errorf("query topo configuration list failed: %s **errstack**0", err.Error())
 	}
 
 	var total int64
@@ -139,6 +147,10 @@ func (m *MysqlClient) QueryTopoConfigurationList(query *response.PaginationQ) ([
 }
 
 func (m *MysqlClient) AddTopoConfiguration(tc *meta.Topo_configuration_DB) (int, error) {
+	if Global_mysql == nil {
+		return -1, errors.New("mysql client not init **errstack**1")
+	}
+
 	_tc := tc
 	if err := m.db.Save(_tc).Error; err != nil {
 		err = errors.Errorf("add topo configuration failed: %s, %+v **errstack**0", err.Error(), tc)
@@ -149,9 +161,12 @@ func (m *MysqlClient) AddTopoConfiguration(tc *meta.Topo_configuration_DB) (int,
 }
 
 func (m *MysqlClient) DeleteTopoConfiguration(tcid uint) error {
+	if Global_mysql == nil {
+		return errors.New("mysql client not init **errstack**1")
+	}
+
 	if err := m.db.Where("id = ?", tcid).Unscoped().Delete(meta.Topo_configuration_DB{}).Error; err != nil {
-		err = errors.Errorf("delete topo configuration failed: %s, %d **errstack**0", err.Error(), tcid)
-		return err
+		return errors.Errorf("delete topo configuration failed: %s, %d **errstack**0", err.Error(), tcid)
 	}
 
 	return nil

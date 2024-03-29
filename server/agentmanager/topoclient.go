@@ -225,6 +225,11 @@ func (t *Topoclient) InitErrorControl(errch <-chan *meta.Topoerror) {
 
 			if topoerr.Err != nil {
 				errarr := strings.Split(errors.Cause(topoerr.Err).Error(), "**")
+				if len(errarr) < 2 {
+					logger.Error("topoerror type required in root error (err: %+v)", topoerr.Err)
+					os.Exit(1)
+				}
+
 				switch errarr[1] {
 				case "debug": // 只打印最底层error的message，不展开错误链的调用栈
 					logger.Debug("%+v\n", strings.Split(errors.Cause(topoerr.Err).Error(), "**")[0])

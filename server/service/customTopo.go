@@ -35,6 +35,8 @@ func RunCustomTopoService(tcid uint) ([]*meta.Node, []*meta.Edge, []map[string]s
 	running_agent_num := dao.Global_redis.UpdateTopoRunningAgentList(machine_uuids, true)
 	if running_agent_num == 0 {
 		return nil, nil, nil, errors.Errorf("no running agent for custom id %d **errstack**2", tc.ID)
+	} else if running_agent_num == -1 {
+		return nil, nil, nil, errors.New("redis client not init **errstack**1")
 	}
 
 	unixtime_now := time.Now().Unix()
