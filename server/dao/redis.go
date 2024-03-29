@@ -54,10 +54,6 @@ func RedisInit(url, pass string, db int, dialTimeout time.Duration) *RedisClient
 }
 
 func (r *RedisClient) Set(key string, value interface{}) error {
-	if Global_redis == nil {
-		return errors.New("redis client not init **errstack**1")
-	}
-
 	if agentmanager.Topo != nil && Global_redis != nil {
 		bytes, _ := json.Marshal(value)
 		err := Global_redis.Client.Set(agentmanager.Topo.Tctx, key, string(bytes), 0).Err()
@@ -74,10 +70,6 @@ func (r *RedisClient) Set(key string, value interface{}) error {
 }
 
 func (r *RedisClient) Get(key string, obj interface{}) (interface{}, error) {
-	if Global_redis == nil {
-		return nil, errors.New("redis client not init **errstack**1")
-	}
-
 	if agentmanager.Topo != nil && Global_redis != nil {
 		data, err := Global_redis.Client.Get(agentmanager.Topo.Tctx, key).Result()
 		if err != nil {
@@ -94,10 +86,6 @@ func (r *RedisClient) Get(key string, obj interface{}) (interface{}, error) {
 func (r *RedisClient) Scan(key string) ([]string, error) {
 	keys := []string{}
 
-	if Global_redis == nil {
-		return nil, errors.New("redis client not init **errstack**1")
-	}
-
 	if agentmanager.Topo != nil && Global_redis != nil {
 		iterator := Global_redis.Client.Scan(agentmanager.Topo.Tctx, 0, key, 0).Iterator()
 		for iterator.Next(agentmanager.Topo.Tctx) {
@@ -113,10 +101,6 @@ func (r *RedisClient) Scan(key string) ([]string, error) {
 }
 
 func (r *RedisClient) Delete(key string) error {
-	if Global_redis == nil {
-		return errors.New("redis client not init **errstack**1")
-	}
-
 	if agentmanager.Topo != nil && Global_redis != nil {
 		err := Global_redis.Client.Del(agentmanager.Topo.Tctx, key).Err()
 		if err != nil {
@@ -135,6 +119,7 @@ func (r *RedisClient) UpdateTopoRunningAgentList(uuids []string, updateonce bool
 	var running_agent_num int32
 	var once sync.Once
 	var wg sync.WaitGroup
+	var abort_reason []string
 
 	if agentmanager.Topo == nil {
 		err := errors.New("agentmanager.Topo is not initialized!") // err top
@@ -185,26 +170,32 @@ func (r *RedisClient) UpdateTopoRunningAgentList(uuids []string, updateonce bool
 						}
 
 						if !inbatch {
+							abort_reason = append(abort_reason, fmt.Sprintf("%s:未在批次范围内", agentvalue.UUID))
 							return
 						}
 					}
 
 					// 当agent满足：①心跳要求；②包含于pilotgo纳管的机器范围内；③包含于uuids批次机器内；④agent的IP:PORT可连通等条件时，则加入TAgentMap
-					if time.Since(agentvalue.Time) < 1*time.Second+time.Duration(agentvalue.HeartbeatInterval)*time.Second {
-						agentp := agentmanager.Topo.GetAgent_P(agentvalue.UUID)
-						if agentp == nil {
-							return
-						}
-
-						if ok, err := utils.IsIPandPORTValid(agentp.IP, agentmanager.Topo.AgentPort); !ok {
-							err := errors.Errorf("%s:%s is unreachable (%s) %s **warn**1", agentp.IP, agentmanager.Topo.AgentPort, err.Error(), agentp.UUID) // err top
-							agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
-							return
-						}
-						agentmanager.Topo.AddAgent_T(agentp)
-
-						atomic.AddInt32(&running_agent_num, int32(1))
+					if elapse := time.Since(agentvalue.Time); elapse >= 1*time.Second+time.Duration(agentvalue.HeartbeatInterval)*time.Second {
+						abort_reason = append(abort_reason, fmt.Sprintf("%s:心跳超时", agentvalue.UUID))
+						return
 					}
+
+					agentp := agentmanager.Topo.GetAgent_P(agentvalue.UUID)
+					if agentp == nil {
+						abort_reason = append(abort_reason, fmt.Sprintf("%s:未被pilotgo纳管", agentvalue.UUID))
+						return
+					}
+
+					if ok, err := utils.IsIPandPORTValid(agentp.IP, agentmanager.Topo.AgentPort); !ok {
+						err := errors.Errorf("%s:%s is unreachable (%s) %s **warn**1", agentp.IP, agentmanager.Topo.AgentPort, err.Error(), agentp.UUID) // err top
+						agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
+						abort_reason = append(abort_reason, fmt.Sprintf("%s:ip||port不可达", agentvalue.UUID))
+						return
+					}
+					agentmanager.Topo.AddAgent_T(agentp)
+
+					atomic.AddInt32(&running_agent_num, int32(1))
 				}(agentkey)
 
 			}
@@ -217,9 +208,17 @@ func (r *RedisClient) UpdateTopoRunningAgentList(uuids []string, updateonce bool
 		}
 
 		once.Do(func() {
-			err := errors.New("no running agent...... **warn**0") // err top
-			agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
+			logger.Warn("no running agent......")
 		})
+
+		// ttcode
+		if len(abort_reason) != 0 {
+			logger.Debug(">>>>>>>>>>>>获取agent状态信息")
+			for _, r := range abort_reason {
+				logger.Debug(r)
+			}
+			logger.Debug(">>>>>>>>>>>>")
+		}
 
 		if updateonce {
 			return 0
@@ -246,11 +245,17 @@ func (r *RedisClient) ActiveHeartbeatDetection(uuids []string) {
 	activeHeartbeatDetection := func(agent *agentmanager.Agent_m) {
 		url := "http://" + agent.IP + ":" + conf.Config().Topo.Agent_port + "/plugin/topology/api/health"
 		if resp, err := httputils.Get(url, nil); err == nil && resp != nil && resp.StatusCode == 200 {
-			agentinfo := struct {
+			type agentinfo struct {
 				Interval int `json:"interval"`
+			}
+
+			resp_body := struct {
+				Code int       `json:"code"`
+				Data agentinfo `json:"data"`
+				Msg  string    `json:"msg"`
 			}{}
 
-			err = json.Unmarshal(resp.Body, &agentinfo)
+			err = json.Unmarshal(resp.Body, &resp_body)
 			if err != nil {
 				err = errors.Errorf("%+v **errstack**2", err.Error()) // err top
 				agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
@@ -261,11 +266,11 @@ func (r *RedisClient) ActiveHeartbeatDetection(uuids []string) {
 			value := meta.AgentHeartbeat{
 				UUID:              agent.UUID,
 				Addr:              agent.IP + ":" + conf.Config().Topo.Agent_port,
-				HeartbeatInterval: agentinfo.Interval,
+				HeartbeatInterval: resp_body.Data.Interval,
 				Time:              time.Now(),
 			}
 
-			err := Global_redis.Set(key, value)
+			err = Global_redis.Set(key, value)
 			if err != nil {
 				err = errors.Wrap(err, " **errstack**2") // err top
 				agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
