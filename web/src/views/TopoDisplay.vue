@@ -17,7 +17,7 @@
 import { ElMessage } from 'element-plus'
 import { onMounted, reactive, ref, watch, watchEffect } from 'vue';
 import PGTopo from '@/components/PGTopo.vue';
-import topodata from '@/assets/cluster2024-3-15.json'
+// import topodata from '@/assets/cluster2024-3-15.json'
 // import topodata from '@/utils/test.json';
 import nodeDetail from './nodeDetail.vue';
 import { getCustomTopo, getTopoData, getUuidTopo } from "@/request/api";
