@@ -303,10 +303,10 @@ func (d *DataProcesser) CustomCreateNodeEntities(agent *agentmanager.Agent_m, no
 					if _name, ok := condition.Rule_condition["name"]; !ok {
 						atomic.AddInt32(&d.agent_node_count, int32(1))
 						return errors.Errorf("there is no name field in node rule_condition: %+v **errstack**3", condition.Rule_condition)
-					} else if _name.(string) == process.ExeName {
+					} else if utils.ProcessMatching(process.ExeName, process.Cmdline, _name.(string)) {
 						proc_node := &meta.Node{
 							ID:         fmt.Sprintf("%s%s%s%s%d", agent.UUID, meta.NODE_CONNECTOR, meta.NODE_PROCESS, meta.NODE_CONNECTOR, process.Pid),
-							Name:       process.ExeName,
+							Name:       _name.(string),
 							Type:       meta.NODE_PROCESS,
 							UUID:       agent.UUID,
 							LayoutAttr: meta.INNER_LAYOUT_2,
