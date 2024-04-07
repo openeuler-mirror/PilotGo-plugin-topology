@@ -62,7 +62,7 @@ func (d *DataProcesser) ProcessData(agentnum int, tagrules []meta.Tag_rule, node
 	}
 
 	start := time.Now()
-	
+
 	ctx1, cancel1 := context.WithCancel(agentmanager.Topo.Tctx)
 	go func(cancelfunc context.CancelFunc) {
 		for {
@@ -303,7 +303,7 @@ func (d *DataProcesser) CustomCreateNodeEntities(agent *agentmanager.Agent_m, no
 					if _name, ok := condition.Rule_condition["name"]; !ok {
 						atomic.AddInt32(&d.agent_node_count, int32(1))
 						return errors.Errorf("there is no name field in node rule_condition: %+v **errstack**3", condition.Rule_condition)
-					} else if utils.ProcessMatching(process.ExeName, process.Cmdline, _name.(string)) {
+					} else if ProcessMatching(process.ExeName, process.Cmdline, _name.(string)) {
 						proc_node := &meta.Node{
 							ID:         fmt.Sprintf("%s%s%s%s%d", agent.UUID, meta.NODE_CONNECTOR, meta.NODE_PROCESS, meta.NODE_CONNECTOR, process.Pid),
 							Name:       _name.(string),
@@ -331,10 +331,10 @@ func (d *DataProcesser) CustomCreateNodeEntities(agent *agentmanager.Agent_m, no
 					if _tag, ok := condition.Rule_condition["tag_name"]; !ok {
 						atomic.AddInt32(&d.agent_node_count, int32(1))
 						return errors.Errorf("there is no tag_name field in node rule_condition: %+v **errstack**3", condition.Rule_condition)
-					} else if _tag.(string) == process.ExeName {
+					} else if ProcessMatching(process.ExeName, process.Cmdline, _tag.(string)) {
 						proc_node := &meta.Node{
 							ID:         fmt.Sprintf("%s%s%s%s%d", agent.UUID, meta.NODE_CONNECTOR, meta.NODE_PROCESS, meta.NODE_CONNECTOR, process.Pid),
-							Name:       process.ExeName,
+							Name:       _tag.(string),
 							Type:       meta.NODE_PROCESS,
 							UUID:       agent.UUID,
 							LayoutAttr: meta.INNER_LAYOUT_2,

@@ -116,10 +116,11 @@ func DataCollectorService() (utils.Data_collector, error) {
 
 		wg.Wait()
 
-		// ttcode
+		fmt.Println("============================")
 		for _, t := range cost_time {
 			fmt.Println(t)
 		}
+		fmt.Println("============================")
 
 		return collector.Psutildata, nil
 	default:
