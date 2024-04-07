@@ -34,8 +34,6 @@ func PeriodCollectWorking(batch []string, noderules [][]meta.Filter_rule) {
 }
 
 func DataProcessWorking(unixtime int64, agentnum int, graphdb dao.GraphdbIface, tagrules []meta.Tag_rule, noderules [][]meta.Filter_rule) ([]*meta.Node, []*meta.Edge, []map[string]string, error) {
-	start := time.Now()
-
 	var nodeTypeWg sync.WaitGroup
 	var nodeUuidWg sync.WaitGroup
 	var edgeBreakWg sync.WaitGroup
@@ -80,6 +78,8 @@ func DataProcessWorking(unixtime int64, agentnum int, graphdb dao.GraphdbIface, 
 
 		return nodes.Nodes, edges.Edges, combos, nil
 	}
+
+	start := time.Now()
 
 	for _, nodesByUUID := range nodes.LookupByUUID {
 		nodesbyuuid := nodesByUUID
