@@ -6,12 +6,13 @@ import (
 
 	"gitee.com/openeuler/PilotGo-plugin-topology-agent/conf"
 	"gitee.com/openeuler/PilotGo-plugin-topology-agent/service"
+	"gitee.com/openeuler/PilotGo-plugin-topology-agent/service/container"
 	"gitee.com/openeuler/PilotGo/sdk/response"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 )
 
-func Raw_metric_data(ctx *gin.Context) {
+func RawMetricDataHandle(ctx *gin.Context) {
 	data, err := service.DataCollectorService()
 	if err != nil {
 		err = errors.Wrap(err, "**2")
@@ -42,4 +43,15 @@ func HealthCheckHandle(ctx *gin.Context) {
 	}
 
 	response.Success(ctx, agentinfo, fmt.Sprintf("agent %s is running", conf.Config().Topo.Agent_addr))
+}
+
+func ContainerListHandle(ctx *gin.Context) {
+	containers, err := container.ContainerList()
+	if err != nil {
+		err = errors.Wrap(err, "") // err top
+		fmt.Printf("%+v\n", err)
+		response.Fail(ctx, nil, errors.Cause(err).Error())
+	}
+
+	response.Success(ctx, containers, "success")	
 }

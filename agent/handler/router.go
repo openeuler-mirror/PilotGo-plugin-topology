@@ -8,6 +8,7 @@ func InitRouter(router *gin.Engine) {
 	api := router.Group("/plugin/topology/api")
 	{
 		api.GET("/health", HealthCheckHandle)
-		api.GET("/rawdata", Raw_metric_data)
+		api.GET("/rawdata", RawMetricDataHandle)
+		api.GET("/container_list", ContainerListHandle)
 	}
 }
