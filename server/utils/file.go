@@ -3,13 +3,14 @@ package utils
 import (
 	"io"
 	"os"
+
 	"github.com/pkg/errors"
 )
 
 func FileReadString(filePath string) (string, error) {
 	content, err := os.ReadFile(filePath)
 	if err != nil {
-		return "", errors.New(err.Error())
+		return "", errors.Errorf("%s **errstack**0", err.Error())
 	}
 
 	return string(content), nil
@@ -18,7 +19,7 @@ func FileReadString(filePath string) (string, error) {
 func FileReadBytes(filePath string) ([]byte, error) {
 	f, err := os.Open(filePath)
 	if err != nil {
-		return nil, errors.New(err.Error())
+		return nil, errors.Errorf("%s **errstack**0", err.Error())
 	}
 	defer f.Close()
 
@@ -33,7 +34,7 @@ func FileReadBytes(filePath string) ([]byte, error) {
 				}
 				break
 			}
-			return nil, errors.New(err.Error())
+			return nil, errors.Errorf("%s **errstack**0", err.Error())
 		}
 		content = append(content, readbuff[:n]...)
 	}
