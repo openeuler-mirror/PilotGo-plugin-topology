@@ -3,7 +3,6 @@ package collector
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
 	"os"
 	"sync"
@@ -11,7 +10,9 @@ import (
 
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/agentmanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/conf"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/errormanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/meta"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/pluginclient"
 	"gitee.com/openeuler/PilotGo/sdk/logger"
 	"gitee.com/openeuler/PilotGo/sdk/utils/httputils"
 	"github.com/mitchellh/mapstructure"
@@ -30,13 +31,13 @@ func (d *DataCollector) CollectInstantData() []error {
 	var errorlist []error
 	var errorlist_rwlock sync.RWMutex
 
-	if agentmanager.Topo == nil {
-		err := errors.New("agentmanager.Topo is not initialized!") // err top
-		fmt.Printf("%+v\n", err)
-		os.Exit(1)
+	if agentmanager.GlobalAgentManager == nil {
+		err := errors.New("globalagentmanager is nil **errstackfatal**0") // err top
+		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
+		return nil
 	}
 
-	agentmanager.Topo.TAgentMap.Range(
+	agentmanager.GlobalAgentManager.TAgentMap.Range(
 		func(key, value interface{}) bool {
 			wg.Add(1)
 
@@ -44,7 +45,7 @@ func (d *DataCollector) CollectInstantData() []error {
 				defer wg.Done()
 				// ttcode
 				temp_start := time.Now()
-				agent := value.(*agentmanager.Agent_m)
+				agent := value.(*agentmanager.Agent)
 				agent.Port = conf.Config().Topo.Agent_port
 				err := d.GetCollectDataFromTopoAgent(agent)
 				if err != nil {
@@ -52,7 +53,7 @@ func (d *DataCollector) CollectInstantData() []error {
 					errorlist = append(errorlist, errors.Wrapf(err, "%s**2", agent.IP))
 					errorlist_rwlock.Unlock()
 				}
-				agentmanager.Topo.AddAgent_T(agent)
+				agentmanager.GlobalAgentManager.AddAgent_T(agent)
 				// ttcode
 				temp_elapse := time.Since(temp_start)
 				logger.Info("\033[32mtopo server 采集数据获取时间\033[0m: %s, %v, total\n", agent.UUID, temp_elapse)
@@ -74,7 +75,7 @@ func (d *DataCollector) CollectInstantData() []error {
 	return nil
 }
 
-func (d *DataCollector) GetCollectDataFromTopoAgent(agent *agentmanager.Agent_m) error {
+func (d *DataCollector) GetCollectDataFromTopoAgent(agent *agentmanager.Agent) error {
 	url := "http://" + agent.IP + ":" + agent.Port + "/plugin/topology/api/rawdata"
 
 	resp, err := httputils.Get(url, nil)

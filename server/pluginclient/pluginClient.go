@@ -24,7 +24,7 @@ var PluginInfo = &client.PluginInfo{
 	PluginType:  "micro-app",
 }
 
-func Init() {
+func InitPluginClient() {
 	PluginInfo.Url = "http://" + conf.Config().Topo.Server_addr
 	GlobalClient = client.DefaultClient(PluginInfo)
 

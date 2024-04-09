@@ -4,10 +4,11 @@ import (
 	"fmt"
 
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/agentmanager"
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/pluginclient"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/dao"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/handler"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/meta"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/pluginclient"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/errormanager"
 	service "gitee.com/openeuler/PilotGo-plugin-topology-server/service/background"
 	// "github.com/pyroscope-io/pyroscope/pkg/agent/profiler"
 )
@@ -28,12 +29,17 @@ func main() {
 	/*
 		init plugin client
 	*/
-	pluginclient.Init()
+	pluginclient.InitPluginClient()
 
 	/*
 		init error control
 	*/
-	agentmanager.Topo.InitErrorControl(agentmanager.Topo.ErrCh)
+	errormanager.InitErrorManager()
+
+	/*
+		init agent manager
+	*/
+	agentmanager.InitAgentManager()
 
 	/*
 		init web server
@@ -48,7 +54,7 @@ func main() {
 	/*
 		init machine agent list
 	*/
-	agentmanager.Topo.InitMachineList()
+	agentmanager.GlobalAgentManager.InitMachineList()
 
 	/*
 		init database

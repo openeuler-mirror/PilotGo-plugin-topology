@@ -10,6 +10,7 @@ import (
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/agentmanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/conf"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/dao"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/errormanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/meta"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/pluginclient"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/processor"
@@ -21,7 +22,13 @@ import (
 func PeriodCollectWorking(batch []string, noderules [][]meta.Filter_rule) {
 	graphperiod := conf.Global_config.Topo.Period
 
-	agentmanager.Topo.UpdateMachineList()
+	if agentmanager.GlobalAgentManager == nil {
+		err := errors.New("globalagentmanager is nil **errstackfatal**0") // err top
+		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
+		return
+	}
+
+	agentmanager.GlobalAgentManager.UpdateMachineList()
 
 	go func(_interval int64, _gdb dao.GraphdbIface, _noderules [][]meta.Filter_rule) {
 		for {
@@ -45,7 +52,7 @@ func DataProcessWorking(unixtime int64, agentnum int, graphdb dao.GraphdbIface, 
 	if len(collect_errlist) != 0 {
 		for i, cerr := range collect_errlist {
 			collect_errlist[i] = errors.Wrap(cerr, "**errstack**3") // err top
-			agentmanager.ErrorTransmit(pluginclient.GlobalContext, collect_errlist[i], agentmanager.Topo.ErrCh, false)
+			errormanager.ErrorTransmit(pluginclient.GlobalContext, collect_errlist[i], false)
 		}
 		collect_errlist_string := []string{}
 		for _, e := range collect_errlist {
@@ -56,13 +63,18 @@ func DataProcessWorking(unixtime int64, agentnum int, graphdb dao.GraphdbIface, 
 	if len(process_errlist) != 0 {
 		for i, perr := range process_errlist {
 			process_errlist[i] = errors.Wrap(perr, "**errstack**14") // err top
-			agentmanager.ErrorTransmit(pluginclient.GlobalContext, process_errlist[i], agentmanager.Topo.ErrCh, false)
+			errormanager.ErrorTransmit(pluginclient.GlobalContext, process_errlist[i], false)
 		}
 		process_errlist_string := []string{}
 		for _, e := range process_errlist {
 			process_errlist_string = append(process_errlist_string, e.Error())
 		}
 		return nil, nil, nil, errors.Errorf("process data failed: %+v **errstack**21", strings.Join(process_errlist_string, "/e/"))
+	}
+	if nodes == nil || edges == nil {
+		err := errors.New("nodes or edges is nil **errstack**24") // err top
+		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, false)
+		return nil, nil, nil, err
 	}
 
 	if len(noderules) != 0 {
@@ -113,7 +125,7 @@ func DataProcessWorking(unixtime int64, agentnum int, graphdb dao.GraphdbIface, 
 							err := graphdb.Node_create(_unixtime, _node)
 							if err != nil {
 								err = errors.Wrapf(err, "create neo4j node failed; %s **errstack**2", cqlIN) // err top
-								agentmanager.ErrorTransmit(pluginclient.GlobalContext, err, agentmanager.Topo.ErrCh, false)
+								errormanager.ErrorTransmit(pluginclient.GlobalContext, err, false)
 							}
 						}
 					}(__nodes)
@@ -136,7 +148,7 @@ func DataProcessWorking(unixtime int64, agentnum int, graphdb dao.GraphdbIface, 
 					err := graphdb.Edge_create(_unixtime, _edge)
 					if err != nil {
 						err = errors.Wrapf(err, "create neo4j edge failed **errstack**2") // err top
-						agentmanager.ErrorTransmit(pluginclient.GlobalContext, err, agentmanager.Topo.ErrCh, false)
+						errormanager.ErrorTransmit(pluginclient.GlobalContext, err, false)
 					}
 				}
 			}(__edges)

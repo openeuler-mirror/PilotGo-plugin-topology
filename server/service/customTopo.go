@@ -5,9 +5,10 @@ import (
 	"time"
 
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/agentmanager"
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/pluginclient"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/dao"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/meta"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/pluginclient"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/errormanager"
 	back "gitee.com/openeuler/PilotGo-plugin-topology-server/service/background"
 	"gitee.com/openeuler/PilotGo/sdk/response"
 	"github.com/pkg/errors"
@@ -24,6 +25,12 @@ func RunCustomTopoService(tcid uint) ([]*meta.Node, []*meta.Edge, []map[string]s
 		return nil, nil, nil, errors.Wrap(err, "**2")
 	}
 
+	if pluginclient.GlobalClient == nil {
+		err := errors.New("globalclient is nil **errstackfatal**2") // err top
+		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
+		return nil, nil, nil, err
+	}
+
 	machine_uuids, err := pluginclient.GlobalClient.BatchUUIDList(strconv.Itoa(int(tc.BatchId)))
 	if err != nil {
 		return nil, nil, nil, errors.Wrap(err, "**2")
@@ -31,7 +38,13 @@ func RunCustomTopoService(tcid uint) ([]*meta.Node, []*meta.Edge, []map[string]s
 
 	// ctxv := context.WithValue(agentmanager.Topo.Tctx, "custom_name", "pilotgo-topo")
 
-	agentmanager.Topo.UpdateMachineList()
+	if agentmanager.GlobalAgentManager == nil {
+		err := errors.New("globalagentmanager is nil **errstackfatal**0") // err top
+		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
+		return nil, nil, nil, err
+	}
+
+	agentmanager.GlobalAgentManager.UpdateMachineList()
 	dao.Global_redis.ActiveHeartbeatDetection(machine_uuids)
 	running_agent_num := dao.Global_redis.UpdateTopoRunningAgentList(machine_uuids, true)
 	if running_agent_num == 0 {

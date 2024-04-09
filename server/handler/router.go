@@ -7,14 +7,20 @@ import (
 
 	"github.com/gin-contrib/timeout"
 
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/agentmanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/conf"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/errormanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/pluginclient"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 )
 
 func InitWebServer() {
+	if pluginclient.GlobalClient == nil {
+		err := errors.New("globalclient is nil **errstackfatal**2") // err top
+		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
+		return
+	}
+	
 	go func() {
 		engine := gin.Default()
 		gin.SetMode(gin.ReleaseMode)
@@ -25,7 +31,7 @@ func InitWebServer() {
 		err := engine.Run(conf.Config().Topo.Server_addr)
 		if err != nil {
 			err = errors.Errorf("%s **errstackfatal**2", err.Error()) // err top
-			agentmanager.ErrorTransmit(pluginclient.GlobalContext, err, agentmanager.Topo.ErrCh, true)
+			errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
 		}
 	}()
 }
