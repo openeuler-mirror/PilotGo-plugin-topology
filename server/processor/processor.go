@@ -13,6 +13,7 @@ import (
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/agentmanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/collector"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/meta"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/pluginclient"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/utils"
 	"gitee.com/openeuler/PilotGo/sdk/logger"
 	"github.com/pkg/errors"
@@ -63,7 +64,7 @@ func (d *DataProcesser) ProcessData(agentnum int, tagrules []meta.Tag_rule, node
 
 	start := time.Now()
 
-	ctx1, cancel1 := context.WithCancel(agentmanager.Topo.Tctx)
+	ctx1, cancel1 := context.WithCancel(pluginclient.GlobalContext)
 	go func(cancelfunc context.CancelFunc) {
 		for {
 			if atomic.LoadInt32(&d.agent_node_count) == int32(agentnum) {
@@ -77,9 +78,9 @@ func (d *DataProcesser) ProcessData(agentnum int, tagrules []meta.Tag_rule, node
 		func(key, value interface{}) bool {
 			wg.Add(1)
 
-			agent := value.(*agentmanager.Agent_m)
+			agent := value.(*agentmanager.Agent)
 
-			go func(ctx context.Context, _agent *agentmanager.Agent_m, _nodes *meta.Nodes, _edges *meta.Edges, _tagrules []meta.Tag_rule, _noderules [][]meta.Filter_rule) {
+			go func(ctx context.Context, _agent *agentmanager.Agent, _nodes *meta.Nodes, _edges *meta.Edges, _tagrules []meta.Tag_rule, _noderules [][]meta.Filter_rule) {
 				defer wg.Done()
 
 				if _agent.Host_2 != nil && _agent.Processes_2 != nil && _agent.Netconnections_2 != nil {
@@ -132,7 +133,7 @@ func (d *DataProcesser) ProcessData(agentnum int, tagrules []meta.Tag_rule, node
 	return nodes, edges, collect_errorlist, process_errorlist
 }
 
-func (d *DataProcesser) CreateNodeEntities(agent *agentmanager.Agent_m, nodes *meta.Nodes) error {
+func (d *DataProcesser) CreateNodeEntities(agent *agentmanager.Agent, nodes *meta.Nodes) error {
 	host_node := &meta.Node{
 		ID:         fmt.Sprintf("%s%s%s%s%s", agent.UUID, meta.NODE_CONNECTOR, meta.NODE_HOST, meta.NODE_CONNECTOR, agent.IP),
 		Name:       agent.UUID,
@@ -201,7 +202,7 @@ func (d *DataProcesser) CreateNodeEntities(agent *agentmanager.Agent_m, nodes *m
 			nodes.Add(net_node)
 		} else {
 			err := errors.Errorf("syntax error: %s **errstack**13", net.Laddr) // err top
-			agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
+			agentmanager.ErrorTransmit(pluginclient.GlobalContext, err, agentmanager.Topo.ErrCh, false)
 		}
 	}
 
@@ -252,7 +253,7 @@ func (d *DataProcesser) CreateNodeEntities(agent *agentmanager.Agent_m, nodes *m
 	return nil
 }
 
-func (d *DataProcesser) CustomCreateNodeEntities(agent *agentmanager.Agent_m, nodes *meta.Nodes, tagrules []meta.Tag_rule, noderules [][]meta.Filter_rule) error {
+func (d *DataProcesser) CustomCreateNodeEntities(agent *agentmanager.Agent, nodes *meta.Nodes, tagrules []meta.Tag_rule, noderules [][]meta.Filter_rule) error {
 	allconnections := []meta.Netconnection{}
 	for _, net := range agent.Netconnections_2 {
 		allconnections = append(allconnections, *net)
@@ -424,7 +425,7 @@ func (d *DataProcesser) CustomCreateNodeEntities(agent *agentmanager.Agent_m, no
 	return nil
 }
 
-func (d *DataProcesser) CreateEdgeEntities(agent *agentmanager.Agent_m, edges *meta.Edges, nodes *meta.Nodes) error {
+func (d *DataProcesser) CreateEdgeEntities(agent *agentmanager.Agent, edges *meta.Edges, nodes *meta.Nodes) error {
 	nodes_map := map[string][]*meta.Node{}
 
 	for _, node := range nodes.Nodes {
@@ -549,7 +550,7 @@ func (d *DataProcesser) CreateEdgeEntities(agent *agentmanager.Agent_m, edges *m
 	return nil
 }
 
-func (d *DataProcesser) CustomCreateEdgeEntities(agent *agentmanager.Agent_m, edges *meta.Edges, nodes *meta.Nodes) error {
+func (d *DataProcesser) CustomCreateEdgeEntities(agent *agentmanager.Agent, edges *meta.Edges, nodes *meta.Nodes) error {
 	nodes_map := map[string][]*meta.Node{}
 
 	for _, node := range nodes.Nodes {

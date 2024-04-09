@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/agentmanager"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/pluginclient"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/conf"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/meta"
 	"gitee.com/openeuler/PilotGo/sdk/response"
@@ -31,7 +32,7 @@ func MysqldbInit(conf *conf.MysqlConf) *MysqlClient {
 	err := ensureDatabase(conf)
 	if err != nil {
 		err = errors.Wrapf(err, "**errstackfatal**2") // err top
-		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, true)
+		agentmanager.ErrorTransmit(pluginclient.GlobalContext, err, agentmanager.Topo.ErrCh, true)
 	}
 
 	m := &MysqlClient{
@@ -51,13 +52,13 @@ func MysqldbInit(conf *conf.MysqlConf) *MysqlClient {
 	})
 	if err != nil {
 		err := errors.Errorf("mysql connect failed: %s(url: %s) **errstackfatal**2", err.Error(), url) // err top
-		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, true)
+		agentmanager.ErrorTransmit(pluginclient.GlobalContext, err, agentmanager.Topo.ErrCh, true)
 	}
 
 	var db *sql.DB
 	if db, err = m.db.DB(); err != nil {
 		err = errors.Errorf("get mysql sql.db failed: %s **errstackfatal**2", err.Error()) // err top
-		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, true)
+		agentmanager.ErrorTransmit(pluginclient.GlobalContext, err, agentmanager.Topo.ErrCh, true)
 	}
 
 	db.SetMaxIdleConns(10)
@@ -67,7 +68,7 @@ func MysqldbInit(conf *conf.MysqlConf) *MysqlClient {
 	err = m.db.AutoMigrate(&meta.Topo_configuration_DB{})
 	if err != nil {
 		err = errors.Errorf("mysql automigrate failed: %s **errstackfatal**2", err.Error()) // err top
-		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, true)
+		agentmanager.ErrorTransmit(pluginclient.GlobalContext, err, agentmanager.Topo.ErrCh, true)
 	}
 
 	return m

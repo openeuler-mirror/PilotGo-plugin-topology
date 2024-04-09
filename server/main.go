@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/agentmanager"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/pluginclient"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/dao"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/handler"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/meta"
@@ -27,7 +28,7 @@ func main() {
 	/*
 		init plugin client
 	*/
-	agentmanager.InitPluginClient()
+	pluginclient.Init()
 
 	/*
 		init error control

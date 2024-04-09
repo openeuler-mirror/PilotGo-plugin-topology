@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/agentmanager"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/pluginclient"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/meta"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/utils"
 	"github.com/neo4j/neo4j-go-driver/v4/neo4j"
@@ -38,7 +39,7 @@ func Neo4jInit(url, user, pass, db string) *Neo4jClient {
 	})
 	if err != nil {
 		err := errors.Errorf("create neo4j driver failed: %s **errstackfatal**2", err.Error()) // err top
-		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, true)
+		agentmanager.ErrorTransmit(pluginclient.GlobalContext, err, agentmanager.Topo.ErrCh, true)
 	}
 
 	n.Driver = driver
@@ -273,7 +274,7 @@ func (n *Neo4jClient) Relation_query(cypher string, varia string) ([]*meta.Edge,
 func (n *Neo4jClient) ClearExpiredData(retention int64) {
 	if Global_Neo4j == nil {
 		err := errors.New("neo4j client not init **errstack**1") // err top
-		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
+		agentmanager.ErrorTransmit(pluginclient.GlobalContext, err, agentmanager.Topo.ErrCh, false)
 		return
 	}
 
@@ -290,17 +291,17 @@ func (n *Neo4jClient) ClearExpiredData(retention int64) {
 	result, err := session.Run(cqlIN, params)
 	if err != nil {
 		err = errors.Errorf("ClearExpiredData failed: %s, %s **warn**1", err.Error(), cqlIN) // err top
-		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
+		agentmanager.ErrorTransmit(pluginclient.GlobalContext, err, agentmanager.Topo.ErrCh, false)
 		return
 	}
 
 	summary, err := result.Consume()
 	if err != nil {
 		err = errors.Errorf("failed to consume ClearExpiredData result: %s, %s **warn**2", err.Error(), cqlIN) // err top
-		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
+		agentmanager.ErrorTransmit(pluginclient.GlobalContext, err, agentmanager.Topo.ErrCh, false)
 		return
 	}
 
 	err = errors.Errorf("delete %d nodes **debug**0", summary.Counters().NodesDeleted()) // err top
-	agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
+	agentmanager.ErrorTransmit(pluginclient.GlobalContext, err, agentmanager.Topo.ErrCh, false)
 }

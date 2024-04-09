@@ -2,6 +2,7 @@ package handler
 
 import (
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/agentmanager"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/pluginclient"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/service"
 	"gitee.com/openeuler/PilotGo/sdk/response"
 	"github.com/gin-gonic/gin"
@@ -51,7 +52,7 @@ func SingleHostTreeHandle(ctx *gin.Context) {
 	nodes, err := service.SingleHostTreeService(uuid)
 	if err != nil {
 		err = errors.Wrap(err, " **errstack**2") // err top
-		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
+		agentmanager.ErrorTransmit(pluginclient.GlobalContext, err, agentmanager.Topo.ErrCh, false)
 
 		response.Fail(ctx, nil, err.Error())
 		return
@@ -59,7 +60,7 @@ func SingleHostTreeHandle(ctx *gin.Context) {
 
 	if nodes == nil {
 		err := errors.New("node tree is null **errstack**0") // err top
-		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
+		agentmanager.ErrorTransmit(pluginclient.GlobalContext, err, agentmanager.Topo.ErrCh, false)
 
 		response.Fail(ctx, nil, err.Error())
 		return
@@ -87,7 +88,7 @@ func MultiHostHandle(ctx *gin.Context) {
 	nodes, edges, combos, err := service.MultiHostService()
 	if err != nil {
 		err = errors.Wrap(err, " **errstack**2") // err top
-		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
+		agentmanager.ErrorTransmit(pluginclient.GlobalContext, err, agentmanager.Topo.ErrCh, false)
 
 		response.Fail(ctx, nil, err.Error())
 		return
@@ -95,7 +96,7 @@ func MultiHostHandle(ctx *gin.Context) {
 
 	if len(nodes) == 0 || len(edges) == 0 {
 		err := errors.New("nodes list is null or edges list is null **errstack**0") // err top
-		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
+		agentmanager.ErrorTransmit(pluginclient.GlobalContext, err, agentmanager.Topo.ErrCh, false)
 
 		response.Fail(ctx, nil, err.Error())
 		return

@@ -6,13 +6,14 @@ import (
 	"strings"
 
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/agentmanager"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/pluginclient"
 	"gitee.com/openeuler/PilotGo/sdk/utils/httputils"
 	docker "github.com/fsouza/go-dockerclient"
 
 	"github.com/pkg/errors"
 )
 
-func ContainerList(agent *agentmanager.Agent_m) ([]docker.APIContainers, error) {
+func ContainerList(agent *agentmanager.Agent) ([]docker.APIContainers, error) {
 	resp, err := httputils.Get("http://"+agent.IP+":"+agent.Port+"/plugin/topology/api/container_list", nil)
 	if err != nil {
 		return nil, errors.Errorf("get container list from agent %s failed: %s **errstack**0", agent.IP, err.Error())
@@ -36,7 +37,7 @@ func ContainerList(agent *agentmanager.Agent_m) ([]docker.APIContainers, error) 
 	return resp_body.Data, nil
 }
 
-func ProcessMatching(agent *agentmanager.Agent_m, exename, cmdline, component string) bool {
+func ProcessMatching(agent *agentmanager.Agent, exename, cmdline, component string) bool {
 	component_lower := strings.ToLower(component)
 	cmdline_lower := strings.ToLower(cmdline)
 	cmdline_lower_arr := strings.Split(cmdline_lower, " ")
@@ -98,7 +99,7 @@ func ProcessMatching(agent *agentmanager.Agent_m, exename, cmdline, component st
 		containers, err := ContainerList(agent)
 		if err != nil {
 			err = errors.Wrap(err, " **errstack**0") // err top
-			agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
+			agentmanager.ErrorTransmit(pluginclient.GlobalContext, err, agentmanager.Topo.ErrCh, false)
 			break
 		}
 
