@@ -9,6 +9,7 @@ import (
 
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/agentmanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/conf"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/pluginclient"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 )
@@ -17,14 +18,14 @@ func InitWebServer() {
 	go func() {
 		engine := gin.Default()
 		gin.SetMode(gin.ReleaseMode)
-		agentmanager.Topo.Sdkmethod.RegisterHandlers(engine)
+		pluginclient.GlobalClient.RegisterHandlers(engine)
 		InitRouter(engine)
 		StaticRouter(engine)
 
 		err := engine.Run(conf.Config().Topo.Server_addr)
 		if err != nil {
 			err = errors.Errorf("%s **errstackfatal**2", err.Error()) // err top
-			agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, true)
+			agentmanager.ErrorTransmit(pluginclient.GlobalContext, err, agentmanager.Topo.ErrCh, true)
 		}
 	}()
 }

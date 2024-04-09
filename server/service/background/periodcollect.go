@@ -11,6 +11,7 @@ import (
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/conf"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/dao"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/meta"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/pluginclient"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/processor"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/utils"
 	"gitee.com/openeuler/PilotGo/sdk/logger"
@@ -44,7 +45,7 @@ func DataProcessWorking(unixtime int64, agentnum int, graphdb dao.GraphdbIface, 
 	if len(collect_errlist) != 0 {
 		for i, cerr := range collect_errlist {
 			collect_errlist[i] = errors.Wrap(cerr, "**errstack**3") // err top
-			agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, collect_errlist[i], agentmanager.Topo.ErrCh, false)
+			agentmanager.ErrorTransmit(pluginclient.GlobalContext, collect_errlist[i], agentmanager.Topo.ErrCh, false)
 		}
 		collect_errlist_string := []string{}
 		for _, e := range collect_errlist {
@@ -55,7 +56,7 @@ func DataProcessWorking(unixtime int64, agentnum int, graphdb dao.GraphdbIface, 
 	if len(process_errlist) != 0 {
 		for i, perr := range process_errlist {
 			process_errlist[i] = errors.Wrap(perr, "**errstack**14") // err top
-			agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, process_errlist[i], agentmanager.Topo.ErrCh, false)
+			agentmanager.ErrorTransmit(pluginclient.GlobalContext, process_errlist[i], agentmanager.Topo.ErrCh, false)
 		}
 		process_errlist_string := []string{}
 		for _, e := range process_errlist {
@@ -112,7 +113,7 @@ func DataProcessWorking(unixtime int64, agentnum int, graphdb dao.GraphdbIface, 
 							err := graphdb.Node_create(_unixtime, _node)
 							if err != nil {
 								err = errors.Wrapf(err, "create neo4j node failed; %s **errstack**2", cqlIN) // err top
-								agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
+								agentmanager.ErrorTransmit(pluginclient.GlobalContext, err, agentmanager.Topo.ErrCh, false)
 							}
 						}
 					}(__nodes)
@@ -135,7 +136,7 @@ func DataProcessWorking(unixtime int64, agentnum int, graphdb dao.GraphdbIface, 
 					err := graphdb.Edge_create(_unixtime, _edge)
 					if err != nil {
 						err = errors.Wrapf(err, "create neo4j edge failed **errstack**2") // err top
-						agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
+						agentmanager.ErrorTransmit(pluginclient.GlobalContext, err, agentmanager.Topo.ErrCh, false)
 					}
 				}
 			}(__edges)

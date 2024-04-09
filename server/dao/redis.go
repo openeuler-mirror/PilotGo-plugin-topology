@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/agentmanager"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/pluginclient"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/conf"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/meta"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/utils"
@@ -47,7 +48,7 @@ func RedisInit(url, pass string, db int, dialTimeout time.Duration) *RedisClient
 	_, err := r.Client.Ping(timeoutCtx).Result()
 	if err != nil {
 		err = errors.Errorf("redis connection timeout: %s **errstackfatal**2", err.Error()) // err top
-		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, true)
+		agentmanager.ErrorTransmit(pluginclient.GlobalContext, err, agentmanager.Topo.ErrCh, true)
 	}
 
 	return r
@@ -56,7 +57,7 @@ func RedisInit(url, pass string, db int, dialTimeout time.Duration) *RedisClient
 func (r *RedisClient) Set(key string, value interface{}) error {
 	if agentmanager.Topo != nil && Global_redis != nil {
 		bytes, _ := json.Marshal(value)
-		err := Global_redis.Client.Set(agentmanager.Topo.Tctx, key, string(bytes), 0).Err()
+		err := Global_redis.Client.Set(pluginclient.GlobalContext, key, string(bytes), 0).Err()
 		if err != nil {
 			err = errors.Errorf("failed to set key-value: %s **errstack**2", err.Error())
 			return err
@@ -71,7 +72,7 @@ func (r *RedisClient) Set(key string, value interface{}) error {
 
 func (r *RedisClient) Get(key string, obj interface{}) (interface{}, error) {
 	if agentmanager.Topo != nil && Global_redis != nil {
-		data, err := Global_redis.Client.Get(agentmanager.Topo.Tctx, key).Result()
+		data, err := Global_redis.Client.Get(pluginclient.GlobalContext, key).Result()
 		if err != nil {
 			err = errors.Errorf("failed to get value: %s, %s **errstack**2", key, err.Error())
 			return nil, err
@@ -87,8 +88,8 @@ func (r *RedisClient) Scan(key string) ([]string, error) {
 	keys := []string{}
 
 	if agentmanager.Topo != nil && Global_redis != nil {
-		iterator := Global_redis.Client.Scan(agentmanager.Topo.Tctx, 0, key, 0).Iterator()
-		for iterator.Next(agentmanager.Topo.Tctx) {
+		iterator := Global_redis.Client.Scan(pluginclient.GlobalContext, 0, key, 0).Iterator()
+		for iterator.Next(pluginclient.GlobalContext) {
 			key := iterator.Val()
 			keys = append(keys, key)
 		}
@@ -102,7 +103,7 @@ func (r *RedisClient) Scan(key string) ([]string, error) {
 
 func (r *RedisClient) Delete(key string) error {
 	if agentmanager.Topo != nil && Global_redis != nil {
-		err := Global_redis.Client.Del(agentmanager.Topo.Tctx, key).Err()
+		err := Global_redis.Client.Del(pluginclient.GlobalContext, key).Err()
 		if err != nil {
 			err = errors.Errorf("failed to del key-value: %s **errstack**2", err.Error())
 			return err
@@ -142,7 +143,7 @@ func (r *RedisClient) UpdateTopoRunningAgentList(uuids []string, updateonce bool
 		agent_keys, err := r.Scan("heartbeat-topoagent*")
 		if err != nil {
 			err = errors.Wrap(err, "**errstack**2") // err top
-			agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
+			agentmanager.ErrorTransmit(pluginclient.GlobalContext, err, agentmanager.Topo.ErrCh, false)
 			continue
 		}
 
@@ -154,7 +155,7 @@ func (r *RedisClient) UpdateTopoRunningAgentList(uuids []string, updateonce bool
 					v, err := r.Get(key, &meta.AgentHeartbeat{})
 					if err != nil {
 						err = errors.Wrap(err, "**errstack**2") // err top
-						agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
+						agentmanager.ErrorTransmit(pluginclient.GlobalContext, err, agentmanager.Topo.ErrCh, false)
 						return
 					}
 
@@ -189,7 +190,7 @@ func (r *RedisClient) UpdateTopoRunningAgentList(uuids []string, updateonce bool
 
 					if ok, err := utils.IsIPandPORTValid(agentp.IP, agentmanager.Topo.AgentPort); !ok {
 						err := errors.Errorf("%s:%s is unreachable (%s) %s **warn**1", agentp.IP, agentmanager.Topo.AgentPort, err.Error(), agentp.UUID) // err top
-						agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
+						agentmanager.ErrorTransmit(pluginclient.GlobalContext, err, agentmanager.Topo.ErrCh, false)
 						abort_reason = append(abort_reason, fmt.Sprintf("%s:ip||port不可达", agentvalue.UUID))
 						return
 					}
@@ -238,11 +239,11 @@ func (r *RedisClient) ActiveHeartbeatDetection(uuids []string) {
 
 	if Global_redis == nil {
 		err := errors.New("redis client not init **errstack**1")
-		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
+		agentmanager.ErrorTransmit(pluginclient.GlobalContext, err, agentmanager.Topo.ErrCh, false)
 		return
 	}
 
-	activeHeartbeatDetection := func(agent *agentmanager.Agent_m) {
+	activeHeartbeatDetection := func(agent *agentmanager.Agent) {
 		url := "http://" + agent.IP + ":" + conf.Config().Topo.Agent_port + "/plugin/topology/api/health"
 		if resp, err := httputils.Get(url, nil); err == nil && resp != nil && resp.StatusCode == 200 {
 			type agentinfo struct {
@@ -258,7 +259,7 @@ func (r *RedisClient) ActiveHeartbeatDetection(uuids []string) {
 			err = json.Unmarshal(resp.Body, &resp_body)
 			if err != nil {
 				err = errors.Errorf("%+v **errstack**2", err.Error()) // err top
-				agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
+				agentmanager.ErrorTransmit(pluginclient.GlobalContext, err, agentmanager.Topo.ErrCh, false)
 				return
 			}
 
@@ -273,7 +274,7 @@ func (r *RedisClient) ActiveHeartbeatDetection(uuids []string) {
 			err = Global_redis.Set(key, value)
 			if err != nil {
 				err = errors.Wrap(err, " **errstack**2") // err top
-				agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
+				agentmanager.ErrorTransmit(pluginclient.GlobalContext, err, agentmanager.Topo.ErrCh, false)
 				return
 			}
 		}
@@ -281,9 +282,9 @@ func (r *RedisClient) ActiveHeartbeatDetection(uuids []string) {
 
 	if len(uuids) == 0 {
 		agentmanager.Topo.PAgentMap.Range(func(key, value interface{}) bool {
-			agent := value.(*agentmanager.Agent_m)
+			agent := value.(*agentmanager.Agent)
 			wg.Add(1)
-			go func(a *agentmanager.Agent_m) {
+			go func(a *agentmanager.Agent) {
 				defer wg.Done()
 
 				if ok, _ := utils.IsIPandPORTValid(a.IP, agentmanager.Topo.AgentPort); !ok {

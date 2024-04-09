@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/agentmanager"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/pluginclient"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/dao"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/meta"
 	back "gitee.com/openeuler/PilotGo-plugin-topology-server/service/background"
@@ -23,7 +24,7 @@ func RunCustomTopoService(tcid uint) ([]*meta.Node, []*meta.Edge, []map[string]s
 		return nil, nil, nil, errors.Wrap(err, "**2")
 	}
 
-	machine_uuids, err := agentmanager.Topo.Sdkmethod.BatchUUIDList(strconv.Itoa(int(tc.BatchId)))
+	machine_uuids, err := pluginclient.GlobalClient.BatchUUIDList(strconv.Itoa(int(tc.BatchId)))
 	if err != nil {
 		return nil, nil, nil, errors.Wrap(err, "**2")
 	}

@@ -9,6 +9,7 @@ import (
 
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/conf"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/meta"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/pluginclient"
 	"gitee.com/openeuler/PilotGo/sdk/plugin/client"
 )
 
@@ -28,7 +29,7 @@ func WaitingForHandshake() {
 	i := 0
 	loop := []string{`*.....`, `.*....`, `..*...`, `...*..`, `....*.`, `.....*`}
 	for {
-		if Topo != nil && Topo.Sdkmethod != nil && Topo.Sdkmethod.Server() != "" {
+		if Topo != nil && pluginclient.GlobalClient != nil && pluginclient.GlobalClient.Server() != "" {
 			break
 		}
 		fmt.Printf("\r Waiting for handshake with pilotgo server%s", loop[i])
