@@ -21,7 +21,7 @@ type ErrorManager struct {
 
 func InitErrorManager() {
 	GlobalErrorManager = &ErrorManager{
-		ErrCh: make(chan *Topoerror, 10),
+		ErrCh: make(chan *Topoerror, 20),
 	}
 
 	switch conf.Config().Logopts.Driver {
@@ -36,11 +36,11 @@ func InitErrorManager() {
 	}
 
 	go func(ch <-chan *Topoerror) {
-		for {
-			topoerr, ok := <-ch
-			if !ok {
-				break
-			}
+		for topoerr := range ch {
+			// topoerr, ok := <-ch
+			// if !ok {
+			// 	break
+			// }
 
 			if topoerr.Err != nil {
 				errarr := strings.Split(errors.Cause(topoerr.Err).Error(), "**")
