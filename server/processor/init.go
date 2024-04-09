@@ -7,6 +7,7 @@ import (
 
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/agentmanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/pluginclient"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/errormanager"
 	"gitee.com/openeuler/PilotGo/sdk/utils/httputils"
 	docker "github.com/fsouza/go-dockerclient"
 
@@ -99,7 +100,7 @@ func ProcessMatching(agent *agentmanager.Agent, exename, cmdline, component stri
 		containers, err := ContainerList(agent)
 		if err != nil {
 			err = errors.Wrap(err, " **errstack**0") // err top
-			agentmanager.ErrorTransmit(pluginclient.GlobalContext, err, agentmanager.Topo.ErrCh, false)
+			errormanager.ErrorTransmit(pluginclient.GlobalContext, err, false)
 			break
 		}
 

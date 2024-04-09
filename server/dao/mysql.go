@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"strings"
 
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/agentmanager"
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/pluginclient"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/conf"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/errormanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/meta"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/pluginclient"
 	"gitee.com/openeuler/PilotGo/sdk/response"
 	"github.com/pkg/errors"
 	"gorm.io/driver/mysql"
@@ -32,7 +32,7 @@ func MysqldbInit(conf *conf.MysqlConf) *MysqlClient {
 	err := ensureDatabase(conf)
 	if err != nil {
 		err = errors.Wrapf(err, "**errstackfatal**2") // err top
-		agentmanager.ErrorTransmit(pluginclient.GlobalContext, err, agentmanager.Topo.ErrCh, true)
+		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
 	}
 
 	m := &MysqlClient{
@@ -52,13 +52,13 @@ func MysqldbInit(conf *conf.MysqlConf) *MysqlClient {
 	})
 	if err != nil {
 		err := errors.Errorf("mysql connect failed: %s(url: %s) **errstackfatal**2", err.Error(), url) // err top
-		agentmanager.ErrorTransmit(pluginclient.GlobalContext, err, agentmanager.Topo.ErrCh, true)
+		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
 	}
 
 	var db *sql.DB
 	if db, err = m.db.DB(); err != nil {
 		err = errors.Errorf("get mysql sql.db failed: %s **errstackfatal**2", err.Error()) // err top
-		agentmanager.ErrorTransmit(pluginclient.GlobalContext, err, agentmanager.Topo.ErrCh, true)
+		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
 	}
 
 	db.SetMaxIdleConns(10)
@@ -68,7 +68,7 @@ func MysqldbInit(conf *conf.MysqlConf) *MysqlClient {
 	err = m.db.AutoMigrate(&meta.Topo_configuration_DB{})
 	if err != nil {
 		err = errors.Errorf("mysql automigrate failed: %s **errstackfatal**2", err.Error()) // err top
-		agentmanager.ErrorTransmit(pluginclient.GlobalContext, err, agentmanager.Topo.ErrCh, true)
+		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
 	}
 
 	return m

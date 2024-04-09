@@ -5,10 +5,10 @@ import (
 
 	"github.com/pkg/errors"
 
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/agentmanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/conf"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/dao"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/pluginclient"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/errormanager"
 	"gitee.com/openeuler/PilotGo/sdk/logger"
 )
 
@@ -32,7 +32,7 @@ func initGraphDB() {
 
 	default:
 		err := errors.Errorf("unknown database in topo_server.yaml: %s **errstackfatal**4", conf.Global_config.Topo.GraphDB) // err top
-		agentmanager.ErrorTransmit(pluginclient.GlobalContext, err, agentmanager.Topo.ErrCh, true)
+		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
 	}
 
 	if dao.Global_GraphDB != nil {

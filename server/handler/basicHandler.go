@@ -10,6 +10,7 @@ import (
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/dao"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/meta"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/pluginclient"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/errormanager"
 	"gitee.com/openeuler/PilotGo/sdk/response"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -30,9 +31,20 @@ func HeartbeatHandle(ctx *gin.Context) {
 		Time:              time.Now(),
 	}
 
-	if agentmanager.Topo.GetAgent_P(uuid) == nil {
+	if agentmanager.GlobalAgentManager == nil {
+		err := errors.New("globalagentmanager is nil **errstackfatal**0") // err top
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"code":  -1,
+			"error": err.Error(),
+			"data":  nil,
+		})
+		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
+		return
+	}
+
+	if agentmanager.GlobalAgentManager.GetAgent_P(uuid) == nil {
 		err := errors.Errorf("unknown agent's heartbeat: %s, %s **warn**1", uuid, addr) // err top
-		agentmanager.ErrorTransmit(pluginclient.GlobalContext, err, agentmanager.Topo.ErrCh, false)
+		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, false)
 
 		ctx.JSON(http.StatusUnauthorized, gin.H{
 			"code":  -1,
@@ -45,7 +57,7 @@ func HeartbeatHandle(ctx *gin.Context) {
 	err := dao.Global_redis.Set(key, value)
 	if err != nil {
 		err = errors.Wrap(err, " **errstack**2") // err top
-		agentmanager.ErrorTransmit(pluginclient.GlobalContext, err, agentmanager.Topo.ErrCh, false)
+		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, false)
 
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"code":  -1,
@@ -66,7 +78,7 @@ func TimestampsHandle(ctx *gin.Context) {
 	times, err := dao.Global_GraphDB.Timestamps_query()
 	if err != nil {
 		err = errors.Wrap(err, " **errstack**2")
-		agentmanager.ErrorTransmit(pluginclient.GlobalContext, err, agentmanager.Topo.ErrCh, false)
+		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, false)
 
 		response.Fail(ctx, nil, err.Error())
 		return
@@ -78,7 +90,14 @@ func TimestampsHandle(ctx *gin.Context) {
 func AgentListHandle(ctx *gin.Context) {
 	agentmap := make(map[string]string)
 
-	agentmanager.Topo.TAgentMap.Range(func(key, value interface{}) bool {
+	if agentmanager.GlobalAgentManager == nil {
+		err := errors.New("globalagentmanager is nil **errstackfatal**0") // err top
+		response.Fail(ctx, nil, err.Error())
+		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
+		return
+	}
+
+	agentmanager.GlobalAgentManager.TAgentMap.Range(func(key, value interface{}) bool {
 		agent := value.(*agentmanager.Agent)
 		if agent.Host_2 != nil {
 			agentmap[agent.UUID] = agent.IP + ":" + agent.Port
@@ -93,10 +112,17 @@ func AgentListHandle(ctx *gin.Context) {
 }
 
 func BatchListHandle(ctx *gin.Context) {
+	if pluginclient.GlobalClient == nil {
+		err := errors.New("globalclient is nil **errstackfatal**2") // err top
+		response.Fail(ctx, nil, err.Error())
+		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
+		return
+	}
+	
 	batchlist, err := pluginclient.GlobalClient.BatchList()
 	if err != nil {
 		err = errors.Errorf("%+v **errstack**2", err.Error()) // err top
-		agentmanager.ErrorTransmit(pluginclient.GlobalContext, err, agentmanager.Topo.ErrCh, false)
+		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, false)
 		response.Fail(ctx, nil, err.Error())
 		return
 	}
@@ -113,15 +139,29 @@ func BatchMachineListHandle(ctx *gin.Context) {
 		return
 	}
 
+	if pluginclient.GlobalClient == nil {
+		err := errors.New("globalclient is nil **errstackfatal**2") // err top
+		response.Fail(ctx, nil, err.Error())
+		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
+		return
+	}
+
 	machine_uuids, err := pluginclient.GlobalClient.BatchUUIDList(BatchId)
 	if err != nil {
 		err = errors.Errorf("%+v **errstack**2", err.Error()) // err top
-		agentmanager.ErrorTransmit(pluginclient.GlobalContext, err, agentmanager.Topo.ErrCh, false)
+		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, false)
 		response.Fail(ctx, nil, err.Error())
 		return
 	}
 
-	agentmanager.Topo.PAgentMap.Range(func(key, value interface{}) bool {
+	if agentmanager.GlobalAgentManager == nil {
+		err := errors.New("globalagentmanager is nil **errstackfatal**0") // err top
+		response.Fail(ctx, nil, err.Error())
+		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
+		return
+	}
+
+	agentmanager.GlobalAgentManager.PAgentMap.Range(func(key, value interface{}) bool {
 		uuid := key.(string)
 		agent := value.(*agentmanager.Agent)
 		for _, _uuid := range machine_uuids {

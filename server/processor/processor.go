@@ -3,7 +3,6 @@ package processor
 import (
 	"context"
 	"fmt"
-	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -12,6 +11,7 @@ import (
 
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/agentmanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/collector"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/errormanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/meta"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/pluginclient"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/utils"
@@ -48,12 +48,6 @@ func (d *DataProcesser) ProcessData(agentnum int, tagrules []meta.Tag_rule, node
 	var process_errorlist []error
 	var process_errorlist_rwlock sync.RWMutex
 
-	if agentmanager.Topo == nil {
-		err := errors.New("agentmanager.Topo is not initialized!") // err top
-		fmt.Printf("%+v\n", err)
-		os.Exit(1)
-	}
-
 	datacollector := collector.CreateDataCollector()
 	collect_errorlist = datacollector.CollectInstantData()
 	if len(collect_errorlist) != 0 {
@@ -74,7 +68,13 @@ func (d *DataProcesser) ProcessData(agentnum int, tagrules []meta.Tag_rule, node
 		}
 	}(cancel1)
 
-	agentmanager.Topo.TAgentMap.Range(
+	if agentmanager.GlobalAgentManager == nil {
+		err := errors.New("globalagentmanager is nil **errstackfatal**0") // err top
+		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
+		return nil, nil, nil, nil
+	}
+
+	agentmanager.GlobalAgentManager.TAgentMap.Range(
 		func(key, value interface{}) bool {
 			wg.Add(1)
 
@@ -202,7 +202,7 @@ func (d *DataProcesser) CreateNodeEntities(agent *agentmanager.Agent, nodes *met
 			nodes.Add(net_node)
 		} else {
 			err := errors.Errorf("syntax error: %s **errstack**13", net.Laddr) // err top
-			agentmanager.ErrorTransmit(pluginclient.GlobalContext, err, agentmanager.Topo.ErrCh, false)
+			errormanager.ErrorTransmit(pluginclient.GlobalContext, err, false)
 		}
 	}
 
