@@ -11,7 +11,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-var GlobalErrorManager *ErrorManager
+var Global_ErrorManager *ErrorManager
 
 type ErrorManager struct {
 	ErrCh chan *Topoerror
@@ -20,19 +20,19 @@ type ErrorManager struct {
 }
 
 func InitErrorManager() {
-	GlobalErrorManager = &ErrorManager{
+	Global_ErrorManager = &ErrorManager{
 		ErrCh: make(chan *Topoerror, 20),
 	}
 
-	switch conf.Config().Logopts.Driver {
+	switch conf.Global_Config.Logopts.Driver {
 	case "stdout":
-		GlobalErrorManager.Out = os.Stdout
+		Global_ErrorManager.Out = os.Stdout
 	case "file":
-		logfile, err := os.OpenFile(conf.Global_config.Logopts.Path, os.O_WRONLY|os.O_CREATE, 0666)
+		logfile, err := os.OpenFile(conf.Global_Config.Logopts.Path, os.O_WRONLY|os.O_CREATE, 0666)
 		if err != nil {
 			panic(err)
 		}
-		GlobalErrorManager.Out = logfile
+		Global_ErrorManager.Out = logfile
 	}
 
 	go func(ch <-chan *Topoerror) {
@@ -55,10 +55,10 @@ func InitErrorManager() {
 				case "warn": // 只打印最底层error的message，不展开错误链的调用栈
 					logger.Warn("%+v\n", strings.Split(errors.Cause(topoerr.Err).Error(), "**")[0])
 				case "errstack": // 打印错误链的调用栈
-					fmt.Fprintf(GlobalErrorManager.Out, "%+v\n", topoerr.Err)
+					fmt.Fprintf(Global_ErrorManager.Out, "%+v\n", topoerr.Err)
 					// errors.EORE(err)
 				case "errstackfatal": // 打印错误链的调用栈，并结束程序
-					fmt.Fprintf(GlobalErrorManager.Out, "%+v\n", topoerr.Err)
+					fmt.Fprintf(Global_ErrorManager.Out, "%+v\n", topoerr.Err)
 					// errors.EORE(err)
 					topoerr.Cancel()
 				default:
@@ -67,5 +67,5 @@ func InitErrorManager() {
 				}
 			}
 		}
-	}(GlobalErrorManager.ErrCh)
+	}(Global_ErrorManager.ErrCh)
 }

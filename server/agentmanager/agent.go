@@ -10,7 +10,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-var GlobalAgentManager *AgentManager
+var Global_AgentManager *AgentManager
 
 type AgentManager struct {
 	PAgentMap sync.Map
@@ -39,8 +39,8 @@ type Agent struct {
 }
 
 func InitAgentManager() {
-	GlobalAgentManager = &AgentManager{
-		AgentPort: conf.Config().Topo.Agent_port,
+	Global_AgentManager = &AgentManager{
+		AgentPort: conf.Global_Config.Topo.Agent_port,
 	}
 }
 

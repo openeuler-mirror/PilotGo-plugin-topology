@@ -15,20 +15,20 @@ import (
 )
 
 func InitWebServer() {
-	if pluginclient.GlobalClient == nil {
-		err := errors.New("globalclient is nil **errstackfatal**2") // err top
+	if pluginclient.Global_Client == nil {
+		err := errors.New("Global_Client is nil **errstackfatal**2") // err top
 		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
 		return
 	}
-	
+
 	go func() {
 		engine := gin.Default()
 		gin.SetMode(gin.ReleaseMode)
-		pluginclient.GlobalClient.RegisterHandlers(engine)
+		pluginclient.Global_Client.RegisterHandlers(engine)
 		InitRouter(engine)
 		StaticRouter(engine)
 
-		err := engine.Run(conf.Config().Topo.Server_addr)
+		err := engine.Run(conf.Global_Config.Topo.Server_addr)
 		if err != nil {
 			err = errors.Errorf("%s **errstackfatal**2", err.Error()) // err top
 			errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)

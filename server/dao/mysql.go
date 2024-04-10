@@ -17,7 +17,7 @@ import (
 	"gorm.io/gorm/schema"
 )
 
-var Global_mysql *MysqlClient
+var Global_Mysql *MysqlClient
 
 type MysqlClient struct {
 	ip       string
@@ -117,7 +117,7 @@ func ensureDatabase(conf *conf.MysqlConf) error {
 func (m *MysqlClient) QuerySingleTopoConfiguration(tcid uint) (*meta.Topo_configuration_DB, error) {
 	var tcdb *meta.Topo_configuration_DB = new(meta.Topo_configuration_DB)
 
-	if Global_mysql == nil {
+	if Global_Mysql == nil {
 		return nil, errors.New("mysql client not init **errstack**1")
 	}
 
@@ -130,7 +130,7 @@ func (m *MysqlClient) QuerySingleTopoConfiguration(tcid uint) (*meta.Topo_config
 }
 
 func (m *MysqlClient) QueryTopoConfigurationList(query *response.PaginationQ) ([]*meta.Topo_configuration_DB, int, error) {
-	if Global_mysql == nil {
+	if Global_Mysql == nil {
 		return nil, 0, errors.New("mysql client not init **errstack**1")
 	}
 
@@ -148,7 +148,7 @@ func (m *MysqlClient) QueryTopoConfigurationList(query *response.PaginationQ) ([
 }
 
 func (m *MysqlClient) AddTopoConfiguration(tc *meta.Topo_configuration_DB) (int, error) {
-	if Global_mysql == nil {
+	if Global_Mysql == nil {
 		return -1, errors.New("mysql client not init **errstack**1")
 	}
 
@@ -162,7 +162,7 @@ func (m *MysqlClient) AddTopoConfiguration(tc *meta.Topo_configuration_DB) (int,
 }
 
 func (m *MysqlClient) DeleteTopoConfiguration(tcid uint) error {
-	if Global_mysql == nil {
+	if Global_Mysql == nil {
 		return errors.New("mysql client not init **errstack**1")
 	}
 

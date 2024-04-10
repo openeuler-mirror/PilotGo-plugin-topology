@@ -1,54 +1,22 @@
 package conf
 
 import (
+	"flag"
+	"fmt"
+	"os"
 	"path"
-	"time"
 
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/utils"
 	"gitee.com/openeuler/PilotGo/sdk/logger"
+	"github.com/pkg/errors"
+	"gopkg.in/yaml.v2"
 )
 
-type TopoConf struct {
-	Server_addr string `yaml:"server_addr"`
-	Agent_port  string `yaml:"agent_port"`
-	GraphDB     string `yaml:"graphDB"`
-	Period      int64  `yaml:"period"`
-	Retention   int64  `yaml:"retention"`
-	Cleartime   string `yaml:"cleartime"`
-}
+var Global_Config *ServerConfig
 
-type PilotGoConf struct {
-	Addr string `yaml:"http_addr"`
-}
+const config_type = "topo_server.yaml"
 
-type ArangodbConf struct {
-	Addr     string `yaml:"addr"`
-	Database string `yaml:"database"`
-}
-
-type Neo4jConf struct {
-	Addr     string `yaml:"addr"`
-	Username string `yaml:"username"`
-	Password string `yaml:"password"`
-	DB       string `yaml:"DB"`
-}
-
-type PrometheusConf struct {
-	Addr string `yaml:"addr"`
-}
-
-type RedisConf struct {
-	Addr        string        `yaml:"addr"`
-	Password    string        `yaml:"password"`
-	DB          int           `yaml:"DB"`
-	DialTimeout time.Duration `yaml:"dialTimeout"`
-}
-
-type MysqlConf struct {
-	Addr     string `yaml:"addr"`
-	Username string `yaml:"username"`
-	Password string `yaml:"password"`
-	DB       string `yaml:"DB"`
-}
+var config_dir string
 
 type ServerConfig struct {
 	Topo       *TopoConf
@@ -61,23 +29,30 @@ type ServerConfig struct {
 	Mysql      *MysqlConf
 }
 
-const config_type = "topo_server.yaml"
-
-var Config_dir string
-
-func Config_file() string {
-	// _, thisfilepath, _, _ := runtime.Caller(0)
-	// dirpath := filepath.Dir(thisfilepath)
-	// configfilepath := path.Join(dirpath, "..", "..", "conf", config_type)
-
-	// ttcode:
-	configfilepath := path.Join(Config_dir, config_type)
+func ConfigFile() string {
+	configfilepath := path.Join(config_dir, config_type)
 
 	return configfilepath
 }
 
-var Global_config ServerConfig
+func InitConfig() {
+	flag.StringVar(&config_dir, "conf", "/opt/PilotGo/plugin/topology/server", "topo-server configuration directory")
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, "Usage: %s -conf /PATH/TO/TOPO_SERVER.YAML(default:/opt/PilotGo/plugin/topology/server) \n", os.Args[0])
+	}
+	flag.Parse()
 
-func Config() *ServerConfig {
-	return &Global_config
+	bytes, err := utils.FileReadBytes(ConfigFile())
+	if err != nil {
+		err = errors.Wrapf(err, "open file failed: %s, %s", ConfigFile(), err.Error()) // err top
+		fmt.Printf("%+v\n", err)
+		os.Exit(1)
+	}
+
+	err = yaml.Unmarshal(bytes, Global_Config)
+	if err != nil {
+		err = errors.Errorf("yaml unmarshal failed: %s", err.Error()) // err top
+		fmt.Printf("%+v\n", err)
+		os.Exit(1)
+	}
 }
