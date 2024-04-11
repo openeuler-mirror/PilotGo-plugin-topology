@@ -9,9 +9,11 @@ import (
 
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/agentmanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/conf"
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/dao"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/db/graphmanager"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/db/mysqlmanager"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/db/redismanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/errormanager"
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/meta"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/graph"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/pluginclient"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/processor"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/utils"
@@ -19,7 +21,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func PeriodCollectWorking(batch []string, noderules [][]meta.Filter_rule) {
+func PeriodCollectWorking(batch []string, noderules [][]mysqlmanager.Filter_rule) {
 	graphperiod := conf.Global_Config.Topo.Period
 
 	if agentmanager.Global_AgentManager == nil {
@@ -28,7 +30,7 @@ func PeriodCollectWorking(batch []string, noderules [][]meta.Filter_rule) {
 		return
 	}
 
-	if dao.Global_Redis == nil {
+	if redismanager.Global_Redis == nil {
 		err := errors.New("Global_Redis is nil **errstackfatal**1") // err top
 		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
 		return
@@ -36,18 +38,18 @@ func PeriodCollectWorking(batch []string, noderules [][]meta.Filter_rule) {
 
 	agentmanager.Global_AgentManager.UpdateMachineList()
 
-	go func(_interval int64, _gdb dao.GraphdbIface, _noderules [][]meta.Filter_rule) {
+	go func(_interval int64, _gdb graphmanager.GraphdbIface, _noderules [][]mysqlmanager.Filter_rule) {
 		for {
-			dao.Global_Redis.ActiveHeartbeatDetection(batch)
-			running_agent_num := dao.Global_Redis.UpdateTopoRunningAgentList(batch, false)
+			redismanager.Global_Redis.ActiveHeartbeatDetection(batch)
+			running_agent_num := redismanager.Global_Redis.UpdateTopoRunningAgentList(batch, false)
 			unixtime_now := time.Now().Unix()
 			DataProcessWorking(unixtime_now, running_agent_num, _gdb, nil, _noderules)
 			time.Sleep(time.Duration(_interval) * time.Second)
 		}
-	}(graphperiod, dao.Global_GraphDB, noderules)
+	}(graphperiod, graphmanager.Global_GraphDB, noderules)
 }
 
-func DataProcessWorking(unixtime int64, agentnum int, graphdb dao.GraphdbIface, tagrules []meta.Tag_rule, noderules [][]meta.Filter_rule) ([]*meta.Node, []*meta.Edge, []map[string]string, error) {
+func DataProcessWorking(unixtime int64, agentnum int, graphdb graphmanager.GraphdbIface, tagrules []mysqlmanager.Tag_rule, noderules [][]mysqlmanager.Filter_rule) ([]*graph.Node, []*graph.Edge, []map[string]string, error) {
 	var nodeTypeWg sync.WaitGroup
 	var nodeUuidWg sync.WaitGroup
 	var edgeBreakWg sync.WaitGroup
@@ -98,13 +100,19 @@ func DataProcessWorking(unixtime int64, agentnum int, graphdb dao.GraphdbIface, 
 		return nodes.Nodes, edges.Edges, combos, nil
 	}
 
+	if graphmanager.Global_GraphDB == nil {
+		err := errors.New("Global_GraphDB is nil **errstackfatal**0") // err top
+		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
+		return nil, nil, nil, err
+	}
+
 	start := time.Now()
 
 	for _, nodesByUUID := range nodes.LookupByUUID {
 		nodesbyuuid := nodesByUUID
 
 		nodeUuidWg.Add(1)
-		go func(_nodesbyuuid []*meta.Node) {
+		go func(_nodesbyuuid []*graph.Node) {
 			defer nodeUuidWg.Done()
 
 			// TODO: 根据插件运行状态agent的数目拆分nodes
@@ -113,7 +121,7 @@ func DataProcessWorking(unixtime int64, agentnum int, graphdb dao.GraphdbIface, 
 				for _, _nodes := range splitnodes {
 					__nodes := _nodes
 					nodeTypeWg.Add(1)
-					go func(_nodesbytype []*meta.Node) {
+					go func(_nodesbytype []*graph.Node) {
 						defer nodeTypeWg.Done()
 
 						var cqlIN string
@@ -128,7 +136,7 @@ func DataProcessWorking(unixtime int64, agentnum int, graphdb dao.GraphdbIface, 
 									_node.Type, _unixtime, _node.ID, _node.Name, _node.LayoutAttr, _node.ComboId, _node.UUID)
 							}
 
-							err := graphdb.Node_create(_unixtime, _node)
+							err := graphmanager.Global_GraphDB.Node_create(_unixtime, _node)
 							if err != nil {
 								err = errors.Wrapf(err, "create neo4j node failed; %s **errstack**2", cqlIN) // err top
 								errormanager.ErrorTransmit(pluginclient.GlobalContext, err, false)
@@ -147,11 +155,11 @@ func DataProcessWorking(unixtime int64, agentnum int, graphdb dao.GraphdbIface, 
 		for _, _edges := range splitedges {
 			__edges := _edges
 			edgeBreakWg.Add(1)
-			go func(___edges []*meta.Edge) {
+			go func(___edges []*graph.Edge) {
 				defer edgeBreakWg.Done()
 
 				for _, _edge := range ___edges {
-					err := graphdb.Edge_create(_unixtime, _edge)
+					err := graphmanager.Global_GraphDB.Edge_create(_unixtime, _edge)
 					if err != nil {
 						err = errors.Wrapf(err, "create neo4j edge failed **errstack**2") // err top
 						errormanager.ErrorTransmit(pluginclient.GlobalContext, err, false)

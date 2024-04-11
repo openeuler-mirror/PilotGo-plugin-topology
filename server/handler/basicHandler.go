@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/agentmanager"
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/dao"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/db/graphmanager"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/db/redismanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/errormanager"
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/meta"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/pluginclient"
 	"gitee.com/openeuler/PilotGo/sdk/response"
 	"github.com/gin-gonic/gin"
@@ -24,7 +24,7 @@ func HeartbeatHandle(ctx *gin.Context) {
 	heartbeatinterval, _ := strconv.Atoi(ctx.Query("interval"))
 
 	key := "heartbeat-topoagent-" + uuid
-	value := meta.AgentHeartbeat{
+	value := redismanager.AgentHeartbeat{
 		UUID:              uuid,
 		Addr:              addr,
 		HeartbeatInterval: heartbeatinterval,
@@ -53,7 +53,7 @@ func HeartbeatHandle(ctx *gin.Context) {
 		return
 	}
 
-	if dao.Global_Redis == nil {
+	if redismanager.Global_Redis == nil {
 		err := errors.New("Global_Redis is nil **errstackfatal**0") // err top
 		ctx.JSON(http.StatusUnauthorized, gin.H{
 			"code":  -1,
@@ -64,7 +64,7 @@ func HeartbeatHandle(ctx *gin.Context) {
 		return
 	}
 
-	err := dao.Global_Redis.Set(key, value)
+	err := redismanager.Global_Redis.Set(key, value)
 	if err != nil {
 		err = errors.Wrap(err, " **errstack**2") // err top
 		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, false)
@@ -85,7 +85,14 @@ func HeartbeatHandle(ctx *gin.Context) {
 }
 
 func TimestampsHandle(ctx *gin.Context) {
-	times, err := dao.Global_GraphDB.Timestamps_query()
+	if graphmanager.Global_GraphDB == nil {
+		err := errors.New("Global_GraphDB is nil **errstackfatal**0") // err top
+		response.Fail(ctx, nil, err.Error())
+		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
+		return
+	}
+	
+	times, err := graphmanager.Global_GraphDB.Timestamps_query()
 	if err != nil {
 		err = errors.Wrap(err, " **errstack**2")
 		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, false)

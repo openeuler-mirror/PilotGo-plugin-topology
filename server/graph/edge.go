@@ -1,9 +1,10 @@
-package meta
+package graph
 
 import (
 	"strings"
 	"sync"
 
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/global"
 	"gitee.com/openeuler/PilotGo/sdk/logger"
 	"github.com/pkg/errors"
 )
@@ -32,15 +33,15 @@ type Edge struct {
 
 // 网络边镜像id检测：多个goruntine并发添加、访问、修改相同的edge实例
 func (e *Edges) Add(edge *Edge) {
-	if edge.Type == EDGE_TCP || edge.Type == EDGE_UDP {
-		id_slice := strings.Split(edge.ID, EDGE_CONNECTOR)
+	if edge.Type == global.EDGE_TCP || edge.Type == global.EDGE_UDP {
+		id_slice := strings.Split(edge.ID, global.EDGE_CONNECTOR)
 		if len(id_slice) != 3 {
 			logger.Error("can not generate mirror id of edge: %s, failed to add edge.", edge.ID)
 			return
 		}
 
 		id_slice[0], id_slice[2] = id_slice[2], id_slice[0]
-		mirror_id := strings.Join(id_slice, EDGE_CONNECTOR)
+		mirror_id := strings.Join(id_slice, global.EDGE_CONNECTOR)
 
 		e.Lock.Lock()
 		if _, ok := e.Lookup.Load(mirror_id); !ok {

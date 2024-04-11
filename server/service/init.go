@@ -1,14 +1,14 @@
 package service
 
-import "gitee.com/openeuler/PilotGo-plugin-topology-server/meta"
+import "gitee.com/openeuler/PilotGo-plugin-topology-server/graph"
 
 type TreeTopoNode struct {
 	ID       string          `json:"id"`
-	Node     *meta.Node      `json:"node"`
+	Node     *graph.Node      `json:"node"`
 	Children []*TreeTopoNode `json:"children"`
 }
 
-func CreateTreeNode(node *meta.Node) *TreeTopoNode {
+func CreateTreeNode(node *graph.Node) *TreeTopoNode {
 	return &TreeTopoNode{
 		ID:       node.ID,
 		Node:     node,

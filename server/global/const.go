@@ -1,4 +1,4 @@
-package meta
+package global
 
 var (
 	NODE_TYPES   []string

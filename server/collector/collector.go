@@ -11,7 +11,7 @@ import (
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/agentmanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/conf"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/errormanager"
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/meta"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/graph"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/pluginclient"
 	"gitee.com/openeuler/PilotGo/sdk/logger"
 	"gitee.com/openeuler/PilotGo/sdk/utils/httputils"
@@ -107,13 +107,13 @@ func (d *DataCollector) GetCollectDataFromTopoAgent(agent *agentmanager.Agent) e
 	}
 
 	collectdata := &struct {
-		Host_1             *meta.Host
-		Processes_1        []*meta.Process
-		Netconnections_1   []*meta.Netconnection
-		NetIOcounters_1    []*meta.NetIOcounter
+		Host_1             *graph.Host
+		Processes_1        []*graph.Process
+		Netconnections_1   []*graph.Netconnection
+		NetIOcounters_1    []*graph.NetIOcounter
 		AddrInterfaceMap_1 map[string][]string
-		Disks_1            []*meta.Disk
-		Cpus_1             []*meta.Cpu
+		Disks_1            []*graph.Disk
+		Cpus_1             []*graph.Cpu
 	}{}
 	mapstructure.Decode(results.Data, collectdata)
 

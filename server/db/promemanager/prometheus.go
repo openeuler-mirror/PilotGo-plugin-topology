@@ -1,4 +1,4 @@
-package dao
+package promemanager
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
 )
 
-var Prome *Prometheus
+var Global_Prome *Prometheus
 
 type Prometheus struct {
 	addr string

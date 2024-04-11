@@ -3,12 +3,12 @@ package utils
 import (
 	"strconv"
 
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/meta"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/graph"
 	"github.com/shirou/gopsutil/net"
 )
 
-func GopsutilNetMeta2TopoNetMeta(gopsnets []net.ConnectionStat) []*meta.Netconnection {
-	toponets := []*meta.Netconnection{}
+func GopsutilNetMeta2TopoNetMeta(gopsnets []net.ConnectionStat) []*graph.Netconnection {
+	toponets := []*graph.Netconnection{}
 
 	for _, c := range gopsnets {
 		if c.Status == "NONE" {
@@ -17,7 +17,7 @@ func GopsutilNetMeta2TopoNetMeta(gopsnets []net.ConnectionStat) []*meta.Netconne
 		if c.Laddr.Port == 22 || c.Raddr.Port == 22 {
 			continue
 		}
-		c1 := &meta.Netconnection{}
+		c1 := &graph.Netconnection{}
 		c1.Fd = c.Fd
 		c1.Family = c.Family
 		c1.Type = c.Type

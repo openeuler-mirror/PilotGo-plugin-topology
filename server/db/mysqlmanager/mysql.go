@@ -1,4 +1,4 @@
-package dao
+package mysqlmanager
 
 import (
 	"database/sql"
@@ -8,7 +8,6 @@ import (
 
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/conf"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/errormanager"
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/meta"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/pluginclient"
 	"gitee.com/openeuler/PilotGo/sdk/response"
 	"github.com/pkg/errors"
@@ -65,7 +64,7 @@ func MysqldbInit(conf *conf.MysqlConf) *MysqlClient {
 	db.SetMaxOpenConns(100)
 
 	// mysql 模型迁移
-	err = m.db.AutoMigrate(&meta.Topo_configuration_DB{})
+	err = m.db.AutoMigrate(&Topo_configuration_DB{})
 	if err != nil {
 		err = errors.Errorf("mysql automigrate failed: %s **errstackfatal**2", err.Error()) // err top
 		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
@@ -114,14 +113,10 @@ func ensureDatabase(conf *conf.MysqlConf) error {
 	return nil
 }
 
-func (m *MysqlClient) QuerySingleTopoConfiguration(tcid uint) (*meta.Topo_configuration_DB, error) {
-	var tcdb *meta.Topo_configuration_DB = new(meta.Topo_configuration_DB)
+func (m *MysqlClient) QuerySingleTopoConfiguration(tcid uint) (*Topo_configuration_DB, error) {
+	var tcdb *Topo_configuration_DB = new(Topo_configuration_DB)
 
-	if Global_Mysql == nil {
-		return nil, errors.New("mysql client not init **errstack**1")
-	}
-
-	if err := m.db.Model(&meta.Topo_configuration_DB{}).Where("id=?", tcid).First(tcdb).Error; err != nil {
+	if err := m.db.Model(&Topo_configuration_DB{}).Where("id=?", tcid).First(tcdb).Error; err != nil {
 		err = errors.Errorf("query topo configuration failed: %s, %d **errstack**0", err.Error(), tcid)
 		return nil, err
 	}
@@ -129,29 +124,21 @@ func (m *MysqlClient) QuerySingleTopoConfiguration(tcid uint) (*meta.Topo_config
 	return tcdb, nil
 }
 
-func (m *MysqlClient) QueryTopoConfigurationList(query *response.PaginationQ) ([]*meta.Topo_configuration_DB, int, error) {
-	if Global_Mysql == nil {
-		return nil, 0, errors.New("mysql client not init **errstack**1")
-	}
-
-	tcdbs := make([]*meta.Topo_configuration_DB, 0)
+func (m *MysqlClient) QueryTopoConfigurationList(query *response.PaginationQ) ([]*Topo_configuration_DB, int, error) {
+	tcdbs := make([]*Topo_configuration_DB, 0)
 	if err := m.db.Order("id desc").Limit(query.PageSize).Offset((query.Page - 1) * query.PageSize).Find(&tcdbs).Error; err != nil {
 		return nil, 0, errors.Errorf("query topo configuration list failed: %s **errstack**0", err.Error())
 	}
 
 	var total int64
-	if err := m.db.Model(&meta.Topo_configuration_DB{}).Count(&total).Error; err != nil {
+	if err := m.db.Model(&Topo_configuration_DB{}).Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
 	return tcdbs, int(total), nil
 }
 
-func (m *MysqlClient) AddTopoConfiguration(tc *meta.Topo_configuration_DB) (int, error) {
-	if Global_Mysql == nil {
-		return -1, errors.New("mysql client not init **errstack**1")
-	}
-
+func (m *MysqlClient) AddTopoConfiguration(tc *Topo_configuration_DB) (int, error) {
 	_tc := tc
 	if err := m.db.Save(_tc).Error; err != nil {
 		err = errors.Errorf("add topo configuration failed: %s, %+v **errstack**0", err.Error(), tc)
@@ -162,19 +149,15 @@ func (m *MysqlClient) AddTopoConfiguration(tc *meta.Topo_configuration_DB) (int,
 }
 
 func (m *MysqlClient) DeleteTopoConfiguration(tcid uint) error {
-	if Global_Mysql == nil {
-		return errors.New("mysql client not init **errstack**1")
-	}
-
-	if err := m.db.Where("id = ?", tcid).Unscoped().Delete(meta.Topo_configuration_DB{}).Error; err != nil {
+	if err := m.db.Where("id = ?", tcid).Unscoped().Delete(Topo_configuration_DB{}).Error; err != nil {
 		return errors.Errorf("delete topo configuration failed: %s, %d **errstack**0", err.Error(), tcid)
 	}
 
 	return nil
 }
 
-func (m *MysqlClient) TopoConfigurationToDB(tc *meta.Topo_configuration) (*meta.Topo_configuration_DB, error) {
-	var tcdb *meta.Topo_configuration_DB = new(meta.Topo_configuration_DB)
+func (m *MysqlClient) TopoConfigurationToDB(tc *Topo_configuration) (*Topo_configuration_DB, error) {
+	var tcdb *Topo_configuration_DB = new(Topo_configuration_DB)
 
 	noderules_bytes, noderules_err := json.Marshal(tc.NodeRules)
 	tagrules_bytes, tagrules_err := json.Marshal(tc.TagRules)
@@ -197,8 +180,8 @@ func (m *MysqlClient) TopoConfigurationToDB(tc *meta.Topo_configuration) (*meta.
 	return tcdb, nil
 }
 
-func (m *MysqlClient) DBToTopoConfiguration(tcdb *meta.Topo_configuration_DB) (*meta.Topo_configuration, error) {
-	var tc *meta.Topo_configuration = new(meta.Topo_configuration)
+func (m *MysqlClient) DBToTopoConfiguration(tcdb *Topo_configuration_DB) (*Topo_configuration, error) {
+	var tc *Topo_configuration = new(Topo_configuration)
 
 	noderules_err := json.Unmarshal([]byte(tcdb.NodeRules), &tc.NodeRules)
 	tagrules_err := json.Unmarshal([]byte(tcdb.TagRules), &tc.TagRules)

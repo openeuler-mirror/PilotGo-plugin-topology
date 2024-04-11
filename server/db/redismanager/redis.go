@@ -1,4 +1,4 @@
-package dao
+package redismanager
 
 import (
 	"context"
@@ -11,7 +11,6 @@ import (
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/agentmanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/conf"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/errormanager"
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/meta"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/pluginclient"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/utils"
 	"gitee.com/openeuler/PilotGo/sdk/logger"
@@ -145,14 +144,14 @@ func (r *RedisClient) UpdateTopoRunningAgentList(uuids []string, updateonce bool
 				wg.Add(1)
 				go func(key string) {
 					defer wg.Done()
-					v, err := r.Get(key, &meta.AgentHeartbeat{})
+					v, err := r.Get(key, &AgentHeartbeat{})
 					if err != nil {
 						err = errors.Wrap(err, "**errstack**2") // err top
 						errormanager.ErrorTransmit(pluginclient.GlobalContext, err, false)
 						return
 					}
 
-					agentvalue := v.(*meta.AgentHeartbeat)
+					agentvalue := v.(*AgentHeartbeat)
 
 					if len(uuids) != 0 {
 						inbatch := false
@@ -250,7 +249,7 @@ func (r *RedisClient) ActiveHeartbeatDetection(uuids []string) {
 			}
 
 			key := "heartbeat-topoagent-" + agent.UUID
-			value := meta.AgentHeartbeat{
+			value := AgentHeartbeat{
 				UUID:              agent.UUID,
 				Addr:              agent.IP + ":" + conf.Global_Config.Topo.Agent_port,
 				HeartbeatInterval: resp_body.Data.Interval,

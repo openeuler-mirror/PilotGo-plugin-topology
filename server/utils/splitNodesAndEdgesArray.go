@@ -1,15 +1,15 @@
 package utils
 
-import "gitee.com/openeuler/PilotGo-plugin-topology-server/meta"
+import "gitee.com/openeuler/PilotGo-plugin-topology-server/graph"
 
-func SplitEdgesByBreakpoint(arr []*meta.Edge, n int) [][]*meta.Edge {
+func SplitEdgesByBreakpoint(arr []*graph.Edge, n int) [][]*graph.Edge {
 	length := len(arr)
 	if length == 0 {
 		return nil
 	}
 
 	size := length / n
-	result := make([][]*meta.Edge, n)
+	result := make([][]*graph.Edge, n)
 
 	for i := 0; i < n; i++ {
 		start := i * size
@@ -25,14 +25,14 @@ func SplitEdgesByBreakpoint(arr []*meta.Edge, n int) [][]*meta.Edge {
 	return result
 }
 
-func SplitNodesByBreakpoint(arr []*meta.Node, n int) [][]*meta.Node {
+func SplitNodesByBreakpoint(arr []*graph.Node, n int) [][]*graph.Node {
 	length := len(arr)
 	if length == 0 {
 		return nil
 	}
 	
 	size := length / n
-	result := make([][]*meta.Node, n)
+	result := make([][]*graph.Node, n)
 
 	for i := 0; i < n; i++ {
 		start := i * size
