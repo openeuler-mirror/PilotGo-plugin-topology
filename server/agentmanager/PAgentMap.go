@@ -45,7 +45,7 @@ func (am *AgentManager) InitMachineList() {
 
 	if pluginclient.Global_Client == nil {
 		err := errors.New("Global_Client is nil **errstackfatal**2") // err top
-		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
+		errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
 		return
 	}
 
@@ -54,7 +54,7 @@ func (am *AgentManager) InitMachineList() {
 	machine_list, err := pluginclient.Global_Client.MachineList()
 	if err != nil {
 		err = errors.Errorf("%s **errstackfatal**2", err.Error()) // err top
-		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
+		errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
 	}
 
 	for _, m := range machine_list {
@@ -72,7 +72,7 @@ func (am *AgentManager) UpdateMachineList() {
 	machine_list, err := pluginclient.Global_Client.MachineList()
 	if err != nil {
 		err = errors.Errorf("%s **errstackfatal**2", err.Error()) // err top
-		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
+		errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
 	}
 
 	am.PAgentMap.Range(func(key, value interface{}) bool {

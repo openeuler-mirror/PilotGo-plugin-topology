@@ -56,13 +56,13 @@ func SingleHostTreeHandle(ctx *gin.Context) {
 		switch strings.Split(errors.Cause(err).Error(), "**")[1] {
 		case "errstack":
 			err = errors.Wrap(err, " **errstack**2") // err top
-			errormanager.ErrorTransmit(pluginclient.GlobalContext, err, false)
+			errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
 			response.Fail(ctx, nil, err.Error())
 			return
 		case "errstackfatal":
 			err = errors.Wrap(err, " **errstackfatal**2") // err top
 			response.Fail(ctx, nil, errors.Cause(err).Error())
-			errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
+			errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
 			return
 		}
 
@@ -70,7 +70,7 @@ func SingleHostTreeHandle(ctx *gin.Context) {
 
 	if nodes == nil {
 		err := errors.New("node tree is null **errstack**0") // err top
-		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, false)
+		errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
 
 		response.Fail(ctx, nil, err.Error())
 		return
@@ -100,13 +100,13 @@ func MultiHostHandle(ctx *gin.Context) {
 		switch strings.Split(errors.Cause(err).Error(), "**")[1] {
 		case "errstack":
 			err = errors.Wrap(err, " **errstack**2") // err top
-			errormanager.ErrorTransmit(pluginclient.GlobalContext, err, false)
+			errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
 			response.Fail(ctx, nil, err.Error())
 			return
 		case "errstackfatal":
 			err = errors.Wrap(err, " **errstack**2") // err top
 			response.Fail(ctx, nil, errors.Cause(err).Error())
-			errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
+			errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
 			return
 		}
 
@@ -114,7 +114,7 @@ func MultiHostHandle(ctx *gin.Context) {
 
 	if len(nodes) == 0 || len(edges) == 0 {
 		err := errors.New("nodes list is null or edges list is null **errstack**0") // err top
-		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, false)
+		errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
 
 		response.Fail(ctx, nil, err.Error())
 		return

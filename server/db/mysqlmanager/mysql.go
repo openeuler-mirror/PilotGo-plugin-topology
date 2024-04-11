@@ -31,7 +31,7 @@ func MysqldbInit(conf *conf.MysqlConf) *MysqlClient {
 	err := ensureDatabase(conf)
 	if err != nil {
 		err = errors.Wrapf(err, "**errstackfatal**2") // err top
-		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
+		errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
 	}
 
 	m := &MysqlClient{
@@ -51,13 +51,13 @@ func MysqldbInit(conf *conf.MysqlConf) *MysqlClient {
 	})
 	if err != nil {
 		err := errors.Errorf("mysql connect failed: %s(url: %s) **errstackfatal**2", err.Error(), url) // err top
-		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
+		errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
 	}
 
 	var db *sql.DB
 	if db, err = m.db.DB(); err != nil {
 		err = errors.Errorf("get mysql sql.db failed: %s **errstackfatal**2", err.Error()) // err top
-		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
+		errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
 	}
 
 	db.SetMaxIdleConns(10)
@@ -67,7 +67,7 @@ func MysqldbInit(conf *conf.MysqlConf) *MysqlClient {
 	err = m.db.AutoMigrate(&Topo_configuration_DB{})
 	if err != nil {
 		err = errors.Errorf("mysql automigrate failed: %s **errstackfatal**2", err.Error()) // err top
-		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
+		errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
 	}
 
 	return m

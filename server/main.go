@@ -11,8 +11,8 @@ import (
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/handler"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/logger"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/pluginclient"
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/signal"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/service"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/signal"
 	// "github.com/pyroscope-io/pyroscope/pkg/agent/profiler"
 )
 
@@ -26,6 +26,7 @@ func main() {
 
 	/*
 		init config
+		main.go中第一个执行的初始化模块，省略Global_Config全局指针变量调用的非空检测
 	*/
 	conf.InitConfig()
 
@@ -67,11 +68,11 @@ func main() {
 	/*
 		topo插件自身数据采集模块周期性数据采集: 全局网络拓扑、单机拓扑
 	*/
-	// ttcode: 测试自定义拓扑采集，临时注释
 	service.PeriodCollectWorking([]string{}, [][]mysqlmanager.Filter_rule{})
 
 	/*
 		终止进程信号监听
+		main.go中最后执行，不进行全局指针变量非空检测
 	*/
 	signal.SignalMonitoring()
 }

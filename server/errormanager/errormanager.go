@@ -62,7 +62,7 @@ func InitErrorManager() {
 					// errors.EORE(err)
 					topoerr.Cancel()
 				default:
-					fmt.Printf("only support \"info warn fatal\" error type: %+v\n", topoerr.Err)
+					fmt.Printf("only support \"debug warn errstack errstackfatal\" error type: %+v\n", topoerr.Err)
 					os.Exit(1)
 				}
 			}

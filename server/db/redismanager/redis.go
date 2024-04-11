@@ -11,8 +11,8 @@ import (
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/agentmanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/conf"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/errormanager"
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/pluginclient"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/global"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/pluginclient"
 	"gitee.com/openeuler/PilotGo/sdk/logger"
 	"gitee.com/openeuler/PilotGo/sdk/utils/httputils"
 	"github.com/go-redis/redis/v8"
@@ -47,7 +47,7 @@ func RedisInit(url, pass string, db int, dialTimeout time.Duration) *RedisClient
 	_, err := r.Client.Ping(timeoutCtx).Result()
 	if err != nil {
 		err = errors.Errorf("redis connection timeout: %s **errstackfatal**2", err.Error()) // err top
-		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
+		errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
 	}
 
 	return r
@@ -59,7 +59,7 @@ func (r *RedisClient) Set(key string, value interface{}) error {
 	}
 
 	bytes, _ := json.Marshal(value)
-	err := r.Client.Set(pluginclient.GlobalContext, key, string(bytes), 0).Err()
+	err := r.Client.Set(pluginclient.Global_Context, key, string(bytes), 0).Err()
 	if err != nil {
 		err = errors.Errorf("failed to set key-value: %s **errstack**2", err.Error())
 		return err
@@ -73,7 +73,7 @@ func (r *RedisClient) Get(key string, obj interface{}) (interface{}, error) {
 		return nil, errors.New("key is empty **errstack**1")
 	}
 
-	data, err := r.Client.Get(pluginclient.GlobalContext, key).Result()
+	data, err := r.Client.Get(pluginclient.Global_Context, key).Result()
 	if err != nil {
 		err = errors.Errorf("failed to get value: %s, %s **errstack**2", key, err.Error())
 		return nil, err
@@ -89,8 +89,8 @@ func (r *RedisClient) Scan(key string) ([]string, error) {
 		return nil, errors.New("key is empty **errstack**1")
 	}
 
-	iterator := r.Client.Scan(pluginclient.GlobalContext, 0, key, 0).Iterator()
-	for iterator.Next(pluginclient.GlobalContext) {
+	iterator := r.Client.Scan(pluginclient.Global_Context, 0, key, 0).Iterator()
+	for iterator.Next(pluginclient.Global_Context) {
 		key := iterator.Val()
 		keys = append(keys, key)
 	}
@@ -103,7 +103,7 @@ func (r *RedisClient) Delete(key string) error {
 		return errors.New("key is empty **errstack**1")
 	}
 
-	err := r.Client.Del(pluginclient.GlobalContext, key).Err()
+	err := r.Client.Del(pluginclient.Global_Context, key).Err()
 	if err != nil {
 		err = errors.Errorf("failed to del key-value: %s **errstack**2", err.Error())
 		return err
@@ -120,7 +120,7 @@ func (r *RedisClient) UpdateTopoRunningAgentList(uuids []string, updateonce bool
 
 	if agentmanager.Global_AgentManager == nil {
 		err := errors.New("Global_AgentManager is nil **errstackfatal**0") // err top
-		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
+		errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
 		return -1
 	}
 
@@ -135,7 +135,7 @@ func (r *RedisClient) UpdateTopoRunningAgentList(uuids []string, updateonce bool
 		agent_keys, err := r.Scan("heartbeat-topoagent*")
 		if err != nil {
 			err = errors.Wrap(err, "**errstack**2") // err top
-			errormanager.ErrorTransmit(pluginclient.GlobalContext, err, false)
+			errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
 			continue
 		}
 
@@ -147,7 +147,7 @@ func (r *RedisClient) UpdateTopoRunningAgentList(uuids []string, updateonce bool
 					v, err := r.Get(key, &AgentHeartbeat{})
 					if err != nil {
 						err = errors.Wrap(err, "**errstack**2") // err top
-						errormanager.ErrorTransmit(pluginclient.GlobalContext, err, false)
+						errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
 						return
 					}
 
@@ -182,7 +182,7 @@ func (r *RedisClient) UpdateTopoRunningAgentList(uuids []string, updateonce bool
 
 					if ok, err := global.IsIPandPORTValid(agentp.IP, agentmanager.Global_AgentManager.AgentPort); !ok {
 						err := errors.Errorf("%s:%s is unreachable (%s) %s **warn**1", agentp.IP, agentmanager.Global_AgentManager.AgentPort, err.Error(), agentp.UUID) // err top
-						errormanager.ErrorTransmit(pluginclient.GlobalContext, err, false)
+						errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
 						abort_reason = append(abort_reason, fmt.Sprintf("%s:ip||port不可达", agentvalue.UUID))
 						return
 					}
@@ -244,7 +244,7 @@ func (r *RedisClient) ActiveHeartbeatDetection(uuids []string) {
 			err = json.Unmarshal(resp.Body, &resp_body)
 			if err != nil {
 				err = errors.Errorf("%+v **errstack**2", err.Error()) // err top
-				errormanager.ErrorTransmit(pluginclient.GlobalContext, err, false)
+				errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
 				return
 			}
 
@@ -259,7 +259,7 @@ func (r *RedisClient) ActiveHeartbeatDetection(uuids []string) {
 			err = r.Set(key, value)
 			if err != nil {
 				err = errors.Wrap(err, " **errstack**2") // err top
-				errormanager.ErrorTransmit(pluginclient.GlobalContext, err, false)
+				errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
 				return
 			}
 		}
@@ -267,7 +267,7 @@ func (r *RedisClient) ActiveHeartbeatDetection(uuids []string) {
 
 	if agentmanager.Global_AgentManager == nil {
 		err := errors.New("Global_AgentManager is nil **errstackfatal**0") // err top
-		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
+		errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
 		return
 	}
 

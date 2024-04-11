@@ -19,14 +19,14 @@ func CustomTopoListHandle(ctx *gin.Context) {
 	err := ctx.ShouldBindQuery(query)
 	if err != nil {
 		err = errors.New("failed to load parameters in url **errstack**2") // err top
-		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, false)
+		errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
 		response.Fail(ctx, nil, errors.Cause(err).Error())
 		return
 	}
 
 	if query.PageSize == 0 && query.Page == 0 {
 		err := errors.New("query topo configuration list failed: page size and page can not be zero **errstack**1") // err top
-		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, false)
+		errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
 		response.Fail(ctx, nil, errors.Cause(err).Error())
 		return
 	}
@@ -36,13 +36,13 @@ func CustomTopoListHandle(ctx *gin.Context) {
 		switch strings.Split(errors.Cause(err).Error(), "**")[1] {
 		case "errstack":
 			err = errors.Wrap(err, " **errstack**2") // err top
-			errormanager.ErrorTransmit(pluginclient.GlobalContext, err, false)
+			errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
 			response.Fail(ctx, nil, errors.Cause(err).Error())
 			return
 		case "errstackfatal":
 			err = errors.Wrap(err, " **errstackfatal**2") // err top
 			response.Fail(ctx, nil, errors.Cause(err).Error())
-			errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
+			errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
 			return
 		}
 	}
@@ -55,14 +55,14 @@ func CreateCustomTopoHandle(ctx *gin.Context) {
 
 	if err := ctx.ShouldBindJSON(tc); err != nil {
 		err = errors.Wrap(err, " **errstack**1") // err top
-		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, false)
+		errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
 		response.Fail(ctx, nil, errors.Cause(err).Error())
 		return
 	}
 
 	if tc.Name == "" && tc.BatchId == 0 && len(tc.NodeRules) == 0 && len(tc.TagRules) == 0 {
 		err := errors.New("create topo configuration failed: topo configuration required **errstack**1") // err top
-		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, false)
+		errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
 		response.Fail(ctx, nil, errors.Cause(err).Error())
 		return
 	}
@@ -72,13 +72,13 @@ func CreateCustomTopoHandle(ctx *gin.Context) {
 		switch strings.Split(errors.Cause(err).Error(), "**")[1] {
 		case "errstack":
 			err = errors.Wrap(err, "**errstack**1") // err top
-			errormanager.ErrorTransmit(pluginclient.GlobalContext, err, false)
+			errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
 			response.Fail(ctx, nil, errors.Cause(err).Error())
 			return
 		case "errstackfatal":
 			err = errors.Wrap(err, " **errstackfatal**2") // err top
 			response.Fail(ctx, nil, errors.Cause(err).Error())
-			errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
+			errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
 			return
 		}
 	}
@@ -96,14 +96,14 @@ func UpdateCustomTopoHandle(ctx *gin.Context) {
 	// fmt.Printf("%+v\n", ctx.Request.Body)
 	if err := ctx.ShouldBindJSON(&req_body); err != nil {
 		err = errors.Wrap(err, "**errstack**1") // err top
-		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, false)
+		errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
 		response.Fail(ctx, nil, errors.Cause(err).Error())
 		return
 	}
 
 	if req_body.TC.Name == "" && req_body.TC.BatchId == 0 && len(req_body.TC.NodeRules) == 0 && len(req_body.TC.TagRules) == 0 {
 		err := errors.New("update topo configuration failed: topo configuration required **errstack**1") // err top
-		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, false)
+		errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
 		response.Fail(ctx, nil, errors.Cause(err).Error())
 		return
 	}
@@ -113,13 +113,13 @@ func UpdateCustomTopoHandle(ctx *gin.Context) {
 		switch strings.Split(errors.Cause(err).Error(), "**")[1] {
 		case "errstack":
 			err = errors.Wrap(err, "**errstack**2") // err top
-			errormanager.ErrorTransmit(pluginclient.GlobalContext, err, false)
+			errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
 			response.Fail(ctx, nil, errors.Cause(err).Error())
 			return
 		case "errstackfatal":
 			err = errors.Wrap(err, " **errstackfatal**2") // err top
 			response.Fail(ctx, nil, errors.Cause(err).Error())
-			errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
+			errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
 			return
 		}
 	}
@@ -142,7 +142,7 @@ func RunCustomTopoHandle(ctx *gin.Context) {
 		tcid_str := ctx.Query("id")
 		if tcid_str == "" {
 			err := errors.New("id is nil **errstack**2") // err top
-			errormanager.ErrorTransmit(pluginclient.GlobalContext, err, false)
+			errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
 			doneChan <- topodata
 			response.Fail(ctx, nil, errors.Cause(err).Error())
 			return
@@ -151,7 +151,7 @@ func RunCustomTopoHandle(ctx *gin.Context) {
 		tcid_int, err := strconv.Atoi(tcid_str)
 		if err != nil {
 			err = errors.Wrap(err, "**errstack**2") // err top
-			errormanager.ErrorTransmit(pluginclient.GlobalContext, err, false)
+			errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
 			doneChan <- topodata
 			response.Fail(ctx, nil, errors.Cause(err).Error())
 			return
@@ -162,7 +162,7 @@ func RunCustomTopoHandle(ctx *gin.Context) {
 			switch strings.Split(errors.Cause(err).Error(), "**")[1] {
 			case "errstack":
 				err = errors.Wrap(err, " **errstack**2") // err top
-				errormanager.ErrorTransmit(pluginclient.GlobalContext, err, false)
+				errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
 				doneChan <- topodata
 				response.Fail(ctx, nil, errors.Cause(err).Error())
 				return
@@ -170,7 +170,7 @@ func RunCustomTopoHandle(ctx *gin.Context) {
 				err = errors.Wrap(err, " **errstackfatal**2") // err top
 				doneChan <- topodata
 				response.Fail(ctx, nil, errors.Cause(err).Error())
-				errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
+				errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
 				return
 			}
 
@@ -178,7 +178,7 @@ func RunCustomTopoHandle(ctx *gin.Context) {
 
 		if len(topodata.Nodes) == 0 || len(topodata.Edges) == 0 {
 			err := errors.New("nodes list is null or edges list is null **errstack**0") // err top
-			errormanager.ErrorTransmit(pluginclient.GlobalContext, err, false)
+			errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
 			doneChan <- topodata
 			response.Fail(ctx, nil, errors.Cause(err).Error())
 			return
@@ -208,7 +208,7 @@ func DeleteCustomTopoHandle(ctx *gin.Context) {
 
 	if err := ctx.ShouldBindJSON(&req_body); err != nil {
 		err = errors.New(err.Error() + "**errstack**1") // err top
-		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, false)
+		errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
 		response.Fail(ctx, nil, errors.Cause(err).Error())
 		return
 	}
@@ -217,13 +217,13 @@ func DeleteCustomTopoHandle(ctx *gin.Context) {
 		switch strings.Split(errors.Cause(err).Error(), "**")[1] {
 		case "errstack":
 			err = errors.Wrap(err, "**errstack**1") // err top
-			errormanager.ErrorTransmit(pluginclient.GlobalContext, err, false)
+			errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
 			response.Fail(ctx, nil, errors.Cause(err).Error())
 			return
 		case "errstackfatal":
 			err = errors.Wrap(err, " **errstackfatal**2") // err top
 			response.Fail(ctx, nil, errors.Cause(err).Error())
-			errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
+			errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
 			return
 		}
 	}

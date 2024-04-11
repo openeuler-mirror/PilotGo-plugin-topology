@@ -33,7 +33,7 @@ func (d *DataCollector) CollectInstantData() []error {
 
 	if agentmanager.Global_AgentManager == nil {
 		err := errors.New("Global_AgentManager is nil **errstackfatal**0") // err top
-		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
+		errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
 		return nil
 	}
 

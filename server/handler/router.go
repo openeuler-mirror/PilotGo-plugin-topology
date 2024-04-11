@@ -17,7 +17,7 @@ import (
 func InitWebServer() {
 	if pluginclient.Global_Client == nil {
 		err := errors.New("Global_Client is nil **errstackfatal**2") // err top
-		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
+		errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
 		return
 	}
 
@@ -31,7 +31,7 @@ func InitWebServer() {
 		err := engine.Run(conf.Global_Config.Topo.Server_addr)
 		if err != nil {
 			err = errors.Errorf("%s **errstackfatal**2", err.Error()) // err top
-			errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
+			errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
 		}
 	}()
 }
