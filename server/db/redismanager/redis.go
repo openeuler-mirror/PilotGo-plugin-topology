@@ -12,7 +12,7 @@ import (
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/conf"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/errormanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/pluginclient"
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/utils"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/global"
 	"gitee.com/openeuler/PilotGo/sdk/logger"
 	"gitee.com/openeuler/PilotGo/sdk/utils/httputils"
 	"github.com/go-redis/redis/v8"
@@ -180,7 +180,7 @@ func (r *RedisClient) UpdateTopoRunningAgentList(uuids []string, updateonce bool
 						return
 					}
 
-					if ok, err := utils.IsIPandPORTValid(agentp.IP, agentmanager.Global_AgentManager.AgentPort); !ok {
+					if ok, err := global.IsIPandPORTValid(agentp.IP, agentmanager.Global_AgentManager.AgentPort); !ok {
 						err := errors.Errorf("%s:%s is unreachable (%s) %s **warn**1", agentp.IP, agentmanager.Global_AgentManager.AgentPort, err.Error(), agentp.UUID) // err top
 						errormanager.ErrorTransmit(pluginclient.GlobalContext, err, false)
 						abort_reason = append(abort_reason, fmt.Sprintf("%s:ip||port不可达", agentvalue.UUID))
@@ -278,7 +278,7 @@ func (r *RedisClient) ActiveHeartbeatDetection(uuids []string) {
 			go func(a *agentmanager.Agent) {
 				defer wg.Done()
 
-				if ok, _ := utils.IsIPandPORTValid(a.IP, agentmanager.Global_AgentManager.AgentPort); !ok {
+				if ok, _ := global.IsIPandPORTValid(a.IP, agentmanager.Global_AgentManager.AgentPort); !ok {
 					// err := errors.Errorf("%s:%s is unreachable (%s) %s **warn**1", a.IP, agentmanager.Topo.AgentPort, err.Error(), a.UUID) // err top
 					// agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 					return
@@ -304,7 +304,7 @@ func (r *RedisClient) ActiveHeartbeatDetection(uuids []string) {
 				return
 			}
 
-			if ok, _ := utils.IsIPandPORTValid(agent.IP, agentmanager.Global_AgentManager.AgentPort); !ok {
+			if ok, _ := global.IsIPandPORTValid(agent.IP, agentmanager.Global_AgentManager.AgentPort); !ok {
 				// err := errors.Errorf("%s:%s is unreachable (%s) %s **warn**1", agent.IP, agentmanager.Topo.AgentPort, err.Error(), agent.UUID) // err top
 				// agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
 				return

@@ -16,7 +16,6 @@ import (
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/graph"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/pluginclient"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/processor"
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/utils"
 	"gitee.com/openeuler/PilotGo/sdk/logger"
 	"github.com/pkg/errors"
 )
@@ -116,7 +115,7 @@ func DataProcessWorking(unixtime int64, agentnum int, graphdb graphmanager.Graph
 			defer nodeUuidWg.Done()
 
 			// TODO: 根据插件运行状态agent的数目拆分nodes
-			splitnodes := utils.SplitNodesByBreakpoint(_nodesbyuuid, agentnum)
+			splitnodes := SplitNodesByBreakpoint(_nodesbyuuid, agentnum)
 			if splitnodes != nil {
 				for _, _nodes := range splitnodes {
 					__nodes := _nodes
@@ -150,7 +149,7 @@ func DataProcessWorking(unixtime int64, agentnum int, graphdb graphmanager.Graph
 	}
 	nodeUuidWg.Wait()
 
-	splitedges := utils.SplitEdgesByBreakpoint(edges.Edges, agentnum)
+	splitedges := SplitEdgesByBreakpoint(edges.Edges, agentnum)
 	if splitedges != nil {
 		for _, _edges := range splitedges {
 			__edges := _edges
@@ -175,4 +174,50 @@ func DataProcessWorking(unixtime int64, agentnum int, graphdb graphmanager.Graph
 	logger.Info("\033[32mtopo server 数据库写入时间\033[0m: %v\n\n", elapse)
 
 	return nil, nil, nil, nil
+}
+
+func SplitEdgesByBreakpoint(arr []*graph.Edge, n int) [][]*graph.Edge {
+	length := len(arr)
+	if length == 0 {
+		return nil
+	}
+
+	size := length / n
+	result := make([][]*graph.Edge, n)
+
+	for i := 0; i < n; i++ {
+		start := i * size
+		end := (i + 1) * size
+
+		if end > length {
+			end = length
+		}
+
+		result = append(result, arr[start:end])
+	}
+
+	return result
+}
+
+func SplitNodesByBreakpoint(arr []*graph.Node, n int) [][]*graph.Node {
+	length := len(arr)
+	if length == 0 {
+		return nil
+	}
+
+	size := length / n
+	result := make([][]*graph.Node, n)
+
+	for i := 0; i < n; i++ {
+		start := i * size
+		end := (i + 1) * size
+
+		if end > length {
+			end = length
+		}
+
+		result = append(result, arr[start:end])
+	}
+
+	return result
 }

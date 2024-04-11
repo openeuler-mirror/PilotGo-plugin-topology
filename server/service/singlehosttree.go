@@ -2,18 +2,18 @@ package service
 
 import (
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/db/graphmanager"
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/graph"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/global"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/graph"
 	"github.com/pkg/errors"
 )
 
-func SingleHostTreeService(uuid string) (*TreeTopoNode, error) {
+func SingleHostTreeService(uuid string) (*graph.TreeTopoNode, error) {
 	var latest string
-	var treerootnode *TreeTopoNode
-	single_nodes := make([]*graph.Node, 0)
+	var treerootnode *graph.TreeTopoNode
+	var single_nodes []*graph.Node
 	single_nodes_map := make(map[int64]*graph.Node)
-	treenodes_process := make([]*TreeTopoNode, 0)
-	treenodes_net := make([]*TreeTopoNode, 0)
+	treenodes_process := make([]*graph.TreeTopoNode, 0)
+	treenodes_net := make([]*graph.TreeTopoNode, 0)
 	nodes_type_map := make(map[string][]*graph.Node)
 
 	if graphmanager.Global_GraphDB == nil {
@@ -53,7 +53,7 @@ func SingleHostTreeService(uuid string) (*TreeTopoNode, error) {
 	for _, node := range single_nodes {
 		nodes_type_map[node.Type] = append(nodes_type_map[node.Type], node)
 		if node.Type == "host" {
-			treerootnode = CreateTreeNode(node)
+			treerootnode = graph.CreateTreeNode(node)
 		}
 	}
 
@@ -63,23 +63,23 @@ func SingleHostTreeService(uuid string) (*TreeTopoNode, error) {
 	}
 
 	for _, node := range nodes_type_map[global.NODE_RESOURCE] {
-		childnode := CreateTreeNode(node)
+		childnode := graph.CreateTreeNode(node)
 		treerootnode.Children = append(treerootnode.Children, childnode)
 	}
 
 	for _, node := range nodes_type_map[global.NODE_PROCESS] {
-		treenode := CreateTreeNode(node)
+		treenode := graph.CreateTreeNode(node)
 		treenodes_process = append(treenodes_process, treenode)
 	}
 
 	for _, node := range nodes_type_map[global.NODE_NET] {
-		treenode := CreateTreeNode(node)
+		treenode := graph.CreateTreeNode(node)
 		treenodes_net = append(treenodes_net, treenode)
 	}
 
 	for _, node := range treenodes_process {
 		if node.Node.Metrics["Pid"] == "1" {
-			node.Children = SliceToTree(treenodes_process, treenodes_net, "1")
+			node.Children = graph.SliceToTree(treenodes_process, treenodes_net, "1")
 			treerootnode.Children = append(treerootnode.Children, node)
 
 			break

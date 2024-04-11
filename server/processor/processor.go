@@ -16,7 +16,6 @@ import (
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/global"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/graph"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/pluginclient"
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/utils"
 	"gitee.com/openeuler/PilotGo/sdk/logger"
 	"github.com/pkg/errors"
 )
@@ -143,7 +142,7 @@ func (d *DataProcesser) CreateNodeEntities(agent *agentmanager.Agent, nodes *gra
 		UUID:       agent.UUID,
 		LayoutAttr: global.INNER_LAYOUT_1,
 		ComboId:    agent.UUID,
-		Metrics:    *utils.HostToMap(agent.Host_2, &agent.AddrInterfaceMap_2),
+		Metrics:    *graph.HostToMap(agent.Host_2, &agent.AddrInterfaceMap_2),
 	}
 
 	nodes.Add(host_node)
@@ -156,7 +155,7 @@ func (d *DataProcesser) CreateNodeEntities(agent *agentmanager.Agent, nodes *gra
 			UUID:       agent.UUID,
 			LayoutAttr: global.INNER_LAYOUT_2,
 			ComboId:    agent.UUID,
-			Metrics:    *utils.ProcessToMap(process),
+			Metrics:    *graph.ProcessToMap(process),
 		}
 
 		nodes.Add(proc_node)
@@ -169,7 +168,7 @@ func (d *DataProcesser) CreateNodeEntities(agent *agentmanager.Agent, nodes *gra
 				UUID:       agent.UUID,
 				LayoutAttr: global.INNER_LAYOUT_3,
 				ComboId:    agent.UUID,
-				Metrics:    *utils.ThreadToMap(&thread),
+				Metrics:    *graph.ThreadToMap(&thread),
 			}
 
 			nodes.Add(thre_node)
@@ -198,7 +197,7 @@ func (d *DataProcesser) CreateNodeEntities(agent *agentmanager.Agent, nodes *gra
 				UUID:       agent.UUID,
 				LayoutAttr: global.INNER_LAYOUT_5,
 				ComboId:    agent.UUID,
-				Metrics:    *utils.NetToMap(net),
+				Metrics:    *graph.NetToMap(net),
 			}
 
 			nodes.Add(net_node)
@@ -216,7 +215,7 @@ func (d *DataProcesser) CreateNodeEntities(agent *agentmanager.Agent, nodes *gra
 			UUID:       agent.UUID,
 			LayoutAttr: global.INNER_LAYOUT_4,
 			ComboId:    agent.UUID,
-			Metrics:    *utils.DiskToMap(disk),
+			Metrics:    *graph.DiskToMap(disk),
 		}
 
 		nodes.Add(disk_node)
@@ -230,7 +229,7 @@ func (d *DataProcesser) CreateNodeEntities(agent *agentmanager.Agent, nodes *gra
 			UUID:       agent.UUID,
 			LayoutAttr: global.INNER_LAYOUT_4,
 			ComboId:    agent.UUID,
-			Metrics:    *utils.CpuToMap(cpu),
+			Metrics:    *graph.CpuToMap(cpu),
 		}
 
 		nodes.Add(cpu_node)
@@ -244,7 +243,7 @@ func (d *DataProcesser) CreateNodeEntities(agent *agentmanager.Agent, nodes *gra
 			UUID:       agent.UUID,
 			LayoutAttr: global.INNER_LAYOUT_4,
 			ComboId:    agent.UUID,
-			Metrics:    *utils.InterfaceToMap(ifaceio),
+			Metrics:    *graph.InterfaceToMap(ifaceio),
 		}
 
 		nodes.Add(iface_node)
@@ -269,7 +268,7 @@ func (d *DataProcesser) CustomCreateNodeEntities(agent *agentmanager.Agent, node
 		LayoutAttr: global.INNER_LAYOUT_1,
 		ComboId:    agent.UUID,
 		Network:    allconnections,
-		Metrics:    *utils.HostToMap(agent.Host_2, &agent.AddrInterfaceMap_2),
+		Metrics:    *graph.HostToMap(agent.Host_2, &agent.AddrInterfaceMap_2),
 	}
 
 	host_node.Tags = append(host_node.Tags, host_node.UUID, host_node.Type)
@@ -315,7 +314,7 @@ func (d *DataProcesser) CustomCreateNodeEntities(agent *agentmanager.Agent, node
 							LayoutAttr: global.INNER_LAYOUT_2,
 							ComboId:    agent.UUID,
 							Network:    process.Connections,
-							Metrics:    *utils.ProcessToMap(process),
+							Metrics:    *graph.ProcessToMap(process),
 						}
 
 						proc_node.Tags = append(proc_node.Tags, proc_node.UUID, proc_node.Type)
@@ -343,7 +342,7 @@ func (d *DataProcesser) CustomCreateNodeEntities(agent *agentmanager.Agent, node
 							LayoutAttr: global.INNER_LAYOUT_2,
 							ComboId:    agent.UUID,
 							Network:    process.Connections,
-							Metrics:    *utils.ProcessToMap(process),
+							Metrics:    *graph.ProcessToMap(process),
 						}
 
 						proc_node.Tags = append(proc_node.Tags, proc_node.UUID, proc_node.Type)
@@ -366,7 +365,7 @@ func (d *DataProcesser) CustomCreateNodeEntities(agent *agentmanager.Agent, node
 						UUID:       agent.UUID,
 						LayoutAttr: global.INNER_LAYOUT_4,
 						ComboId:    agent.UUID,
-						Metrics:    *utils.DiskToMap(disk),
+						Metrics:    *graph.DiskToMap(disk),
 					}
 
 					disk_node.Tags = append(disk_node.Tags, disk_node.UUID, disk_node.Type)
@@ -386,7 +385,7 @@ func (d *DataProcesser) CustomCreateNodeEntities(agent *agentmanager.Agent, node
 						UUID:       agent.UUID,
 						LayoutAttr: global.INNER_LAYOUT_4,
 						ComboId:    agent.UUID,
-						Metrics:    *utils.CpuToMap(cpu),
+						Metrics:    *graph.CpuToMap(cpu),
 					}
 
 					cpu_node.Tags = append(cpu_node.Tags, cpu_node.UUID, cpu_node.Type)
@@ -406,7 +405,7 @@ func (d *DataProcesser) CustomCreateNodeEntities(agent *agentmanager.Agent, node
 						UUID:       agent.UUID,
 						LayoutAttr: global.INNER_LAYOUT_4,
 						ComboId:    agent.UUID,
-						Metrics:    *utils.InterfaceToMap(ifaceio),
+						Metrics:    *graph.InterfaceToMap(ifaceio),
 					}
 
 					iface_node.Tags = append(iface_node.Tags, iface_node.UUID, iface_node.Type)
