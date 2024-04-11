@@ -1,15 +1,18 @@
-package collector
+package generator
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
 	"os"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/agentmanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/conf"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/db/mysqlmanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/errormanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/graph"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/pluginclient"
@@ -19,13 +22,117 @@ import (
 	"github.com/pkg/errors"
 )
 
-type DataCollector struct{}
-
-func CreateDataCollector() *DataCollector {
-	return &DataCollector{}
+type TopoGenerator struct {
+	Factory TopoInterface
 }
 
-func (d *DataCollector) CollectInstantData() []error {
+func CreateTopoGenerator(trules []mysqlmanager.Tag_rule, nrules [][]mysqlmanager.Filter_rule) *TopoGenerator {
+	_topogenerator := &TopoGenerator{}
+
+	if len(nrules) != 0 {
+		_topogenerator.Factory = &CustomTopo{
+			Tagrules:         trules,
+			Noderules:        nrules,
+			Agent_node_count: new(int32),
+		}
+		return _topogenerator
+	}
+
+	_topogenerator.Factory = &PublicTopo{
+		Agent_node_count: new(int32),
+	}
+	return _topogenerator
+}
+
+func (t *TopoGenerator) ProcessingData(agentnum int) (*graph.Nodes, *graph.Edges, []error, []error) {
+	nodes := &graph.Nodes{
+		Lock:         sync.Mutex{},
+		Lookup:       make(map[string]*graph.Node, 0),
+		LookupByType: make(map[string][]*graph.Node, 0),
+		LookupByUUID: make(map[string][]*graph.Node, 0),
+		Nodes:        make([]*graph.Node, 0),
+	}
+	edges := &graph.Edges{
+		Lock:      sync.Mutex{},
+		Lookup:    sync.Map{},
+		SrcToDsts: make(map[string][]string, 0),
+		DstToSrcs: make(map[string][]string, 0),
+		Edges:     make([]*graph.Edge, 0),
+	}
+
+	var wg sync.WaitGroup
+	var collect_errorlist []error
+	var process_errorlist []error
+	var process_errorlist_rwlock sync.RWMutex
+
+	collect_errorlist = t.collectInstantData()
+	if len(collect_errorlist) != 0 {
+		for i, err := range collect_errorlist {
+			collect_errorlist[i] = errors.Wrap(err, "**7")
+		}
+	}
+
+	start := time.Now()
+
+	ctx1, cancel1 := context.WithCancel(pluginclient.Global_Context)
+	go func(cancelfunc context.CancelFunc) {
+		for {
+			if atomic.LoadInt32(t.Factory.Return_Agent_node_count()) == int32(agentnum) {
+				cancelfunc()
+				break
+			}
+		}
+	}(cancel1)
+
+	if agentmanager.Global_AgentManager == nil {
+		err := errors.New("Global_AgentManager is nil **errstackfatal**0") // err top
+		errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
+		return nil, nil, nil, nil
+	}
+
+	agentmanager.Global_AgentManager.TAgentMap.Range(
+		func(key, value interface{}) bool {
+			wg.Add(1)
+
+			agent := value.(*agentmanager.Agent)
+
+			go func(ctx context.Context, _agent *agentmanager.Agent, _nodes *graph.Nodes, _edges *graph.Edges) {
+				defer wg.Done()
+
+				if _agent.Host_2 != nil && _agent.Processes_2 != nil && _agent.Netconnections_2 != nil {
+					err := t.Factory.CreateNodeEntities(_agent, _nodes)
+					if err != nil {
+						process_errorlist_rwlock.Lock()
+						process_errorlist = append(process_errorlist, errors.Wrap(err, "**2"))
+						process_errorlist_rwlock.Unlock()
+					}
+
+					<-ctx.Done()
+
+					err = t.Factory.CreateEdgeEntities(_agent, _edges, _nodes)
+					if err != nil {
+						process_errorlist_rwlock.Lock()
+						process_errorlist = append(process_errorlist, errors.Wrap(err, "**2"))
+						process_errorlist_rwlock.Unlock()
+					}
+
+				}
+			}(ctx1, agent, nodes, edges)
+
+			return true
+		},
+	)
+	wg.Wait()
+
+	atomic.StoreInt32(t.Factory.Return_Agent_node_count(), int32(0))
+
+	elapse := time.Since(start)
+	logger.Info("\033[32mtopo server 采集数据处理时间\033[0m: %v\n", elapse)
+
+	return nodes, edges, collect_errorlist, process_errorlist
+}
+
+func (t *TopoGenerator) collectInstantData() []error {
 	start := time.Now()
 	var wg sync.WaitGroup
 	var errorlist []error
@@ -47,7 +154,7 @@ func (d *DataCollector) CollectInstantData() []error {
 				temp_start := time.Now()
 				agent := value.(*agentmanager.Agent)
 				agent.Port = conf.Global_Config.Topo.Agent_port
-				err := d.GetCollectDataFromTopoAgent(agent)
+				err := t.getCollectDataFromTopoAgent(agent)
 				if err != nil {
 					errorlist_rwlock.Lock()
 					errorlist = append(errorlist, errors.Wrapf(err, "%s**2", agent.IP))
@@ -75,7 +182,7 @@ func (d *DataCollector) CollectInstantData() []error {
 	return nil
 }
 
-func (d *DataCollector) GetCollectDataFromTopoAgent(agent *agentmanager.Agent) error {
+func (t *TopoGenerator) getCollectDataFromTopoAgent(agent *agentmanager.Agent) error {
 	url := "http://" + agent.IP + ":" + agent.Port + "/plugin/topology/api/rawdata"
 
 	resp, err := httputils.Get(url, nil)

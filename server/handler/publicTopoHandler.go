@@ -5,7 +5,7 @@ import (
 
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/errormanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/pluginclient"
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/service"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/service/public"
 	"gitee.com/openeuler/PilotGo/sdk/response"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -51,7 +51,7 @@ import (
 
 func SingleHostTreeHandle(ctx *gin.Context) {
 	uuid := ctx.Param("uuid")
-	nodes, err := service.SingleHostTreeService(uuid)
+	nodes, err := public.SingleHostTreeService(uuid)
 	if err != nil {
 		switch strings.Split(errors.Cause(err).Error(), "**")[1] {
 		case "errstack":
@@ -95,7 +95,7 @@ func SingleHostTreeHandle(ctx *gin.Context) {
 }
 
 func MultiHostHandle(ctx *gin.Context) {
-	nodes, edges, combos, err := service.MultiHostService()
+	nodes, edges, combos, err := public.MultiHostService()
 	if err != nil {
 		switch strings.Split(errors.Cause(err).Error(), "**")[1] {
 		case "errstack":

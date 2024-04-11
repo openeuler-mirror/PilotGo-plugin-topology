@@ -9,6 +9,7 @@ import (
 	"gitee.com/openeuler/PilotGo-plugin-topology-agent/conf"
 	"gitee.com/openeuler/PilotGo-plugin-topology-agent/utils"
 	"github.com/pkg/errors"
+	"gitee.com/openeuler/PilotGo/sdk/logger"
 )
 
 func DataCollectorService() (utils.Data_collector, error) {
@@ -116,11 +117,11 @@ func DataCollectorService() (utils.Data_collector, error) {
 
 		wg.Wait()
 
-		fmt.Println("============================")
+		logger.Info("============================")
 		for _, t := range cost_time {
-			fmt.Println(t)
+			logger.Info(t)
 		}
-		fmt.Println("============================")
+		logger.Info("============================")
 
 		return collector.Psutildata, nil
 	default:

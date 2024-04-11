@@ -1,15 +1,18 @@
-package service
+package custom
 
 import (
 	"strconv"
+	"strings"
 	"time"
 
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/agentmanager"
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/db/graphmanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/db/mysqlmanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/db/redismanager"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/errormanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/graph"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/pluginclient"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/generator"
+
 	"gitee.com/openeuler/PilotGo/sdk/response"
 	"github.com/pkg/errors"
 )
@@ -62,13 +65,47 @@ func RunCustomTopoService(tcid uint) ([]*graph.Node, []*graph.Edge, []map[string
 		return nil, nil, nil, errors.New("redis client not init **errstack**1")
 	}
 
-	unixtime_now := time.Now().Unix()
-	nodes, edges, combos, err := DataProcessWorking(unixtime_now, running_agent_num, graphmanager.Global_GraphDB, tc.TagRules, tc.NodeRules)
-	if err != nil {
-		return nil, nil, nil, errors.Wrap(err, "**2")
+	topogenerator := generator.CreateTopoGenerator(tc.TagRules, tc.NodeRules)
+	nodes, edges, collect_errlist, process_errlist := topogenerator.ProcessingData(running_agent_num)
+	if len(collect_errlist) != 0 {
+		for i, cerr := range collect_errlist {
+			collect_errlist[i] = errors.Wrap(cerr, "**errstack**3") // err top
+			errormanager.ErrorTransmit(pluginclient.Global_Context, collect_errlist[i], false)
+		}
+		collect_errlist_string := []string{}
+		for _, e := range collect_errlist {
+			collect_errlist_string = append(collect_errlist_string, e.Error())
+		}
+		return nil, nil, nil, errors.Errorf("collect data failed: %+v **errstack**10", strings.Join(collect_errlist_string, "/e/"))
+	}
+	if len(process_errlist) != 0 {
+		for i, perr := range process_errlist {
+			process_errlist[i] = errors.Wrap(perr, "**errstack**14") // err top
+			errormanager.ErrorTransmit(pluginclient.Global_Context, process_errlist[i], false)
+		}
+		process_errlist_string := []string{}
+		for _, e := range process_errlist {
+			process_errlist_string = append(process_errlist_string, e.Error())
+		}
+		return nil, nil, nil, errors.Errorf("process data failed: %+v **errstack**21", strings.Join(process_errlist_string, "/e/"))
+	}
+	if nodes == nil || edges == nil {
+		err := errors.New("nodes or edges is nil **errstack**24") // err top
+		errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
+		return nil, nil, nil, err
 	}
 
-	return nodes, edges, combos, nil
+	combos := make([]map[string]string, 0)
+	for _, node := range nodes.Nodes {
+		if node.Type == "host" {
+			combos = append(combos, map[string]string{
+				"id":    node.UUID,
+				"label": node.UUID,
+			})
+		}
+	}
+
+	return nodes.Nodes, edges.Edges, combos, nil
 }
 
 func CustomTopoListService(query *response.PaginationQ) ([]*mysqlmanager.Topo_configuration, int, error) {

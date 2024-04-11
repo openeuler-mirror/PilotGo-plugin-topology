@@ -62,13 +62,14 @@ func main() {
 
 	/*
 		init database
+		neo4j mysql redis prometheus
 	*/
 	db.InitDB()
 
 	/*
 		topo插件自身数据采集模块周期性数据采集: 全局网络拓扑、单机拓扑
 	*/
-	service.PeriodCollectWorking([]string{}, [][]mysqlmanager.Filter_rule{})
+	service.InitPeriodCollectWorking([]string{}, [][]mysqlmanager.Filter_rule{})
 
 	/*
 		终止进程信号监听

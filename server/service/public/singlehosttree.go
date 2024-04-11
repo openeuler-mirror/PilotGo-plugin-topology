@@ -1,4 +1,4 @@
-package service
+package public
 
 import (
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/db/graphmanager"
