@@ -33,7 +33,7 @@ type Agent struct {
 	Processes_2        []*graph.Process       `json:"processes"`
 	Netconnections_2   []*graph.Netconnection `json:"netconnections"`
 	NetIOcounters_2    []*graph.NetIOcounter  `json:"netiocounters"`
-	AddrInterfaceMap_2 map[string][]string   `json:"addrinterfacemap"`
+	AddrInterfaceMap_2 map[string][]string    `json:"addrinterfacemap"`
 	Disks_2            []*graph.Disk          `json:"disks"`
 	Cpus_2             []*graph.Cpu           `json:"cpus"`
 }
@@ -61,14 +61,14 @@ func (am *AgentManager) GetAgent_P(uuid string) *Agent {
 func (am *AgentManager) DeleteAgent_P(uuid string) {
 	if _, ok := am.PAgentMap.LoadAndDelete(uuid); !ok {
 		err := errors.Errorf("delete unknown agent:%s **errstack**2", uuid) // err top
-		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, false)
+		errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
 	}
 }
 
 func (am *AgentManager) AddAgent_T(a *Agent) {
 	if a == nil {
 		err := errors.Errorf("failed to add agent_t: %v **errstack**0", a) // err top
-		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, false)
+		errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
 		return
 	}
 	am.TAgentMap.Store(a.UUID, a)
@@ -90,6 +90,6 @@ func (am *AgentManager) GetAgent_T(uuid string) *Agent {
 func (am *AgentManager) DeleteAgent_T(uuid string) {
 	if _, ok := am.TAgentMap.LoadAndDelete(uuid); !ok {
 		err := errors.Errorf("delete unknown agent:%s **errstack**2", uuid) // err top
-		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, false)
+		errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
 	}
 }

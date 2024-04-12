@@ -59,7 +59,7 @@ func (d *DataProcesser) ProcessData(agentnum int, tagrules []mysqlmanager.Tag_ru
 
 	start := time.Now()
 
-	ctx1, cancel1 := context.WithCancel(pluginclient.GlobalContext)
+	ctx1, cancel1 := context.WithCancel(pluginclient.Global_Context)
 	go func(cancelfunc context.CancelFunc) {
 		for {
 			if atomic.LoadInt32(&d.agent_node_count) == int32(agentnum) {
@@ -71,7 +71,7 @@ func (d *DataProcesser) ProcessData(agentnum int, tagrules []mysqlmanager.Tag_ru
 
 	if agentmanager.Global_AgentManager == nil {
 		err := errors.New("Global_AgentManager is nil **errstackfatal**0") // err top
-		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
+		errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
 		return nil, nil, nil, nil
 	}
 
@@ -203,7 +203,7 @@ func (d *DataProcesser) CreateNodeEntities(agent *agentmanager.Agent, nodes *gra
 			nodes.Add(net_node)
 		} else {
 			err := errors.Errorf("syntax error: %s **errstack**13", net.Laddr) // err top
-			errormanager.ErrorTransmit(pluginclient.GlobalContext, err, false)
+			errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
 		}
 	}
 

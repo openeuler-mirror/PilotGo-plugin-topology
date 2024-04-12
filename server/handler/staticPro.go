@@ -10,7 +10,8 @@ import (
 	"net/http"
 	"strings"
 
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/agentmanager"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/errormanager"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/pluginclient"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 )
@@ -22,7 +23,7 @@ func StaticRouter(router *gin.Engine) {
 	sf, err := fs.Sub(StaticFiles, "assets")
 	if err != nil {
 		err = errors.Errorf("%s **errstack**2", err.Error()) // err top
-		agentmanager.ErrorTransmit(agentmanager.Topo.Tctx, err, agentmanager.Topo.ErrCh, false)
+		errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
 		return
 	}
 

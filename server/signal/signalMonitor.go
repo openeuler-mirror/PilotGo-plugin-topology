@@ -13,7 +13,6 @@ import (
 )
 
 func SignalMonitoring() {
-	// main.go中最后执行，不进行全局指针变量非空判断
 	ch := make(chan os.Signal, 1)
 
 	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)

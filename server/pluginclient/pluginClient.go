@@ -10,7 +10,7 @@ import (
 
 var Global_Client *client.Client
 
-var GlobalContext context.Context
+var Global_Context context.Context
 
 func InitPluginClient() {
 	PluginInfo.Url = "http://" + conf.Global_Config.Topo.Server_addr
@@ -33,5 +33,5 @@ func InitPluginClient() {
 	ex = append(ex, pe1, pe2)
 	Global_Client.RegisterExtention(ex)
 
-	GlobalContext = context.Background()
+	Global_Context = context.Background()
 }

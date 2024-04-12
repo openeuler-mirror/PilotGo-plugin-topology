@@ -102,7 +102,7 @@ func ProcessMatching(agent *agentmanager.Agent, exename, cmdline, component stri
 		containers, err := ContainerList(agent)
 		if err != nil {
 			err = errors.Wrap(err, " **errstack**0") // err top
-			errormanager.ErrorTransmit(pluginclient.GlobalContext, err, false)
+			errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
 			break
 		}
 

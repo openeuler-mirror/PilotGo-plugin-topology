@@ -34,7 +34,7 @@ func initGraphDB() {
 
 	default:
 		err := errors.Errorf("unknown database in topo_server.yaml: %s **errstackfatal**4", conf.Global_Config.Topo.GraphDB) // err top
-		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
+		errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
 	}
 
 	if graphmanager.Global_GraphDB != nil {
@@ -66,7 +66,7 @@ func initMysql() {
 func ClearGraphData(retention int64) {
 	if graphmanager.Global_GraphDB == nil {
 		err := errors.New("global_graphdb is nil **errstackfatal**0")
-		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
+		errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
 		return
 	}
 

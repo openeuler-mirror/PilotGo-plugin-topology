@@ -38,13 +38,13 @@ func HeartbeatHandle(ctx *gin.Context) {
 			"error": err.Error(),
 			"data":  nil,
 		})
-		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
+		errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
 		return
 	}
 
 	if agentmanager.Global_AgentManager.GetAgent_P(uuid) == nil {
 		err := errors.Errorf("unknown agent's heartbeat: %s, %s **warn**1", uuid, addr) // err top
-		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, false)
+		errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
 		ctx.JSON(http.StatusUnauthorized, gin.H{
 			"code":  -1,
 			"error": err.Error(),
@@ -60,14 +60,14 @@ func HeartbeatHandle(ctx *gin.Context) {
 			"error": err.Error(),
 			"data":  nil,
 		})
-		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
+		errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
 		return
 	}
 
 	err := redismanager.Global_Redis.Set(key, value)
 	if err != nil {
 		err = errors.Wrap(err, " **errstack**2") // err top
-		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, false)
+		errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
 
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"code":  -1,
@@ -88,14 +88,14 @@ func TimestampsHandle(ctx *gin.Context) {
 	if graphmanager.Global_GraphDB == nil {
 		err := errors.New("Global_GraphDB is nil **errstackfatal**0") // err top
 		response.Fail(ctx, nil, err.Error())
-		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
+		errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
 		return
 	}
-	
+
 	times, err := graphmanager.Global_GraphDB.Timestamps_query()
 	if err != nil {
 		err = errors.Wrap(err, " **errstack**2")
-		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, false)
+		errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
 
 		response.Fail(ctx, nil, err.Error())
 		return
@@ -110,7 +110,7 @@ func AgentListHandle(ctx *gin.Context) {
 	if agentmanager.Global_AgentManager == nil {
 		err := errors.New("Global_AgentManager is nil **errstackfatal**0") // err top
 		response.Fail(ctx, nil, err.Error())
-		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
+		errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
 		return
 	}
 
@@ -132,14 +132,14 @@ func BatchListHandle(ctx *gin.Context) {
 	if pluginclient.Global_Client == nil {
 		err := errors.New("Global_Client is nil **errstackfatal**2") // err top
 		response.Fail(ctx, nil, err.Error())
-		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
+		errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
 		return
 	}
 
 	batchlist, err := pluginclient.Global_Client.BatchList()
 	if err != nil {
 		err = errors.Errorf("%+v **errstack**2", err.Error()) // err top
-		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, false)
+		errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
 		response.Fail(ctx, nil, err.Error())
 		return
 	}
@@ -159,14 +159,14 @@ func BatchMachineListHandle(ctx *gin.Context) {
 	if pluginclient.Global_Client == nil {
 		err := errors.New("Global_Client is nil **errstackfatal**2") // err top
 		response.Fail(ctx, nil, err.Error())
-		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
+		errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
 		return
 	}
 
 	machine_uuids, err := pluginclient.Global_Client.BatchUUIDList(BatchId)
 	if err != nil {
 		err = errors.Errorf("%+v **errstack**2", err.Error()) // err top
-		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, false)
+		errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
 		response.Fail(ctx, nil, err.Error())
 		return
 	}
@@ -174,7 +174,7 @@ func BatchMachineListHandle(ctx *gin.Context) {
 	if agentmanager.Global_AgentManager == nil {
 		err := errors.New("Global_AgentManager is nil **errstackfatal**0") // err top
 		response.Fail(ctx, nil, err.Error())
-		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
+		errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
 		return
 	}
 
