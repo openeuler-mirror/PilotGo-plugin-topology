@@ -1,4 +1,4 @@
-package meta
+package mysqlmanager
 
 const (
 	FILTER_TYPE_HOST     = "host"

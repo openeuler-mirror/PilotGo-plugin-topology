@@ -1,4 +1,4 @@
-package meta
+package promemanager
 
 type Target struct {
 	Instance string            `json:"instance"`

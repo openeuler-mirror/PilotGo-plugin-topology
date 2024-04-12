@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"strings"
+
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/errormanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/pluginclient"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/service"
@@ -51,11 +53,19 @@ func SingleHostTreeHandle(ctx *gin.Context) {
 	uuid := ctx.Param("uuid")
 	nodes, err := service.SingleHostTreeService(uuid)
 	if err != nil {
-		err = errors.Wrap(err, " **errstack**2") // err top
-		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, false)
+		switch strings.Split(errors.Cause(err).Error(), "**")[1] {
+		case "errstack":
+			err = errors.Wrap(err, " **errstack**2") // err top
+			errormanager.ErrorTransmit(pluginclient.GlobalContext, err, false)
+			response.Fail(ctx, nil, err.Error())
+			return
+		case "errstackfatal":
+			err = errors.Wrap(err, " **errstackfatal**2") // err top
+			response.Fail(ctx, nil, errors.Cause(err).Error())
+			errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
+			return
+		}
 
-		response.Fail(ctx, nil, err.Error())
-		return
 	}
 
 	if nodes == nil {
@@ -87,11 +97,19 @@ func SingleHostTreeHandle(ctx *gin.Context) {
 func MultiHostHandle(ctx *gin.Context) {
 	nodes, edges, combos, err := service.MultiHostService()
 	if err != nil {
-		err = errors.Wrap(err, " **errstack**2") // err top
-		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, false)
+		switch strings.Split(errors.Cause(err).Error(), "**")[1] {
+		case "errstack":
+			err = errors.Wrap(err, " **errstack**2") // err top
+			errormanager.ErrorTransmit(pluginclient.GlobalContext, err, false)
+			response.Fail(ctx, nil, err.Error())
+			return
+		case "errstackfatal":
+			err = errors.Wrap(err, " **errstack**2") // err top
+			response.Fail(ctx, nil, errors.Cause(err).Error())
+			errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
+			return
+		}
 
-		response.Fail(ctx, nil, err.Error())
-		return
 	}
 
 	if len(nodes) == 0 || len(edges) == 0 {

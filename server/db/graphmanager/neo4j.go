@@ -1,4 +1,4 @@
-package dao
+package graphmanager
 
 import (
 	"fmt"
@@ -7,12 +7,13 @@ import (
 	"time"
 
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/errormanager"
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/meta"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/graph"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/pluginclient"
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/utils"
 	"github.com/neo4j/neo4j-go-driver/v4/neo4j"
 	"github.com/pkg/errors"
 )
+
+var Global_Neo4j *Neo4jClient
 
 type Neo4jClient struct {
 	addr     string
@@ -21,8 +22,6 @@ type Neo4jClient struct {
 	DB       string
 	Driver   neo4j.Driver
 }
-
-var Global_Neo4j *Neo4jClient
 
 func Neo4jInit(url, user, pass, db string) *Neo4jClient {
 	n := &Neo4jClient{
@@ -46,12 +45,8 @@ func Neo4jInit(url, user, pass, db string) *Neo4jClient {
 	return n
 }
 
-func (n *Neo4jClient) Node_create(unixtime string, node *meta.Node) error {
+func (n *Neo4jClient) Node_create(unixtime string, node *graph.Node) error {
 	var cqlIN string
-
-	if Global_Neo4j == nil {
-		return errors.New("neo4j client not init **errstack**1")
-	}
 
 	if len(node.Metrics) == 0 {
 		cqlIN = fmt.Sprintf("create (node:`%s` {unixtime:'%s', nid:'%s', name:'%s', layoutattr:'%s', comboid:'%s'} set node:`%s`)",
@@ -83,12 +78,8 @@ func (n *Neo4jClient) Node_create(unixtime string, node *meta.Node) error {
 	return nil
 }
 
-func (n *Neo4jClient) Edge_create(unixtime string, edge *meta.Edge) error {
+func (n *Neo4jClient) Edge_create(unixtime string, edge *graph.Edge) error {
 	var cqlIN string
-
-	if Global_Neo4j == nil {
-		return errors.New("neo4j client not init **errstack**1")
-	}
 
 	if len(edge.Metrics) == 0 {
 		cqlIN = fmt.Sprintf("match (src {unixtime:'%s', nid:'%s'}), (dst {unixtime:'%s', nid:'%s'}) create (src)-[r:`%s` {unixtime:'%s', rid:'%s', dir:'%s', src:'%s', dst:'%s'}]->(dst)",
@@ -127,10 +118,6 @@ func (n *Neo4jClient) Timestamps_query() ([]string, error) {
 	varia = "times"
 	var list []string
 
-	if Global_Neo4j == nil {
-		return nil, errors.New("neo4j client not init **errstack**1")
-	}
-
 	session := n.Driver.NewSession(neo4j.SessionConfig{AccessMode: neo4j.AccessModeRead, DatabaseName: n.DB})
 	defer session.Close()
 	_, err := session.ReadTransaction(func(tx neo4j.Transaction) (interface{}, error) {
@@ -168,34 +155,26 @@ func (n *Neo4jClient) Timestamps_query() ([]string, error) {
 	return list, nil
 }
 
-func (n *Neo4jClient) SingleHost_node_query(uuid string, unixtime string) ([]*meta.Node, error) {
+func (n *Neo4jClient) SingleHost_node_query(uuid string, unixtime string) ([]*graph.Node, error) {
 	var cqlOUT string
 	var varia string
 	cqlOUT = fmt.Sprintf("match (nodes:`%s`) where nodes.unixtime='%s' return nodes", uuid, unixtime)
 	varia = "nodes"
 
-	if Global_Neo4j == nil {
-		return nil, errors.New("neo4j client not init **errstack**1")
-	}
-
 	return n.Node_query(cqlOUT, varia)
 }
 
-func (n *Neo4jClient) MultiHost_node_query(unixtime string) ([]*meta.Node, error) {
+func (n *Neo4jClient) MultiHost_node_query(unixtime string) ([]*graph.Node, error) {
 	var cqlOUT string
 	var varia string
 	cqlOUT = fmt.Sprintf("match (nodes) where nodes.unixtime='%s' return nodes", unixtime)
 	varia = "nodes"
 
-	if Global_Neo4j == nil {
-		return nil, errors.New("neo4j client not init **errstack**1")
-	}
-
 	return n.Node_query(cqlOUT, varia)
 }
 
-func (n *Neo4jClient) Node_query(cypher string, varia string) ([]*meta.Node, error) {
-	var list []*meta.Node
+func (n *Neo4jClient) Node_query(cypher string, varia string) ([]*graph.Node, error) {
+	var list []*graph.Node
 	session := n.Driver.NewSession(neo4j.SessionConfig{AccessMode: neo4j.AccessModeRead, DatabaseName: n.DB})
 	defer session.Close()
 	_, err := session.ReadTransaction(func(tx neo4j.Transaction) (interface{}, error) {
@@ -209,7 +188,7 @@ func (n *Neo4jClient) Node_query(cypher string, varia string) ([]*meta.Node, err
 			record := result.Record()
 			if value, ok := record.Get(varia); ok {
 				neo4jnode := value.(neo4j.Node)
-				toponode := utils.Neo4jnodeToToponode(neo4jnode)
+				toponode := Neo4jnodeToToponode(neo4jnode)
 				list = append(list, toponode)
 			}
 		}
@@ -227,21 +206,17 @@ func (n *Neo4jClient) Node_query(cypher string, varia string) ([]*meta.Node, err
 	return list, err
 }
 
-func (n *Neo4jClient) MultiHost_relation_query(unixtime string) ([]*meta.Edge, error) {
+func (n *Neo4jClient) MultiHost_relation_query(unixtime string) ([]*graph.Edge, error) {
 	var cqlOUT string
 	var varia string
 	cqlOUT = fmt.Sprintf("match ()-[relas]->() where relas.unixtime='%s' return relas", unixtime)
 	varia = "relas"
 
-	if Global_Neo4j == nil {
-		return nil, errors.New("neo4j client not init **errstack**1")
-	}
-
 	return n.Relation_query(cqlOUT, varia)
 }
 
-func (n *Neo4jClient) Relation_query(cypher string, varia string) ([]*meta.Edge, error) {
-	var list []*meta.Edge
+func (n *Neo4jClient) Relation_query(cypher string, varia string) ([]*graph.Edge, error) {
+	var list []*graph.Edge
 	session := n.Driver.NewSession(neo4j.SessionConfig{AccessMode: neo4j.AccessModeRead, DatabaseName: n.DB})
 	defer session.Close()
 	_, err := session.ReadTransaction(func(tx neo4j.Transaction) (interface{}, error) {
@@ -254,7 +229,7 @@ func (n *Neo4jClient) Relation_query(cypher string, varia string) ([]*meta.Edge,
 			record := result.Record()
 			if value, ok := record.Get(varia); ok {
 				relationship := value.(neo4j.Relationship)
-				toporelation := utils.Neo4jrelaToToporela(relationship)
+				toporelation := Neo4jrelaToToporela(relationship)
 				list = append(list, toporelation)
 			}
 		}
@@ -272,12 +247,6 @@ func (n *Neo4jClient) Relation_query(cypher string, varia string) ([]*meta.Edge,
 }
 
 func (n *Neo4jClient) ClearExpiredData(retention int64) {
-	if Global_Neo4j == nil {
-		err := errors.New("neo4j client not init **errstack**1") // err top
-		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, false)
-		return
-	}
-
 	current := time.Now()
 	timepoint := current.Add(-time.Duration(retention) * time.Hour).Unix()
 	cqlIN := `match (n) where n.unixtime < $timepoint detach delete n`

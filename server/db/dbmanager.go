@@ -1,4 +1,4 @@
-package service
+package db
 
 import (
 	"time"
@@ -6,7 +6,9 @@ import (
 	"github.com/pkg/errors"
 
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/conf"
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/dao"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/db/graphmanager"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/db/mysqlmanager"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/db/redismanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/errormanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/pluginclient"
 	"gitee.com/openeuler/PilotGo/sdk/logger"
@@ -26,8 +28,8 @@ func InitDB() {
 func initGraphDB() {
 	switch conf.Global_Config.Topo.GraphDB {
 	case "neo4j":
-		dao.Global_Neo4j = dao.Neo4jInit(conf.Global_Config.Neo4j.Addr, conf.Global_Config.Neo4j.Username, conf.Global_Config.Neo4j.Password, conf.Global_Config.Neo4j.DB)
-		dao.Global_GraphDB = dao.Global_Neo4j
+		graphmanager.Global_Neo4j = graphmanager.Neo4jInit(conf.Global_Config.Neo4j.Addr, conf.Global_Config.Neo4j.Username, conf.Global_Config.Neo4j.Password, conf.Global_Config.Neo4j.DB)
+		graphmanager.Global_GraphDB = graphmanager.Global_Neo4j
 	case "otherDB":
 
 	default:
@@ -35,7 +37,7 @@ func initGraphDB() {
 		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
 	}
 
-	if dao.Global_GraphDB != nil {
+	if graphmanager.Global_GraphDB != nil {
 		logger.Debug("graph database initialization successful")
 	} else {
 		logger.Error("graph database initialization failed")
@@ -44,8 +46,8 @@ func initGraphDB() {
 
 // 初始化redis
 func initRedis() {
-	dao.Global_Redis = dao.RedisInit(conf.Global_Config.Redis.Addr, conf.Global_Config.Redis.Password, conf.Global_Config.Redis.DB, conf.Global_Config.Redis.DialTimeout)
-	if dao.Global_Redis != nil {
+	redismanager.Global_Redis = redismanager.RedisInit(conf.Global_Config.Redis.Addr, conf.Global_Config.Redis.Password, conf.Global_Config.Redis.DB, conf.Global_Config.Redis.DialTimeout)
+	if redismanager.Global_Redis != nil {
 		logger.Debug("redis database initialization successful")
 	} else {
 		logger.Error("redis database initialization failed")
@@ -53,8 +55,8 @@ func initRedis() {
 }
 
 func initMysql() {
-	dao.Global_Mysql = dao.MysqldbInit(conf.Global_Config.Mysql)
-	if dao.Global_Mysql != nil {
+	mysqlmanager.Global_Mysql = mysqlmanager.MysqldbInit(conf.Global_Config.Mysql)
+	if mysqlmanager.Global_Mysql != nil {
 		logger.Debug("mysql database initialization successful")
 	} else {
 		logger.Error("mysql database initialization failed")
@@ -62,7 +64,13 @@ func initMysql() {
 }
 
 func ClearGraphData(retention int64) {
-	dao.Global_GraphDB.ClearExpiredData(retention)
+	if graphmanager.Global_GraphDB == nil {
+		err := errors.New("global_graphdb is nil **errstackfatal**0")
+		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
+		return
+	}
+
+	graphmanager.Global_GraphDB.ClearExpiredData(retention)
 
 	for {
 		current := time.Now()
@@ -80,6 +88,6 @@ func ClearGraphData(retention int64) {
 
 		<-timer.C
 
-		dao.Global_GraphDB.ClearExpiredData(retention)
+		graphmanager.Global_GraphDB.ClearExpiredData(retention)
 	}
 }

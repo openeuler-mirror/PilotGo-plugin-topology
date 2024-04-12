@@ -1,4 +1,4 @@
-package meta
+package graph
 
 import (
 	"github.com/shirou/gopsutil/cpu"

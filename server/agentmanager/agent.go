@@ -5,7 +5,7 @@ import (
 
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/conf"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/errormanager"
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/meta"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/graph"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/pluginclient"
 	"github.com/pkg/errors"
 )
@@ -29,13 +29,13 @@ type Agent struct {
 	State      int    `gorm:"not null" json:"state"`
 	TAState    int    `json:"TAstate"` // topo agent state: true(running) false(not runnings)
 
-	Host_2             *meta.Host            `json:"host"`
-	Processes_2        []*meta.Process       `json:"processes"`
-	Netconnections_2   []*meta.Netconnection `json:"netconnections"`
-	NetIOcounters_2    []*meta.NetIOcounter  `json:"netiocounters"`
+	Host_2             *graph.Host            `json:"host"`
+	Processes_2        []*graph.Process       `json:"processes"`
+	Netconnections_2   []*graph.Netconnection `json:"netconnections"`
+	NetIOcounters_2    []*graph.NetIOcounter  `json:"netiocounters"`
 	AddrInterfaceMap_2 map[string][]string   `json:"addrinterfacemap"`
-	Disks_2            []*meta.Disk          `json:"disks"`
-	Cpus_2             []*meta.Cpu           `json:"cpus"`
+	Disks_2            []*graph.Disk          `json:"disks"`
+	Cpus_2             []*graph.Cpu           `json:"cpus"`
 }
 
 func InitAgentManager() {

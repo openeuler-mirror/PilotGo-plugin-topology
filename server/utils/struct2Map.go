@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/meta"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/graph"
 )
 
 func StructToMap(obj interface{}) map[string]string {
@@ -41,7 +41,7 @@ func StructToMap(obj interface{}) map[string]string {
 	return m
 }
 
-func HostToMap(host *meta.Host, a_i_map *map[string][]string) *map[string]string {
+func HostToMap(host *graph.Host, a_i_map *map[string][]string) *map[string]string {
 	host_metrics := StructToMap(host)
 
 	interfaces_string := []string{}
@@ -56,7 +56,7 @@ func HostToMap(host *meta.Host, a_i_map *map[string][]string) *map[string]string
 	return &host_metrics
 }
 
-func ProcessToMap(process *meta.Process) *map[string]string {
+func ProcessToMap(process *graph.Process) *map[string]string {
 	uids_string := []string{}
 	for _, u := range process.Uids {
 		uids_string = append(uids_string, strconv.Itoa(int(u)))
@@ -107,7 +107,7 @@ func ProcessToMap(process *meta.Process) *map[string]string {
 	}
 }
 
-func ThreadToMap(thread *meta.Thread) *map[string]string {
+func ThreadToMap(thread *graph.Thread) *map[string]string {
 	return &map[string]string{
 		"Tid":       strconv.Itoa(int(thread.Tid)),
 		"Tgid":      strconv.Itoa(int(thread.Tgid)),
@@ -126,7 +126,7 @@ func ThreadToMap(thread *meta.Thread) *map[string]string {
 }
 
 // net节点的metrics字段 临时定义
-func NetToMap(net *meta.Netconnection) *map[string]string {
+func NetToMap(net *graph.Netconnection) *map[string]string {
 	uids_string := []string{}
 	for _, uid := range net.Uids {
 		uids_string = append(uids_string, strconv.Itoa(int(uid)))
@@ -168,7 +168,7 @@ func NetToMap(net *meta.Netconnection) *map[string]string {
 // 	}
 // }
 
-func DiskToMap(disk *meta.Disk) *map[string]string {
+func DiskToMap(disk *graph.Disk) *map[string]string {
 	disk_map := make(map[string]string)
 	partition_map := StructToMap(disk.Partition)
 	iocounter_map := StructToMap(disk.IOcounter)
@@ -193,7 +193,7 @@ func DiskToMap(disk *meta.Disk) *map[string]string {
 	return &disk_map
 }
 
-func CpuToMap(cpu *meta.Cpu) *map[string]string {
+func CpuToMap(cpu *graph.Cpu) *map[string]string {
 	cpu_map := make(map[string]string)
 	info_map := StructToMap(cpu.Info)
 	time_map := StructToMap(cpu.Time)
@@ -213,7 +213,7 @@ func CpuToMap(cpu *meta.Cpu) *map[string]string {
 	return &cpu_map
 }
 
-func InterfaceToMap(iface *meta.NetIOcounter) *map[string]string {
+func InterfaceToMap(iface *graph.NetIOcounter) *map[string]string {
 	iface_map := make(map[string]string)
 	old_map := StructToMap(iface)
 

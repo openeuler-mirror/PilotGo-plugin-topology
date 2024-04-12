@@ -2,9 +2,11 @@ package handler
 
 import (
 	"strconv"
+	"strings"
 
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/db/mysqlmanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/errormanager"
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/meta"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/graph"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/pluginclient"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/service"
 	"gitee.com/openeuler/PilotGo/sdk/response"
@@ -31,17 +33,25 @@ func CustomTopoListHandle(ctx *gin.Context) {
 
 	tcs, total, err := service.CustomTopoListService(query)
 	if err != nil {
-		err = errors.Wrap(err, " **errstack**2") // err top
-		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, false)
-		response.Fail(ctx, nil, errors.Cause(err).Error())
-		return
+		switch strings.Split(errors.Cause(err).Error(), "**")[1] {
+		case "errstack":
+			err = errors.Wrap(err, " **errstack**2") // err top
+			errormanager.ErrorTransmit(pluginclient.GlobalContext, err, false)
+			response.Fail(ctx, nil, errors.Cause(err).Error())
+			return
+		case "errstackfatal":
+			err = errors.Wrap(err, " **errstackfatal**2") // err top
+			response.Fail(ctx, nil, errors.Cause(err).Error())
+			errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
+			return
+		}
 	}
 
 	response.DataPagination(ctx, tcs, total, query)
 }
 
 func CreateCustomTopoHandle(ctx *gin.Context) {
-	var tc *meta.Topo_configuration = new(meta.Topo_configuration)
+	var tc *mysqlmanager.Topo_configuration = new(mysqlmanager.Topo_configuration)
 
 	if err := ctx.ShouldBindJSON(tc); err != nil {
 		err = errors.Wrap(err, " **errstack**1") // err top
@@ -59,10 +69,18 @@ func CreateCustomTopoHandle(ctx *gin.Context) {
 
 	tcdb_id, err := service.CreateCustomTopoService(tc)
 	if err != nil {
-		err = errors.Wrap(err, "**errstack**1") // err top
-		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, false)
-		response.Fail(ctx, nil, errors.Cause(err).Error())
-		return
+		switch strings.Split(errors.Cause(err).Error(), "**")[1] {
+		case "errstack":
+			err = errors.Wrap(err, "**errstack**1") // err top
+			errormanager.ErrorTransmit(pluginclient.GlobalContext, err, false)
+			response.Fail(ctx, nil, errors.Cause(err).Error())
+			return
+		case "errstackfatal":
+			err = errors.Wrap(err, " **errstackfatal**2") // err top
+			response.Fail(ctx, nil, errors.Cause(err).Error())
+			errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
+			return
+		}
 	}
 
 	response.Success(ctx, tcdb_id, "successfully created action")
@@ -71,8 +89,8 @@ func CreateCustomTopoHandle(ctx *gin.Context) {
 func UpdateCustomTopoHandle(ctx *gin.Context) {
 	// var tc *meta.Topo_configuration = new(meta.Topo_configuration)
 	req_body := struct {
-		TC *meta.Topo_configuration `json:"topo_configuration"`
-		ID *uint                    `json:"id"`
+		TC *mysqlmanager.Topo_configuration `json:"topo_configuration"`
+		ID *uint                            `json:"id"`
 	}{}
 
 	// fmt.Printf("%+v\n", ctx.Request.Body)
@@ -92,10 +110,18 @@ func UpdateCustomTopoHandle(ctx *gin.Context) {
 
 	tcdb_id, err := service.UpdateCustomTopoService(req_body.TC, *req_body.ID)
 	if err != nil {
-		err = errors.Wrap(err, "**errstack**2") // err top
-		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, false)
-		response.Fail(ctx, nil, errors.Cause(err).Error())
-		return
+		switch strings.Split(errors.Cause(err).Error(), "**")[1] {
+		case "errstack":
+			err = errors.Wrap(err, "**errstack**2") // err top
+			errormanager.ErrorTransmit(pluginclient.GlobalContext, err, false)
+			response.Fail(ctx, nil, errors.Cause(err).Error())
+			return
+		case "errstackfatal":
+			err = errors.Wrap(err, " **errstackfatal**2") // err top
+			response.Fail(ctx, nil, errors.Cause(err).Error())
+			errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
+			return
+		}
 	}
 
 	response.Success(ctx, tcdb_id, "successfully updated action")
@@ -104,8 +130,8 @@ func UpdateCustomTopoHandle(ctx *gin.Context) {
 func RunCustomTopoHandle(ctx *gin.Context) {
 	// TODO: 执行业务之前先判断batch集群中的机器是否部署且运行topo-agent
 	type alldata struct {
-		Nodes  []*meta.Node
-		Edges  []*meta.Edge
+		Nodes  []*graph.Node
+		Edges  []*graph.Edge
 		Combos []map[string]string
 	}
 	doneChan := make(chan *alldata, 1)
@@ -133,11 +159,21 @@ func RunCustomTopoHandle(ctx *gin.Context) {
 
 		topodata.Nodes, topodata.Edges, topodata.Combos, err = service.RunCustomTopoService(uint(tcid_int))
 		if err != nil {
-			err = errors.Wrap(err, " **errstack**2") // err top
-			errormanager.ErrorTransmit(pluginclient.GlobalContext, err, false)
-			doneChan <- topodata
-			response.Fail(ctx, nil, errors.Cause(err).Error())
-			return
+			switch strings.Split(errors.Cause(err).Error(), "**")[1] {
+			case "errstack":
+				err = errors.Wrap(err, " **errstack**2") // err top
+				errormanager.ErrorTransmit(pluginclient.GlobalContext, err, false)
+				doneChan <- topodata
+				response.Fail(ctx, nil, errors.Cause(err).Error())
+				return
+			case "errstackfatal":
+				err = errors.Wrap(err, " **errstackfatal**2") // err top
+				doneChan <- topodata
+				response.Fail(ctx, nil, errors.Cause(err).Error())
+				errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
+				return
+			}
+
 		}
 
 		if len(topodata.Nodes) == 0 || len(topodata.Edges) == 0 {
@@ -178,10 +214,18 @@ func DeleteCustomTopoHandle(ctx *gin.Context) {
 	}
 
 	if err := service.DeleteCustomTopoService(req_body.IDs); err != nil {
-		err = errors.Wrap(err, "**errstack**1") // err top
-		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, false)
-		response.Fail(ctx, nil, errors.Cause(err).Error())
-		return
+		switch strings.Split(errors.Cause(err).Error(), "**")[1] {
+		case "errstack":
+			err = errors.Wrap(err, "**errstack**1") // err top
+			errormanager.ErrorTransmit(pluginclient.GlobalContext, err, false)
+			response.Fail(ctx, nil, errors.Cause(err).Error())
+			return
+		case "errstackfatal":
+			err = errors.Wrap(err, " **errstackfatal**2") // err top
+			response.Fail(ctx, nil, errors.Cause(err).Error())
+			errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
+			return
+		}
 	}
 
 	response.Success(ctx, nil, "successfully deleted action")
