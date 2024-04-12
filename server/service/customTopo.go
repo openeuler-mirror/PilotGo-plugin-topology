@@ -10,7 +10,6 @@ import (
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/db/redismanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/graph"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/pluginclient"
-	back "gitee.com/openeuler/PilotGo-plugin-topology-server/service/background"
 	"gitee.com/openeuler/PilotGo/sdk/response"
 	"github.com/pkg/errors"
 )
@@ -64,7 +63,7 @@ func RunCustomTopoService(tcid uint) ([]*graph.Node, []*graph.Edge, []map[string
 	}
 
 	unixtime_now := time.Now().Unix()
-	nodes, edges, combos, err := back.DataProcessWorking(unixtime_now, running_agent_num, graphmanager.Global_GraphDB, tc.TagRules, tc.NodeRules)
+	nodes, edges, combos, err := DataProcessWorking(unixtime_now, running_agent_num, graphmanager.Global_GraphDB, tc.TagRules, tc.NodeRules)
 	if err != nil {
 		return nil, nil, nil, errors.Wrap(err, "**2")
 	}
@@ -153,7 +152,7 @@ func DeleteCustomTopoService(ids []uint) error {
 	if mysqlmanager.Global_Mysql == nil {
 		return errors.New("global_mysql is nil **errstackfatal**1")
 	}
-	
+
 	for _, tcid := range ids {
 		if err := mysqlmanager.Global_Mysql.DeleteTopoConfiguration(tcid); err != nil {
 			return errors.Wrap(err, "**errstack**2")

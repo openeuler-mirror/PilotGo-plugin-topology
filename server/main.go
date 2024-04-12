@@ -12,7 +12,7 @@ import (
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/logger"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/pluginclient"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/signal"
-	service "gitee.com/openeuler/PilotGo-plugin-topology-server/service/background"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/service"
 	// "github.com/pyroscope-io/pyroscope/pkg/agent/profiler"
 )
 

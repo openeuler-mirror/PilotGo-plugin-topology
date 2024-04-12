@@ -6,7 +6,7 @@ import (
 	"os"
 	"path"
 
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/utils"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/global"
 	"gitee.com/openeuler/PilotGo/sdk/logger"
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
@@ -42,7 +42,7 @@ func InitConfig() {
 	}
 	flag.Parse()
 
-	bytes, err := utils.FileReadBytes(ConfigFile())
+	bytes, err := global.FileReadBytes(ConfigFile())
 	if err != nil {
 		err = errors.Wrapf(err, "open file failed: %s, %s", ConfigFile(), err.Error()) // err top
 		fmt.Printf("%+v\n", err)

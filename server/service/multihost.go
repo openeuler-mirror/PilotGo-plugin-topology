@@ -4,16 +4,16 @@ import (
 	"fmt"
 
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/db/graphmanager"
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/graph"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/global"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/graph"
 	"github.com/pkg/errors"
 )
 
 func MultiHostService() ([]*graph.Node, []*graph.Edge, []map[string]string, error) {
 	var latest string
-	nodes := make([]*graph.Node, 0)
+	var nodes []*graph.Node
+	var edges []*graph.Edge
 	nodes_map := make(map[int64]*graph.Node)
-	edges := make([]*graph.Edge, 0)
 	edges_map := make(map[int64]*graph.Edge)
 	hostids := make([]int64, 0)
 	multi_nodes_map := make(map[int64]*graph.Node)
