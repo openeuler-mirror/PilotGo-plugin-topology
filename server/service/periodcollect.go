@@ -15,12 +15,12 @@ import (
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/errormanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/graph"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/pluginclient"
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/processor"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/generator"
 	"gitee.com/openeuler/PilotGo/sdk/logger"
 	"github.com/pkg/errors"
 )
 
-func PeriodCollectWorking(batch []string, noderules [][]mysqlmanager.Filter_rule) {
+func InitPeriodCollectWorking(batch []string, noderules [][]mysqlmanager.Filter_rule) {
 	graphperiod := conf.Global_Config.Topo.Period
 
 	if agentmanager.Global_AgentManager == nil {
@@ -54,8 +54,8 @@ func DataProcessWorking(unixtime int64, agentnum int, graphdb graphmanager.Graph
 	var edgeBreakWg sync.WaitGroup
 	_unixtime := strconv.Itoa(int(unixtime))
 
-	dataprocesser := processor.CreateDataProcesser()
-	nodes, edges, collect_errlist, process_errlist := dataprocesser.ProcessData(agentnum, tagrules, noderules)
+	topogenerator := generator.CreateTopoGenerator(tagrules, noderules)
+	nodes, edges, collect_errlist, process_errlist := topogenerator.ProcessingData(agentnum)
 	if len(collect_errlist) != 0 {
 		for i, cerr := range collect_errlist {
 			collect_errlist[i] = errors.Wrap(cerr, "**errstack**3") // err top
@@ -82,21 +82,6 @@ func DataProcessWorking(unixtime int64, agentnum int, graphdb graphmanager.Graph
 		err := errors.New("nodes or edges is nil **errstack**24") // err top
 		errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
 		return nil, nil, nil, err
-	}
-
-	if len(noderules) != 0 {
-		combos := make([]map[string]string, 0)
-
-		for _, node := range nodes.Nodes {
-			if node.Type == "host" {
-				combos = append(combos, map[string]string{
-					"id":    node.UUID,
-					"label": node.UUID,
-				})
-			}
-		}
-
-		return nodes.Nodes, edges.Edges, combos, nil
 	}
 
 	if graphmanager.Global_GraphDB == nil {

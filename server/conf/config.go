@@ -49,6 +49,8 @@ func InitConfig() {
 		os.Exit(1)
 	}
 
+	Global_Config = &ServerConfig{}
+
 	err = yaml.Unmarshal(bytes, Global_Config)
 	if err != nil {
 		err = errors.Errorf("yaml unmarshal failed: %s", err.Error()) // err top

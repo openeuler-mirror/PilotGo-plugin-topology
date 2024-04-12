@@ -8,7 +8,7 @@ import (
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/errormanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/graph"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/pluginclient"
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/service"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/service/custom"
 	"gitee.com/openeuler/PilotGo/sdk/response"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -31,7 +31,7 @@ func CustomTopoListHandle(ctx *gin.Context) {
 		return
 	}
 
-	tcs, total, err := service.CustomTopoListService(query)
+	tcs, total, err := custom.CustomTopoListService(query)
 	if err != nil {
 		switch strings.Split(errors.Cause(err).Error(), "**")[1] {
 		case "errstack":
@@ -67,7 +67,7 @@ func CreateCustomTopoHandle(ctx *gin.Context) {
 		return
 	}
 
-	tcdb_id, err := service.CreateCustomTopoService(tc)
+	tcdb_id, err := custom.CreateCustomTopoService(tc)
 	if err != nil {
 		switch strings.Split(errors.Cause(err).Error(), "**")[1] {
 		case "errstack":
@@ -108,7 +108,7 @@ func UpdateCustomTopoHandle(ctx *gin.Context) {
 		return
 	}
 
-	tcdb_id, err := service.UpdateCustomTopoService(req_body.TC, *req_body.ID)
+	tcdb_id, err := custom.UpdateCustomTopoService(req_body.TC, *req_body.ID)
 	if err != nil {
 		switch strings.Split(errors.Cause(err).Error(), "**")[1] {
 		case "errstack":
@@ -157,7 +157,7 @@ func RunCustomTopoHandle(ctx *gin.Context) {
 			return
 		}
 
-		topodata.Nodes, topodata.Edges, topodata.Combos, err = service.RunCustomTopoService(uint(tcid_int))
+		topodata.Nodes, topodata.Edges, topodata.Combos, err = custom.RunCustomTopoService(uint(tcid_int))
 		if err != nil {
 			switch strings.Split(errors.Cause(err).Error(), "**")[1] {
 			case "errstack":
@@ -213,7 +213,7 @@ func DeleteCustomTopoHandle(ctx *gin.Context) {
 		return
 	}
 
-	if err := service.DeleteCustomTopoService(req_body.IDs); err != nil {
+	if err := custom.DeleteCustomTopoService(req_body.IDs); err != nil {
 		switch strings.Split(errors.Cause(err).Error(), "**")[1] {
 		case "errstack":
 			err = errors.Wrap(err, "**errstack**1") // err top
