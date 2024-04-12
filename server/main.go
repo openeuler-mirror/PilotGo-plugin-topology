@@ -4,12 +4,15 @@ import (
 	"fmt"
 
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/agentmanager"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/conf"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/dao"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/errormanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/handler"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/logger"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/meta"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/pluginclient"
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/errormanager"
 	service "gitee.com/openeuler/PilotGo-plugin-topology-server/service/background"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/utils"
 	// "github.com/pyroscope-io/pyroscope/pkg/agent/profiler"
 )
 
@@ -24,7 +27,7 @@ func main() {
 	/*
 		init config
 	*/
-	agentmanager.Topo.InitConfig()
+	conf.InitConfig()
 
 	/*
 		init plugin client
@@ -49,12 +52,12 @@ func main() {
 	/*
 		init logger
 	*/
-	agentmanager.Topo.InitLogger()
+	logger.InitLogger()
 
 	/*
 		init machine agent list
 	*/
-	agentmanager.GlobalAgentManager.InitMachineList()
+	agentmanager.Global_AgentManager.InitMachineList()
 
 	/*
 		init database
@@ -70,5 +73,5 @@ func main() {
 	/*
 		终止进程信号监听
 	*/
-	agentmanager.Topo.SignalMonitoring(dao.Global_Neo4j.Driver, dao.Global_redis.Client)
+	utils.SignalMonitoring(dao.Global_Neo4j.Driver, dao.Global_Redis.Client)
 }

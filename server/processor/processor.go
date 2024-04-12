@@ -68,13 +68,13 @@ func (d *DataProcesser) ProcessData(agentnum int, tagrules []meta.Tag_rule, node
 		}
 	}(cancel1)
 
-	if agentmanager.GlobalAgentManager == nil {
-		err := errors.New("globalagentmanager is nil **errstackfatal**0") // err top
+	if agentmanager.Global_AgentManager == nil {
+		err := errors.New("Global_AgentManager is nil **errstackfatal**0") // err top
 		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
 		return nil, nil, nil, nil
 	}
 
-	agentmanager.GlobalAgentManager.TAgentMap.Range(
+	agentmanager.Global_AgentManager.TAgentMap.Range(
 		func(key, value interface{}) bool {
 			wg.Add(1)
 

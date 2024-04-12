@@ -31,13 +31,13 @@ func (d *DataCollector) CollectInstantData() []error {
 	var errorlist []error
 	var errorlist_rwlock sync.RWMutex
 
-	if agentmanager.GlobalAgentManager == nil {
-		err := errors.New("globalagentmanager is nil **errstackfatal**0") // err top
+	if agentmanager.Global_AgentManager == nil {
+		err := errors.New("Global_AgentManager is nil **errstackfatal**0") // err top
 		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
 		return nil
 	}
 
-	agentmanager.GlobalAgentManager.TAgentMap.Range(
+	agentmanager.Global_AgentManager.TAgentMap.Range(
 		func(key, value interface{}) bool {
 			wg.Add(1)
 
@@ -46,14 +46,14 @@ func (d *DataCollector) CollectInstantData() []error {
 				// ttcode
 				temp_start := time.Now()
 				agent := value.(*agentmanager.Agent)
-				agent.Port = conf.Config().Topo.Agent_port
+				agent.Port = conf.Global_Config.Topo.Agent_port
 				err := d.GetCollectDataFromTopoAgent(agent)
 				if err != nil {
 					errorlist_rwlock.Lock()
 					errorlist = append(errorlist, errors.Wrapf(err, "%s**2", agent.IP))
 					errorlist_rwlock.Unlock()
 				}
-				agentmanager.GlobalAgentManager.AddAgent_T(agent)
+				agentmanager.Global_AgentManager.AddAgent_T(agent)
 				// ttcode
 				temp_elapse := time.Since(temp_start)
 				logger.Info("\033[32mtopo server 采集数据获取时间\033[0m: %s, %v, total\n", agent.UUID, temp_elapse)

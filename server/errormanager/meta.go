@@ -20,23 +20,23 @@ type Topoerror struct {
 @exit_after_print: 打印完错误链信息后是否结束主程序
 */
 func ErrorTransmit(ctx context.Context, err error, exit_after_print bool) {
-	if GlobalErrorManager == nil {
+	if Global_ErrorManager == nil {
 		logger.Error("globalerrormanager is nil")
 		os.Exit(1)
 	}
 
 	if exit_after_print {
 		cctx, cancelF := context.WithCancel(ctx)
-		GlobalErrorManager.ErrCh <- &Topoerror{
+		Global_ErrorManager.ErrCh <- &Topoerror{
 			Err:    err,
 			Cancel: cancelF,
 		}
 		<-cctx.Done()
-		close(GlobalErrorManager.ErrCh)
+		close(Global_ErrorManager.ErrCh)
 		os.Exit(1)
 	}
 
-	GlobalErrorManager.ErrCh <- &Topoerror{
+	Global_ErrorManager.ErrCh <- &Topoerror{
 		Err: err,
 	}
 }

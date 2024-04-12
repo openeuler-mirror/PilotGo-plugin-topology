@@ -20,20 +20,26 @@ import (
 )
 
 func PeriodCollectWorking(batch []string, noderules [][]meta.Filter_rule) {
-	graphperiod := conf.Global_config.Topo.Period
+	graphperiod := conf.Global_Config.Topo.Period
 
-	if agentmanager.GlobalAgentManager == nil {
-		err := errors.New("globalagentmanager is nil **errstackfatal**0") // err top
+	if agentmanager.Global_AgentManager == nil {
+		err := errors.New("Global_AgentManager is nil **errstackfatal**0") // err top
 		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
 		return
 	}
 
-	agentmanager.GlobalAgentManager.UpdateMachineList()
+	if dao.Global_Redis == nil {
+		err := errors.New("Global_Redis is nil **errstackfatal**1") // err top
+		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
+		return
+	}
+
+	agentmanager.Global_AgentManager.UpdateMachineList()
 
 	go func(_interval int64, _gdb dao.GraphdbIface, _noderules [][]meta.Filter_rule) {
 		for {
-			dao.Global_redis.ActiveHeartbeatDetection(batch)
-			running_agent_num := dao.Global_redis.UpdateTopoRunningAgentList(batch, false)
+			dao.Global_Redis.ActiveHeartbeatDetection(batch)
+			running_agent_num := dao.Global_Redis.UpdateTopoRunningAgentList(batch, false)
 			unixtime_now := time.Now().Unix()
 			DataProcessWorking(unixtime_now, running_agent_num, _gdb, nil, _noderules)
 			time.Sleep(time.Duration(_interval) * time.Second)

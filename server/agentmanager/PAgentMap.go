@@ -15,7 +15,7 @@ func WaitingForHandshake() {
 	i := 0
 	loop := []string{`*.....`, `.*....`, `..*...`, `...*..`, `....*.`, `.....*`}
 	for {
-		if pluginclient.GlobalClient != nil && pluginclient.GlobalClient.Server() != "" {
+		if pluginclient.Global_Client != nil && pluginclient.Global_Client.Server() != "" {
 			break
 		}
 		fmt.Printf("\r Waiting for handshake with pilotgo server%s", loop[i])
@@ -30,7 +30,7 @@ func WaitingForHandshake() {
 
 func Wait4TopoServerReady() {
 	for {
-		url := "http://" + conf.Config().Topo.Server_addr + "/plugin_manage/info"
+		url := "http://" + conf.Global_Config.Topo.Server_addr + "/plugin_manage/info"
 		resp, err := http.Get(url)
 		if err == nil && resp != nil && resp.StatusCode == http.StatusOK {
 			break
@@ -43,15 +43,15 @@ func Wait4TopoServerReady() {
 func (am *AgentManager) InitMachineList() {
 	Wait4TopoServerReady()
 
-	if pluginclient.GlobalClient == nil {
-		err := errors.New("globalclient is nil **errstackfatal**2") // err top
+	if pluginclient.Global_Client == nil {
+		err := errors.New("Global_Client is nil **errstackfatal**2") // err top
 		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
 		return
 	}
 
-	pluginclient.GlobalClient.Wait4Bind()
+	pluginclient.Global_Client.Wait4Bind()
 
-	machine_list, err := pluginclient.GlobalClient.MachineList()
+	machine_list, err := pluginclient.Global_Client.MachineList()
 	if err != nil {
 		err = errors.Errorf("%s **errstackfatal**2", err.Error()) // err top
 		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
@@ -69,21 +69,16 @@ func (am *AgentManager) InitMachineList() {
 
 // 更新PAgentMap中的agent
 func (am *AgentManager) UpdateMachineList() {
-	machine_list, err := pluginclient.GlobalClient.MachineList()
+	machine_list, err := pluginclient.Global_Client.MachineList()
 	if err != nil {
 		err = errors.Errorf("%s **errstackfatal**2", err.Error()) // err top
 		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
 	}
 
-	if Topo != nil {
-		am.PAgentMap.Range(func(key, value interface{}) bool {
-			am.DeleteAgent_P(key.(string))
-			return true
-		})
-	} else {
-		err := errors.New("agentmanager.Topo is nil, can not clear Topo.PAgentMap **errstackfatal**6") // err top
-		errormanager.ErrorTransmit(pluginclient.GlobalContext, err, true)
-	}
+	am.PAgentMap.Range(func(key, value interface{}) bool {
+		am.DeleteAgent_P(key.(string))
+		return true
+	})
 
 	for _, m := range machine_list {
 		p := &Agent{}
