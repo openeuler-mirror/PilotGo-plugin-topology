@@ -30,11 +30,11 @@ const (
 )
 
 const (
-	INNER_LAYOUT_1 = "a"
-	INNER_LAYOUT_2 = "b"
-	INNER_LAYOUT_3 = "c"
-	INNER_LAYOUT_4 = "d"
-	INNER_LAYOUT_5 = "e"
+	INNER_LAYOUT_1 = "5"
+	INNER_LAYOUT_2 = "4"
+	INNER_LAYOUT_3 = "2"
+	INNER_LAYOUT_4 = "3"
+	INNER_LAYOUT_5 = "1"
 )
 
 func init() {

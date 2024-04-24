@@ -3,13 +3,12 @@
 </template>
 
 <script setup lang="ts">
-import G6, { Graph } from '@antv/g6';
-import { ref, reactive, onMounted, watch, watchEffect } from "vue";
+import G6, { Graph, ICombo, ComboConfig, INode } from '@antv/g6';
+import { ref, reactive, onMounted, watch, watchEffect, nextTick } from "vue";
 import server_logo from "@/assets/icon/server_blue.png";
 import process_logo from "@/assets/icon/process.png";
 import net_logo from "@/assets/icon/net.png";
 import resource_logo from "@/assets/icon/resource.png";
-import machine_logo from "@/assets/icon/machine.png";
 import { useTopoStore } from '@/stores/topo';
 import { colorSets, graphInitOptions, graphTreeInitOptions } from './PGOptions';
 
@@ -26,18 +25,26 @@ const props = defineProps({
   }
 })
 
+let topo_container: HTMLElement;
+
 let graph: Graph;
-const init_data = ref(false);
 let topo_data = reactive<any>({});
 let topo_type = ref('comb');
+
+let combo_positions: Map<string, number[]>;
+let combo_color: Map<string, string[]>;
+let combo_collapse_status: Map<string, boolean>;
+let zoom_before: number;
+let node_position_process: Map<string, number[]>;
+let node_position_host: Map<string, number[]>;
 
 const topoW = ref(0);
 const topoH = ref(0);
 
 onMounted(() => {
-  init_data.value = false;
-  topoW.value = document.getElementById("topo-container")!.clientWidth;
-  topoH.value = document.getElementById("topo-container")!.clientHeight;
+  topo_container = document.getElementById("topo-container")!;
+  topoW.value = topo_container.clientWidth;
+  topoH.value = topo_container.clientHeight;
 })
 
 const updateTopoData = (topoData: any) => {
@@ -130,22 +137,32 @@ const updateTopoData = (topoData: any) => {
     }
   })
 
-  topo_data.combos.forEach((combo: any, i: number) => {
-    combo.style = {
-      stroke: colorSets[i].mainStroke,
-      fill: colorSets[i].mainFill,
-      opacity: 0.8
-    }
-    combo.collapsedSubstituteIcon = {
-        show: true,
-        img: machine_logo,
-        width: 50,
-        height: 50
-      }
-  })
+  // 初始化combo收缩/展开状态 combo_collapse_status
+  if (!combo_collapse_status) {
+    combo_collapse_status = new Map<string, boolean>();
+    topo_data.combos.forEach((combo: any, _i: any) => {
+      combo_collapse_status.set(combo.id as string, true);
+    });    
+  }
+  // 初始化combo颜色 combo_color
+  if (!combo_color || combo_color.size < topo_data.combos.length) {
+    combo_color = new Map<string, string[]>();
+    topo_data.combos.forEach((combo: any, i: number) => {
+      combo_color.set(combo.id, [colorSets[i].mainStroke as string, colorSets[i].mainFill as string]);
+    });      
+  }
 
-  // 数据处理完成，初始化图
-  init_data.value = true;
+  topo_data.combos.forEach((combo: any, i: number) => {
+    const colors = combo_color.get(combo.id);
+    if (colors) {
+      combo.style = {
+        stroke: colors[0],
+        fill: colors[1],
+        opacity: 0.8
+      };   
+    }
+    combo.collapsed = true; // 图固定关键参数，原因未知
+  })    
 }
 
 function initGraph(data: any) {
@@ -179,27 +196,35 @@ function initGraph(data: any) {
       };
     });
   }
+
   // 节点点击事件
-  graph.on('node:click', (e: any) => {
+  graph.on('node:click', (e) => {
     graph.getNodes().forEach((node) => {
       graph.clearItemStates(node);
     });
     const nodeItem = e.item;
-    graph.setItemState(nodeItem, 'click', true);
-    // 抽屉组件展示的节点数据
-    let selected_node = e.item._cfg;
-    if (topo_type.value === 'comb') {
-      useTopoStore().nodeData = selected_node.model;
-    } else {
-      useTopoStore().nodeData = selected_node.model.node;
+    // ttcode
+    console.log(nodeItem);
+    if (nodeItem) {
+      graph.setItemState(nodeItem, 'click', true);
+      // 抽屉组件展示的节点数据
+      let selected_node = nodeItem._cfg;
+      if (selected_node && topo_type.value === 'comb') {
+        useTopoStore().nodeData = selected_node.model;
+      } else if (selected_node && selected_node.model) {
+        useTopoStore().nodeData = selected_node.model.node;
+      }
     }
+
   });
+
   // 边点击事件
   graph.on('edge:click', (e: any) => {
     graph.getEdges().forEach((edge) => {
       graph.clearItemStates(edge);
     });
     const edgeItem = e.item;
+    console.log(e);
     graph.setItemState(edgeItem, 'click', true);
     // 抽屉组件展示的边数据
     let selected_edge = e.item._cfg;
@@ -209,6 +234,7 @@ function initGraph(data: any) {
       useTopoStore().edgeData = selected_edge.model.edge;
     }
   });
+
   // // 节点悬浮高亮
   // graph.on('node:mouseover', (e: any) => {
   //   graph.setItemState(e.item, 'active', true);
@@ -219,25 +245,139 @@ function initGraph(data: any) {
   // });
 
   graph.on('node:dragstart', (e) => {
-    // graph.layout();
     refreshDragedNodePosition(e);
   });
+
+  graph.on('node:dragend', (e) => {
+    node_position_process.set(e.item?.getModel().id as string, [e.item?.getModel().x as number, e.item?.getModel().y as number])
+    if (e.item?.getModel().id === '3df830f0-cc71-48b4-8693-cd36098cc6d1_process_147139') {
+      console.log("node drag end: ", node_position_process.get(e.item?.getModel().id as string));
+    }
+  });
+
+  graph.on('combo:dragend', (e) => {
+    combo_positions.set(e.item?.getModel().id as string, [e.item?.getModel().x as number, e.item?.getModel().y as number]);
+  });
+
+  // 保存combo collapse expand状态
+  graph.on('combo:dblclick', (e) => {
+    combo_collapse_status.set(e.item?.getID() as string, e.item?.getModel().collapsed as boolean);
+  });
+
   // 解决拖动产生残影问题
   graph.get('canvas').set('localRefresh', false);
+  
+  graph.on('wheelzoom', (e) => {
+    zoom_before = graph.getZoom();
+  });
+
+  // 渲染前的操作
+  graph.on('beforelayout', () => { 
+    // ttcode
+    // graph.getCombos().forEach((combo: ICombo, _i: any) => {
+    //   if (combo.getModel().id === '54bcecd3-ea5f-497e-9ccb-3bb1aa9c0864') {
+    //     console.log("54 before reset: ", combo.getModel().x, combo.getModel().y);
+    //   }
+    // });       
+    // 重置combo坐标
+    if (combo_positions) {
+      graph.getCombos().forEach((combo: ICombo, _i: any) => {
+        const position = combo_positions.get(combo.getModel().id as string)
+        if (position) {
+          combo.updatePosition({x: position[0], y: position[1]});
+          // combo.updatePosition({x: 0, y: 0});
+        }     
+
+        // ttcode
+        // if (combo.getModel().id === '54bcecd3-ea5f-497e-9ccb-3bb1aa9c0864') {
+        //   console.log("54 position: ", position);
+        // }   
+      });      
+    } else {
+      combo_positions = new Map<string, number[]>();
+    }
+    // ttcode
+    // graph.getCombos().forEach((combo: ICombo, _i: any) => {
+    //   if (combo.getModel().id === '54bcecd3-ea5f-497e-9ccb-3bb1aa9c0864') {
+    //     console.log("54 after reset: ", combo.getModel().x, combo.getModel().y);
+    //     // console.log("54combo: ", combo.getModel());   
+    //   }
+    // });  
+
+    // ttcode
+    // graph.getNodes().forEach((node: INode, _i: any) => {
+    //   if (node.getModel().id === '3df830f0-cc71-48b4-8693-cd36098cc6d1_process_147139') {
+    //     console.log("node reset before: ", node.getModel().x, node.getModel().y);
+    //   }
+    // });
+    // 重置process node坐标
+    if (node_position_process) {
+      graph.getNodes().forEach((node: any, _i: number) => {
+        const process_position = node_position_process.get(node.id);
+        if (node.getModel().Type === 'process' && process_position) {
+          node.updatePosition({x: process_position[0], y: process_position[1]})
+        }
+      });
+    } else {
+      // 初始化node_position_process
+      node_position_process = new Map<string, number[]>();
+    }
+    // ttcode
+    // graph.getNodes().forEach((node: INode, _i: any) => {
+    //   if (node.getModel().id === '3df830f0-cc71-48b4-8693-cd36098cc6d1_process_147139') {
+    //     console.log("node reset after: ", node.getModel().x, node.getModel().y);
+    //   }
+    // });
+
+    if (node_position_host) {
+      graph.getNodes().forEach((node: any, _i: number) => {
+        const host_position = node_position_host.get(node.id);
+        if (node.getModel().Type === 'host' && host_position) {
+          node.updatePosition({x: host_position[0], y: host_position[1]})
+        }
+      });
+    } else {
+      node_position_host = new Map<string, number[]>();
+    }
+  });
+
+  // 渲染后的操作
+  graph.on('afterlayout', () => {
+    // ttcode
+    // graph.getNodes().forEach((node: INode, _i: any) => {
+    //   if (node.getModel().id === '3df830f0-cc71-48b4-8693-cd36098cc6d1_process_147139') {
+    //       console.log("node layout after: ", node.getModel().x, node.getModel().y);
+    //     }
+    // });
+
+    saveCombosPosition(); 
+    
+    // 恢复combo收缩/展开状态
+    graph.getCombos().forEach((combo: ICombo, _i: any) => {
+      if (combo_collapse_status.get(combo.getModel().id as string) === true) {
+        graph.collapseCombo(combo.getModel().id as string);
+      } else if (combo_collapse_status.get(combo.getModel().id as string) === false) {
+        graph.expandCombo(combo.getModel().id as string);
+      }
+    });
+
+    saveNodePosition();
+  });
 
   graph.data(data);
-
   graph.render();
 
-
-
-  window.onresize = () => {
-    graph.changeSize(
-      document.getElementById("topo-container")!.clientWidth,
-      document.getElementById("topo-container")!.clientHeight)
-    graph.fitCenter()
+  
+  while (!topo_container) {
+    setTimeout(() => {}, 50);
   }
-  init_data.value = false
+  
+  if (typeof window !== 'undefined') {
+    window.onresize = () => {
+      graph.changeSize(topo_container.clientWidth, topo_container.clientHeight)
+      graph.fitCenter()
+    }
+  }
 }
 
 function refreshDragedNodePosition(e: any) {
@@ -246,30 +386,58 @@ function refreshDragedNodePosition(e: any) {
   model.fy = e.y;
 }
 
+// 保存当前combo坐标
+function saveCombosPosition() {
+  graph.getCombos().forEach((combo: ICombo, _i: any) => {
+    const x = combo.getModel().x;
+    const y = combo.getModel().y;
+    combo_positions.set(combo.getModel().id as string, [x as number, y as number]);
+  });
+}
+
+function saveNodePosition() {
+      graph.getNodes().forEach((node: INode, _i: any) => {
+        if (node.getModel().Type === "host") {
+          if (node.getModel().x && node.getModel().y) {
+            node_position_host.set(node.getModel().id as string, [node.getModel().x as number, node.getModel().y as number]);
+          }
+        }
+      });
+
+      graph.getNodes().forEach((node: INode, _i: any) => {
+        if (node.getModel().Type === "process") {
+          if (node.getModel().x && node.getModel().y) {
+            node_position_process.set(node.getModel().id as string, [node.getModel().x as number, node.getModel().y as number]);
+          }
+        }
+      });     
+}
+
+function changeZoom(zoom: number) {
+  const point_position = graph.getPointByCanvas(graph.getWidth() / 2, graph.getHeight() / 2);
+  graph.zoom(zoom, point_position, false);
+  // graph.zoom(zoom);
+}
+
 watch(() => useTopoStore().topo_data, (new_topo_data) => {
-  // 数据处理入口
-  topo_type.value = 'comb';
-  let topo_data = JSON.parse(JSON.stringify(new_topo_data));
-  if (topo_data.tree) {
-    topo_type.value = 'tree';
-    initGraph(topo_data.tree);
-  } else if (topo_data.nodes) {
-    updateTopoData(topo_data);
-  }
+  nextTick(() => {
+    // 数据处理入口
+    topo_type.value = 'comb';
+    let topo_data_raw = JSON.parse(JSON.stringify(new_topo_data));
+    if (topo_data_raw.tree) {
+      topo_type.value = 'tree';
+      initGraph(topo_data_raw.tree);
+    } else if (topo_data_raw.nodes && !graph) {
+      updateTopoData(topo_data_raw);
+      initGraph(topo_data);
+    } else if (topo_data_raw.nodes) {
+      updateTopoData(topo_data_raw);
+      graph.changeData(topo_data);
+    } 
+
+  });
+
 }, { immediate: true, deep: true })
-
-
-watch(() => init_data, (newdata) => {
-  if (newdata) {
-    initGraph(topo_data);
-    topo_data.combos.forEach((combo: any, _i: any) => {
-      graph.collapseCombo(combo['id']);
-    })
-    graph.updateCombos();
-  }
-
-}, { deep: true })
-
 
 // 设置graph_mode
 watch(() => props.graph_mode, (newData) => {

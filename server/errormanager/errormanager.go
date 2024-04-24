@@ -37,11 +37,6 @@ func InitErrorManager() {
 
 	go func(ch <-chan *Topoerror) {
 		for topoerr := range ch {
-			// topoerr, ok := <-ch
-			// if !ok {
-			// 	break
-			// }
-
 			if topoerr.Err != nil {
 				errarr := strings.Split(errors.Cause(topoerr.Err).Error(), "**")
 				if len(errarr) < 2 {

@@ -5,9 +5,22 @@
       <template #content>
         <span style="font-size: 14px;"> 拓扑图 </span>
       </template>
+      <template #extra>
+        <div class="flex items-center">
+          <el-dropdown @command="changeInterval">
+            <span style="font-size: 14px;"> 定时器 </span>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="关闭">关闭</el-dropdown-item>
+                <el-dropdown-item command="5s">5s</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+        </div>
+      </template>
     </el-page-header>
     <!-- 展示topo图 -->
-    <PGTopo style="width: 100%;height: 100%;" v-if="showTopo" :graph_mode="graphMode" :time_interval="timeInterval" />
+    <PGTopo style="width: 100%;height: 100%;" :graph_mode="graphMode" :time_interval="timeInterval" />
     <!-- 嵌套抽屉组件展示数据 -->
     <nodeDetail />
   </div>
@@ -15,7 +28,7 @@
 
 <script setup lang="ts">
 import { ElMessage } from 'element-plus'
-import { onMounted, reactive, ref, watch, watchEffect } from 'vue';
+import { onMounted, reactive, ref, watch, watchEffect, nextTick } from 'vue';
 import PGTopo from '@/components/PGTopo.vue';
 // import topodata from '@/assets/cluster2024-3-15.json'
 // import topodata from '@/utils/test.json';
@@ -26,69 +39,142 @@ import { useConfigStore } from '@/stores/config';
 import router from '@/router';
 
 const graphMode = ref('default');
-const timeInterval = ref('10');
+const timeInterval = ref('关闭');
+let time_interval_num: number = 0
+let timer: NodeJS.Timeout;
 const showTopo = ref(false);
 const loading = ref(false);
+let request_type: string
+let request_id: string|number
+
 onMounted(() => {
   loading.value = true;
 })
 
 const goBack = () => {
+  if (timer) {
+    clearInterval(timer);
+  }
   router.push('topoList');
 }
 
 watchEffect(() => {
-  let requst_type = useConfigStore().topo_request.type;
-  let requst_id = useConfigStore().topo_request.id;
-  let topoData = {};
-  switch (requst_type) {
-    case 'custom':
-      // ttcode
-      // useTopoStore().topo_data = topodata.data;
-      // showTopo.value = true;
-      // loading.value = false;
-
-      getCustomTopo({ id: requst_id as number }).then(res => {
-        if (res.data.code === 200) {
-          topoData = res.data.data;
-          useTopoStore().topo_data = topoData;
-          showTopo.value = true;
-          loading.value = false;
-        } else {
-            ElMessage.error(res.data.msg);
-            router.push('topoList');
-        }
-      })
-      break;
-    case 'single':
-      getUuidTopo({ uuid: requst_id as string }).then(res => {
-        if (res.data.code === 200) {
-          topoData = res.data.data;
-          loading.value = false;
-          showTopo.value = true;
-          setTimeout(() => {
+  request_type = useConfigStore().topo_request.type;
+  request_id = useConfigStore().topo_request.id;
+  nextTick(() => {
+    let topoData = {};
+    switch (request_type) {
+      case 'custom':
+        getCustomTopo({ id: request_id as number }).then(res => {
+          if (res.data.code === 200) {
+            topoData = res.data.data;
+            loading.value = false;
+            showTopo.value = true;
+            // setTimeout(() => {
+            //   useTopoStore().topo_data = topoData;
+            // }, 200)
             useTopoStore().topo_data = topoData;
-          }, 200)
-        } else {
-            ElMessage.error(res.data.msg);
-            router.push('topoList');
-        }
-      })
-      break;
+          } else {
+              ElMessage.error(res.data.msg);
+              router.push('topoList');
+          }
+        })
 
-    default:
-      getTopoData().then(res => {
-        if (res.data.code === 200) {
-          topoData = res.data.data;
-          useTopoStore().topo_data = topoData;
-          showTopo.value = true;
-          loading.value = false;
-        }
-      })
-      break;
-  }
+        topoTimer(request_id, '关闭');
+
+        break;
+      case 'single':
+        getUuidTopo({ uuid: request_id as string }).then(res => {
+          if (res.data.code === 200) {
+            topoData = res.data.data;
+            loading.value = false;
+            showTopo.value = true;
+            setTimeout(() => {
+              useTopoStore().topo_data = topoData;
+            }, 200)
+          } else {
+              ElMessage.error(res.data.msg);
+              router.push('topoList');
+          }
+        })
+        break;
+
+      default:
+        getTopoData().then(res => {
+          if (res.data.code === 200) {
+            topoData = res.data.data;
+            useTopoStore().topo_data = topoData;
+            showTopo.value = true;
+            loading.value = false;
+          }
+        })
+        break;
+    }
+
+
+  })
+
 })
 
+watch(() => timeInterval.value, (newdata) => {
+  topoTimer(request_id, newdata);
+})
+
+function changeInterval(command: string) {
+  timeInterval.value = command;
+}
+
+// 定时器
+function topoTimer(request_id: any, interval: string) {
+  let topoData = {};
+
+  if (interval === '关闭') {
+      clearInterval(timer)
+  } else {
+      switch (timeInterval.value) {
+        case '5s':
+          time_interval_num = 5000
+          break;
+        case '10s':
+          time_interval_num = 10000
+          break;
+        case '15s':
+          time_interval_num = 15000
+          break;
+        case '1m':
+          time_interval_num = 60000
+          break;
+        case '5m':
+          time_interval_num = 300000
+          break;
+      }
+
+      try {
+        if (timer) {
+          clearInterval(timer)
+        }
+        timer = setInterval(() => {
+          getCustomTopo({ id: request_id as number }).then(res => {
+            if (res.data.code === 200) {
+              topoData = res.data.data;
+              loading.value = false;
+              showTopo.value = true;
+              // setTimeout(() => {
+              //   useTopoStore().topo_data = topoData;
+              // }, 200)
+              useTopoStore().topo_data = topoData;
+            } else {
+                ElMessage.error(res.data.msg);
+                router.push('topoList');
+            }
+          })            
+        }, time_interval_num)
+      
+      } catch (error) {
+        console.error(error)
+      }
+  }
+}
 
 </script>
 

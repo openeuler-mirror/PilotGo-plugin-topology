@@ -1,4 +1,6 @@
 import G6 from '@antv/g6';
+import machine_logo from "@/assets/icon/machine.png";
+
 const subjectColors = [
   '#5F95FF', // blue
   '#61DDAA',
@@ -29,12 +31,29 @@ export const graphInitOptions = {
   fitView: true, // 是否自适应画布
   fitViewPadding: 200, // 画布周围的留白px
   animate: true, // 是否开启动画效果
+  zoom: 1,
   minZoom: 0.00000001, // 
   defaultNode: {
     size: 20,
     labelCfg: {
       position: "bottom",
       offset: 2,
+    },
+  },
+  defaultCombo: {
+    animate: false,
+    // fixSize: 400,
+    fixCollapseSize: 50,
+    collapsed: true,
+    // padding: 30,
+    collapsedSubstituteIcon: {
+      show: true,
+      img: machine_logo,
+      width: 50,
+      height: 50
+    },
+    labelCfg: {
+      position: 'top',
     },
   },
   // 边状态样式,暂定,缺tooltip
@@ -51,15 +70,15 @@ export const graphInitOptions = {
   // 节点状态样式
   nodeStateStyles: {
     // 选中后样式
-    click: {
-      fill: '#0282FF', // 填充色
-      stroke: '#0282FF', // 节点描边颜色
-      lineWidth: 1, // 描边宽度
-      shadowColor: 'rgba(0,102,210,0.5)',
-      'text-shape': {
-        fill: "#0282FF"
-      }
-    },
+    // click: {
+    //   fill: '#0282FF', // 填充色
+    //   stroke: '#0282FF', // 节点描边颜色
+    //   lineWidth: 1, // 描边宽度
+    //   shadowColor: 'rgba(0,102,210,0.5)',
+    //   'text-shape': {
+    //     fill: "#0282FF"
+    //   }
+    // },
     // 悬浮后样式
     active: {
       fill: '#CDEEFF', // 填充色
@@ -95,20 +114,31 @@ export const graphInitOptions = {
     //   sortStrength: 100,
     // }),
     innerLayout: new G6.Layout['concentric']({
-      linkDistance: 200,       
+      // linkDistance: 500, // 无效
+      // nodeSpacing: 500, // 无效
+      sweep: 6.28,
       preventOverlap: true,     
-      nodeSize: 30,        
-      // sweep: 20,             
-      equidistant: true,      
+      nodeSize: 30,                    
+      equidistant: false,      
       startAngle: 0,           
       clockwise: false,        
-      maxLevelDiff: '5',         
-      sortBy: 'layoutattr',    
+      maxLevelDiff: '0.1',        
+      // sortBy: 'degree',
+      sortBy: 'layoutattr',   
       workerEnabled: true,    
     }), 
   },
   modes: {
-    default: ['drag-canvas', 'zoom-canvas', 'drag-combo', 'collapse-expand-combo', 'drag-node']
+    default: [
+      'drag-canvas', 
+      'zoom-canvas', 
+      'drag-combo', 
+      {
+        type: 'collapse-expand-combo',
+        trigger: 'dblclick',
+        relayout: false, // 收缩展开后，不重新布局
+      },
+      'drag-node']
   },
 }
 
