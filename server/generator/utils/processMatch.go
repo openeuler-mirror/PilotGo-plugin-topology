@@ -77,7 +77,7 @@ func ProcessMatching(agent *agentmanager.Agent, exename, cmdline, component stri
 		}
 	case "node":
 		for i := 1; i < len(cmdline_lower_arr); i++ {
-			if strings.HasSuffix(cmdline_lower_arr[i], ".js") || strings.HasSuffix(cmdline_lower_arr[i], ".ts") && strings.Split(strings.Split(cmdline_lower_arr[i], "/")[len(strings.Split(cmdline_lower_arr[i], "/"))-1], ".")[0] == component_lower {
+			if (strings.HasSuffix(cmdline_lower_arr[i], ".js") || strings.HasSuffix(cmdline_lower_arr[i], ".ts")) && strings.Split(strings.Split(cmdline_lower_arr[i], "/")[len(strings.Split(cmdline_lower_arr[i], "/"))-1], ".")[0] == component_lower {
 				return true
 			}
 		}
@@ -119,6 +119,10 @@ func ProcessMatching(agent *agentmanager.Agent, exename, cmdline, component stri
 					}
 				}
 			}
+		}
+	case "nginx":
+		if strings.ToLower(exename) == component_lower && strings.Contains(cmdline_lower, "master process") {
+			return true
 		}
 	default:
 		if strings.ToLower(exename) == component_lower {
