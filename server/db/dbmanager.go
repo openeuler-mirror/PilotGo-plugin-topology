@@ -7,6 +7,7 @@ import (
 
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/conf"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/db/graphmanager"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/db/influxmanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/db/mysqlmanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/db/redismanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/errormanager"
@@ -20,6 +21,8 @@ func InitDB() {
 	initRedis()
 
 	initMysql()
+
+	// initInflux()
 
 	go ClearGraphData(conf.Global_Config.Topo.Retention)
 }
@@ -60,6 +63,15 @@ func initMysql() {
 		logger.Debug("mysql database initialization successful")
 	} else {
 		logger.Error("mysql database initialization failed")
+	}
+}
+
+func initInflux() {
+	influxmanager.Global_Influx = influxmanager.InfluxdbInit(conf.Global_Config.Influx)
+	if influxmanager.Global_Influx != nil {
+		logger.Debug("influx database initialization successful")
+	} else {
+		logger.Error("influx database initialization failed")
 	}
 }
 

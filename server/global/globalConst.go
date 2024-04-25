@@ -37,6 +37,23 @@ const (
 	INNER_LAYOUT_5 = "1"
 )
 
+// 事件类型
+const (
+	EVENT_TYPE_SYSTEM        = "system"
+	EVENT_TYPE_SECURITY      = "security"
+	EVENT_TYPE_PERFORMANCE   = "performance"
+	EVENT_TYPE_CONFIGURATION = "configuration"
+	EVENT_TYPE_LOG           = "log"
+)
+
+// 事件级别
+const (
+	EVENT_LEVEL_FATAL = "fatal"
+	EVENT_LEVEL_ERROR = "error"
+	EVENT_LEVEL_WARN  = "warn"
+	EVENT_LEVEL_INFO  = "info"
+)
+
 func init() {
 	NODE_TYPES = []string{NODE_HOST, NODE_PROCESS, NODE_THREAD, NODE_NET, NODE_APP, NODE_RESOURCE}
 	EDGE_TYPES = []string{EDGE_BELONG, EDGE_SERVER, EDGE_CLIENT, EDGE_TCP, EDGE_UDP}

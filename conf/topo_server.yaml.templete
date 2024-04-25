@@ -30,3 +30,8 @@ mysql:
   username: ''
   password: ''
   DB: "PluginTopo"
+influx:
+  addr: "http://localhost:8086"
+  token: ""
+  org: ""
+  bucket: ""
