@@ -15,6 +15,10 @@ System application architecture detection.
 
 ![Alt text](docs/pilotgo-plugin-topo.png)
 
+![Alt text](docs/custom-configuration.png)
+
+![Alt text](docs/architecture-topo.png)
+
 #### 安装及使用教程
 1. 拉取仓库代码
 ```bash

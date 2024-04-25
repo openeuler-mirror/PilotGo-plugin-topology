@@ -41,7 +41,7 @@ import router from '@/router';
 const graphMode = ref('default');
 const timeInterval = ref('关闭');
 let time_interval_num: number = 0
-let timer: NodeJS.Timeout;
+let timer: any;
 const showTopo = ref(false);
 const loading = ref(false);
 let request_type: string
