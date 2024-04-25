@@ -27,6 +27,7 @@ type ServerConfig struct {
 	Prometheus *PrometheusConf
 	Redis      *RedisConf
 	Mysql      *MysqlConf
+	Influx     *InfluxConf
 }
 
 func ConfigFile() string {

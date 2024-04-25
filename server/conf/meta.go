@@ -44,3 +44,10 @@ type MysqlConf struct {
 	Password string `yaml:"password"`
 	DB       string `yaml:"DB"`
 }
+
+type InfluxConf struct {
+	Addr   string `yaml:"addr"`
+	Token  string `yaml:"token"`
+	Org    string `yaml:"org"`
+	Bucket string `yaml:"bucket"`
+}
