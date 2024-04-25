@@ -3,8 +3,9 @@
 </template>
 
 <script setup lang="ts">
-import G6, { Graph, ICombo, ComboConfig, INode } from '@antv/g6';
-import { ref, reactive, onMounted, watch, watchEffect, nextTick } from "vue";
+import G6, { Graph } from '@antv/g6';
+import type { ICombo, INode } from '@antv/g6';
+import { ref, reactive, onMounted, watch, nextTick } from "vue";
 import server_logo from "@/assets/icon/server_blue.png";
 import process_logo from "@/assets/icon/process.png";
 import net_logo from "@/assets/icon/net.png";
@@ -285,13 +286,7 @@ function initGraph(data: any) {
         const position = combo_positions.get(combo.getModel().id as string)
         if (position) {
           combo.updatePosition({x: position[0], y: position[1]});
-          // combo.updatePosition({x: 0, y: 0});
         }     
-
-        // ttcode
-        // if (combo.getModel().id === '54bcecd3-ea5f-497e-9ccb-3bb1aa9c0864') {
-        //   console.log("54 position: ", position);
-        // }   
       });      
     } else {
       combo_positions = new Map<string, number[]>();
