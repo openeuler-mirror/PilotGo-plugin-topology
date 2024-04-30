@@ -8,29 +8,31 @@ const (
 )
 
 type Topo_configuration struct {
-	ID          uint            `gorm:"primary_key;AUTO_INCREMENT" json:"id"`
-	Name        string          `gorm:"not null;type:varchar(200)" json:"conf_name"`
-	Version     string          `gorm:"not null;type:varchar(20)" json:"conf_version"`
-	Description string          `gorm:"type:text" json:"description"`
-	CreatedAt   string          `gorm:"not null" json:"create_time"`
-	UpdatedAt   string          `gorm:"not null" json:"update_time"`
-	Preserve    uint            `gorm:"not null" json:"preserve"`
-	BatchId     uint            `gorm:"not null" json:"batchId"`
-	NodeRules   [][]Filter_rule `gorm:"type:text" json:"node_rules"`
-	TagRules    []Tag_rule      `gorm:"type:text" json:"tag_rules"`
+	ID             uint                            `gorm:"primary_key;AUTO_INCREMENT" json:"id"`
+	Name           string                          `gorm:"not null;type:varchar(200)" json:"conf_name"`
+	Version        string                          `gorm:"not null;type:varchar(20)" json:"conf_version"`
+	Description    string                          `gorm:"type:text" json:"description"`
+	CreatedAt      string                          `gorm:"not null" json:"create_time"`
+	UpdatedAt      string                          `gorm:"not null" json:"update_time"`
+	Preserve       uint                            `gorm:"not null" json:"preserve"`
+	BatchId        uint                            `gorm:"not null" json:"batchId"`
+	NodeRules      [][]Filter_rule                 `gorm:"type:text" json:"node_rules"`
+	TagRules       []Tag_rule                      `gorm:"type:text" json:"tag_rules"`
+	NodeCoordinate []map[string]map[string]float32 `gorm:"type:text" json:"node_coordi"`
 }
 
 type Topo_configuration_DB struct {
-	ID          uint   `gorm:"primary_key;AUTO_INCREMENT" json:"id"`
-	Name        string `gorm:"not null;type:varchar(200)" json:"conf_name"`
-	Version     string `gorm:"not null;type:varchar(20)" json:"conf_version"`
-	Description string `gorm:"type:text" json:"description"`
-	CreatedAt   string `gorm:"not null" json:"create_time"`
-	UpdatedAt   string `gorm:"not null" json:"update_time"`
-	Preserve    uint   `gorm:"not null" json:"preserve"`
-	BatchId     uint   `gorm:"not null" json:"batchId"`
-	NodeRules   string `gorm:"type:text" json:"node_rules"`
-	TagRules    string `gorm:"type:text" json:"tag_rules"`
+	ID             uint   `gorm:"primary_key;AUTO_INCREMENT" json:"id"`
+	Name           string `gorm:"not null;type:varchar(200)" json:"conf_name"`
+	Version        string `gorm:"not null;type:varchar(20)" json:"conf_version"`
+	Description    string `gorm:"type:text" json:"description"`
+	CreatedAt      string `gorm:"not null" json:"create_time"`
+	UpdatedAt      string `gorm:"not null" json:"update_time"`
+	Preserve       uint   `gorm:"not null" json:"preserve"`
+	BatchId        uint   `gorm:"not null" json:"batchId"`
+	NodeRules      string `gorm:"type:text" json:"node_rules"`
+	TagRules       string `gorm:"type:text" json:"tag_rules"`
+	NodeCoordinate string `gorm:"type:text" json:"node_coordinate"`
 }
 
 type Filter_rule struct {
