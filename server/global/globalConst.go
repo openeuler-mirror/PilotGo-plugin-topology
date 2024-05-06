@@ -39,19 +39,33 @@ const (
 
 // 事件类型
 const (
-	EVENT_TYPE_SYSTEM        = "system"
-	EVENT_TYPE_SECURITY      = "security"
-	EVENT_TYPE_PERFORMANCE   = "performance"
-	EVENT_TYPE_CONFIGURATION = "configuration"
-	EVENT_TYPE_LOG           = "log"
+	EVENT_TYPE_0 = "kernel"
+	EVENT_TYPE_1 = "user_level"
+	EVENT_TYPE_2 = "mail"
+	EVENT_TYPE_3 = "system_daemons"
+	EVENT_TYPE_4 = "security_authorizaion"
+	EVENT_TYPE_5 = "by_log_service"
+	EVENT_TYPE_7 = "network_news"
+	EVENT_TYPE_9 = "clock_daemon"
+	EVENT_TYPE_11 = "ftp_daemon"
+	EVENT_TYPE_12 = "ntp_daemon"
+	EVENT_TYPE_13 = "log_audit"
+	EVENT_TYPE_14 = "log_alert"
+	EVENT_TYPE_16 = "reserve"
+	EVENT_TYPE_17 = "reserve"
+	EVENT_TYPE_18 = "reserve"
 )
 
 // 事件级别
 const (
-	EVENT_LEVEL_FATAL = "fatal"
-	EVENT_LEVEL_ERROR = "error"
-	EVENT_LEVEL_WARN  = "warn"
-	EVENT_LEVEL_INFO  = "info"
+	EVENT_LEVEL_0 = "emergency"
+	EVENT_LEVEL_1 = "alert"
+	EVENT_LEVEL_2 = "critical"
+	EVENT_LEVEL_3 = "error"
+	EVENT_LEVEL_4 = "warn"
+	EVENT_LEVEL_5 = "notice"
+	EVENT_LEVEL_6 = "info"
+	EVENT_LEVEL_7 = "debug"
 )
 
 func init() {

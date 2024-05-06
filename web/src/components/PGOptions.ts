@@ -123,7 +123,6 @@ export const graphInitOptions = {
       startAngle: 0,           
       clockwise: false,        
       maxLevelDiff: '0.1',        
-      // sortBy: 'degree',
       sortBy: 'layoutattr',   
       workerEnabled: true,    
     }), 
