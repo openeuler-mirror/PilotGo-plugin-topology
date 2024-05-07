@@ -73,7 +73,7 @@ func Neo4jrelaToToporela(neo4jrela neo4j.Relationship) *graph.Edge {
 		Dir:      neo4jrela.Props["dir"].(string),
 		Unixtime: neo4jrela.Props["unixtime"].(string),
 		Tags:     tags,
-		Metrics:  metrics,
+		Metrics:  []map[string]string{metrics},
 	}
 
 	return toporela
