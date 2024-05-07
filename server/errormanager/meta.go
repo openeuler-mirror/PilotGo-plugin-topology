@@ -13,7 +13,7 @@ type Topoerror struct {
 }
 
 /*
-@ctx:	插件客户端初始上下文（默认为agentmanager.Topo.Tctx）
+@ctx:	插件服务端初始上下文（默认为pluginclient.Global_Context）
 
 @err:	最终生成的error
 
