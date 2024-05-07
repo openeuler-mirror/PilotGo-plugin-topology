@@ -18,17 +18,17 @@ type Edges struct {
 }
 
 type Edge struct {
-	DBID     int64             `json:"dbid"`
-	ID       string            `json:"id"`
-	Type     string            `json:"Type"`
-	SrcID    int64             `json:"sourceid"`
-	DstID    int64             `json:"targetid"`
-	Src      string            `json:"source"`
-	Dst      string            `json:"target"`
-	Dir      string            `json:"dir"`
-	Unixtime string            `json:"unixtime"`
-	Tags     []string          `json:"tags"`
-	Metrics  map[string]string `json:"metrics"`
+	DBID     int64               `json:"dbid"`
+	ID       string              `json:"id"`
+	Type     string              `json:"Type"`
+	SrcID    int64               `json:"sourceid"`
+	DstID    int64               `json:"targetid"`
+	Src      string              `json:"source"`
+	Dst      string              `json:"target"`
+	Dir      string              `json:"dir"`
+	Unixtime string              `json:"unixtime"`
+	Tags     []string            `json:"tags"`
+	Metrics  []map[string]string `json:"metrics"`
 }
 
 // 网络边镜像id检测：多个goruntine并发添加、访问、修改相同的edge实例
