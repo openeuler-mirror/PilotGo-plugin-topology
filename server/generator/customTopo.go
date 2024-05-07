@@ -8,9 +8,9 @@ import (
 
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/agentmanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/db/mysqlmanager"
+	"gitee.com/openeuler/PilotGo-plugin-topology-server/generator/utils"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/global"
 	"gitee.com/openeuler/PilotGo-plugin-topology-server/graph"
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/generator/utils"
 	"github.com/pkg/errors"
 )
 
@@ -265,6 +265,8 @@ func (c *CustomTopo) CreateEdgeEntities(agent *agentmanager.Agent, edges *graph.
 		var peernode2 *graph.Node
 		var net1 *graph.Netconnection
 		var net2 *graph.Netconnection
+		var exist_multi_net bool
+		var multi_net_edge *graph.Edge
 
 		for _, procn := range nodes_map[global.NODE_PROCESS] {
 			// 全局连接local端
@@ -305,25 +307,38 @@ func (c *CustomTopo) CreateEdgeEntities(agent *agentmanager.Agent, edges *graph.
 				edgetype = global.EDGE_UDP
 			}
 
-			peernet_edge := &graph.Edge{
-				ID:       fmt.Sprintf("%s%s%s%s%s%s%s", peernode1.ID, global.EDGE_CONNECTOR, strings.Split(net1.Laddr, ":")[1], edgetype, strings.Split(net1.Raddr, ":")[1], global.EDGE_CONNECTOR, peernode2.ID),
-				Type:     edgetype,
-				Src:      peernode1.ID,
-				Dst:      peernode2.ID,
-				Dir:      "undirect",
-				Unixtime: peernode1.Unixtime,
-				Metrics: map[string]string{
-					"family":    strconv.Itoa(int(net1.Family)),
-					"type":      strconv.Itoa(int(net1.Type)),
-					"laddr_src": net1.Laddr,
-					"raddr_src": net1.Raddr,
-					"laddr_dst": net2.Laddr,
-					"raddr_dst": net2.Raddr,
-					"status":    net1.Status,
-				},
+			net_metrics := map[string]string{
+				fmt.Sprintf("%s_%s_family", strings.Split(net1.Laddr, ":")[1], strings.Split(net1.Raddr, ":")[1]):    strconv.Itoa(int(net1.Family)),
+				fmt.Sprintf("%s_%s_type", strings.Split(net1.Laddr, ":")[1], strings.Split(net1.Raddr, ":")[1]):      strconv.Itoa(int(net1.Type)),
+				fmt.Sprintf("%s_%s_laddr_src", strings.Split(net1.Laddr, ":")[1], strings.Split(net1.Raddr, ":")[1]): net1.Laddr,
+				fmt.Sprintf("%s_%s_raddr_src", strings.Split(net1.Laddr, ":")[1], strings.Split(net1.Raddr, ":")[1]): net1.Raddr,
+				fmt.Sprintf("%s_%s_laddr_dst", strings.Split(net1.Laddr, ":")[1], strings.Split(net1.Raddr, ":")[1]): net2.Laddr,
+				fmt.Sprintf("%s_%s_raddr_dst", strings.Split(net1.Laddr, ":")[1], strings.Split(net1.Raddr, ":")[1]): net2.Raddr,
+				fmt.Sprintf("%s_%s_status", strings.Split(net1.Laddr, ":")[1], strings.Split(net1.Raddr, ":")[1]):    net1.Status,
 			}
 
-			edges.Add(peernet_edge)
+			// 两个进程之间存在多个网络连接时，将多个网络连接放入一个边实例中
+			for _, edge := range edges.Edges {
+				if (edge.Src == peernode1.ID && edge.Dst == peernode2.ID) || (edge.Src == peernode2.ID && edge.Dst == peernode1.ID) {
+					exist_multi_net = true
+					multi_net_edge = edge
+				}
+			}
+
+			if exist_multi_net {
+				multi_net_edge.Metrics = append(multi_net_edge.Metrics, net_metrics)
+			} else {
+				peernet_edge := &graph.Edge{
+					ID:       fmt.Sprintf("%s%s%s%s%s", peernode1.ID, global.EDGE_CONNECTOR, edgetype, global.EDGE_CONNECTOR, peernode2.ID),
+					Type:     edgetype,
+					Src:      peernode1.ID,
+					Dst:      peernode2.ID,
+					Dir:      "undirect",
+					Unixtime: peernode1.Unixtime,
+					Metrics:  []map[string]string{net_metrics},
+				}
+				edges.Add(peernet_edge)
+			}
 		}
 	}
 
