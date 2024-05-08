@@ -169,13 +169,15 @@ watch(() => useTopoStore().edgeData, (new_edge_data, old_edge_data) => {
     node_or_edge.type = edge_data.Type;
     tags = edge_data.tags;
     table_data = [];
-    let metrics = edge_data.metrics;
-    for (let key in metrics) {
-      table_data.push({
-        name: key,
-        value: metrics[key],
-      })
-    };
+    let metrics_arr = edge_data.metrics;
+    metrics_arr.forEach((metrics: any) => {
+        for (let key in metrics as any) {
+          table_data.push({
+            name: key,
+            value: metrics[key],
+          })
+        };
+    });
   }
 }, {
   immediate: true

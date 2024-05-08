@@ -326,7 +326,13 @@ func (c *CustomTopo) CreateEdgeEntities(agent *agentmanager.Agent, edges *graph.
 			}
 
 			if exist_multi_net {
+				for _, m := range multi_net_edge.Metrics {
+					if m[fmt.Sprintf("%s_%s_laddr_src", strings.Split(net1.Raddr, ":")[1], strings.Split(net1.Laddr, ":")[1])] == net_metrics[fmt.Sprintf("%s_%s_laddr_dst", strings.Split(net1.Laddr, ":")[1], strings.Split(net1.Raddr, ":")[1])] && m[fmt.Sprintf("%s_%s_laddr_dst", strings.Split(net1.Raddr, ":")[1], strings.Split(net1.Laddr, ":")[1])] == net_metrics[fmt.Sprintf("%s_%s_laddr_src", strings.Split(net1.Laddr, ":")[1], strings.Split(net1.Raddr, ":")[1])] {
+						goto jump
+					}
+				}
 				multi_net_edge.Metrics = append(multi_net_edge.Metrics, net_metrics)
+			jump:
 			} else {
 				peernet_edge := &graph.Edge{
 					ID:       fmt.Sprintf("%s%s%s%s%s", peernode1.ID, global.EDGE_CONNECTOR, edgetype, global.EDGE_CONNECTOR, peernode2.ID),
