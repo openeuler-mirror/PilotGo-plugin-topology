@@ -10,8 +10,8 @@ import (
 	"net/http"
 	"strings"
 
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/errormanager"
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/pluginclient"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/errormanager"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/pluginclient"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 )

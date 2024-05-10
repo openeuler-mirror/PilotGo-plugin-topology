@@ -5,9 +5,9 @@ import (
 	"os"
 	"runtime"
 
-	"gitee.com/openeuler/PilotGo-plugin-topology-agent/conf"
-	"gitee.com/openeuler/PilotGo-plugin-topology-agent/handler"
-	"gitee.com/openeuler/PilotGo-plugin-topology-agent/service"
+	"gitee.com/openeuler/PilotGo-plugin-topology/agent/conf"
+	"gitee.com/openeuler/PilotGo-plugin-topology/agent/handler"
+	"gitee.com/openeuler/PilotGo-plugin-topology/agent/service"
 	"gitee.com/openeuler/PilotGo/sdk/logger"
 	"github.com/gin-gonic/gin"
 )

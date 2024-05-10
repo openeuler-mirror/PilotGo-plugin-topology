@@ -6,10 +6,10 @@ import (
 	"os/signal"
 	"syscall"
 
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/conf"
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/db/graphmanager"
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/db/influxmanager"
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/db/redismanager"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/conf"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/db/graphmanager"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/db/influxmanager"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/db/redismanager"
 	"gitee.com/openeuler/PilotGo/sdk/logger"
 )
 

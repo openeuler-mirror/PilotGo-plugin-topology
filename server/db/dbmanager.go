@@ -5,13 +5,13 @@ import (
 
 	"github.com/pkg/errors"
 
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/conf"
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/db/graphmanager"
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/db/influxmanager"
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/db/mysqlmanager"
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/db/redismanager"
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/errormanager"
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/pluginclient"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/conf"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/db/graphmanager"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/db/influxmanager"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/db/mysqlmanager"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/db/redismanager"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/errormanager"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/pluginclient"
 	"gitee.com/openeuler/PilotGo/sdk/logger"
 )
 

@@ -3,7 +3,7 @@ package pluginclient
 import (
 	"context"
 
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/conf"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/conf"
 	"gitee.com/openeuler/PilotGo/sdk/common"
 	"gitee.com/openeuler/PilotGo/sdk/plugin/client"
 )

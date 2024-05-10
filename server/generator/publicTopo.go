@@ -6,11 +6,11 @@ import (
 	"strings"
 	"sync/atomic"
 
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/agentmanager"
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/errormanager"
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/global"
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/graph"
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/pluginclient"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/agentmanager"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/errormanager"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/global"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/graph"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/pluginclient"
 	"github.com/pkg/errors"
 )
 

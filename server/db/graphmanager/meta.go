@@ -1,6 +1,6 @@
 package graphmanager
 
-import "gitee.com/openeuler/PilotGo-plugin-topology-server/graph"
+import "gitee.com/openeuler/PilotGo-plugin-topology/server/graph"
 
 var Global_GraphDB GraphdbIface
 

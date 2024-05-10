@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"time"
 
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/conf"
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/errormanager"
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/pluginclient"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/conf"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/errormanager"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/pluginclient"
 	"github.com/pkg/errors"
 )
 

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"gitee.com/openeuler/PilotGo-plugin-topology-agent/utils"
+	"gitee.com/openeuler/PilotGo-plugin-topology/agent/utils"
 	docker "github.com/fsouza/go-dockerclient"
 	"github.com/pkg/errors"
 )

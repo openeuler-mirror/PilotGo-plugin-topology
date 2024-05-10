@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/conf"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/conf"
 	influx "github.com/influxdata/influxdb-client-go/v2"
 	"github.com/pkg/errors"
 )

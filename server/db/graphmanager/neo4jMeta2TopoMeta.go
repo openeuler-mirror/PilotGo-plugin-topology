@@ -1,8 +1,8 @@
 package graphmanager
 
 import (
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/graph"
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/global"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/graph"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/global"
 	"github.com/neo4j/neo4j-go-driver/v4/neo4j"
 )
 
