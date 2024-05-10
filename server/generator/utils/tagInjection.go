@@ -1,8 +1,8 @@
 package utils
 
 import (
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/db/mysqlmanager"
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/graph"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/db/mysqlmanager"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/graph"
 	"github.com/pkg/errors"
 )
 

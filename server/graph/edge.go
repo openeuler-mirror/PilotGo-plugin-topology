@@ -4,7 +4,7 @@ import (
 	"strings"
 	"sync"
 
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/global"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/global"
 	"gitee.com/openeuler/PilotGo/sdk/logger"
 	"github.com/pkg/errors"
 )

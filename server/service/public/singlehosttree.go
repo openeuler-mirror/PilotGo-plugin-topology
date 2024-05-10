@@ -1,9 +1,9 @@
 package public
 
 import (
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/db/graphmanager"
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/global"
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/graph"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/db/graphmanager"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/global"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/graph"
 	"github.com/pkg/errors"
 )
 

@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"gitee.com/openeuler/PilotGo-plugin-topology-agent/conf"
-	"gitee.com/openeuler/PilotGo-plugin-topology-agent/service"
-	"gitee.com/openeuler/PilotGo-plugin-topology-agent/service/container"
+	"gitee.com/openeuler/PilotGo-plugin-topology/agent/conf"
+	"gitee.com/openeuler/PilotGo-plugin-topology/agent/service"
+	"gitee.com/openeuler/PilotGo-plugin-topology/agent/service/container"
 	"gitee.com/openeuler/PilotGo/sdk/response"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"

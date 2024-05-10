@@ -5,9 +5,9 @@ import (
 	"sync"
 	"time"
 
-	"gitee.com/openeuler/PilotGo-plugin-topology-agent/collector"
-	"gitee.com/openeuler/PilotGo-plugin-topology-agent/conf"
-	"gitee.com/openeuler/PilotGo-plugin-topology-agent/utils"
+	"gitee.com/openeuler/PilotGo-plugin-topology/agent/collector"
+	"gitee.com/openeuler/PilotGo-plugin-topology/agent/conf"
+	"gitee.com/openeuler/PilotGo-plugin-topology/agent/utils"
 	"github.com/pkg/errors"
 	"gitee.com/openeuler/PilotGo/sdk/logger"
 )

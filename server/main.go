@@ -3,16 +3,16 @@ package main
 import (
 	"fmt"
 
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/agentmanager"
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/conf"
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/db"
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/db/mysqlmanager"
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/errormanager"
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/handler"
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/logger"
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/pluginclient"
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/service"
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/signal"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/agentmanager"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/conf"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/db"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/db/mysqlmanager"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/errormanager"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/handler"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/logger"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/pluginclient"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/service"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/signal"
 	// "github.com/pyroscope-io/pyroscope/pkg/agent/profiler"
 )
 

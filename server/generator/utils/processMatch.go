@@ -5,9 +5,9 @@ import (
 	"strconv"
 	"strings"
 
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/agentmanager"
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/errormanager"
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/pluginclient"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/agentmanager"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/errormanager"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/pluginclient"
 	"gitee.com/openeuler/PilotGo/sdk/utils/httputils"
 	docker "github.com/fsouza/go-dockerclient"
 

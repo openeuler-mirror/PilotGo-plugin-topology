@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"time"
 
-	"gitee.com/openeuler/PilotGo-plugin-topology-agent/conf"
-	"gitee.com/openeuler/PilotGo-plugin-topology-agent/utils"
+	"gitee.com/openeuler/PilotGo-plugin-topology/agent/conf"
+	"gitee.com/openeuler/PilotGo-plugin-topology/agent/utils"
 	"gitee.com/openeuler/PilotGo/sdk/logger"
 	"gitee.com/openeuler/PilotGo/sdk/utils/httputils"
 	"github.com/pkg/errors"

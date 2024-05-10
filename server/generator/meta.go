@@ -1,8 +1,8 @@
 package generator
 
 import (
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/agentmanager"
-	"gitee.com/openeuler/PilotGo-plugin-topology-server/graph"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/agentmanager"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/graph"
 )
 
 type TopoInterface interface {

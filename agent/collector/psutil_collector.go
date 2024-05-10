@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"sync"
 
-	"gitee.com/openeuler/PilotGo-plugin-topology-agent/utils"
+	"gitee.com/openeuler/PilotGo-plugin-topology/agent/utils"
 	"gitee.com/openeuler/PilotGo/sdk/logger"
 	"github.com/shirou/gopsutil/cpu"
 	"github.com/shirou/gopsutil/disk"
