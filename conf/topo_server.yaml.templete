@@ -18,7 +18,7 @@ neo4j:
   username: ""
   password: ""
   DB: "neo4j"
-prometheus:
+prometheus: # 暂不启用
   addr: "http://localhost:9090"
 redis:
   addr: "localhost:6379"
@@ -30,7 +30,7 @@ mysql:
   username: ''
   password: ''
   DB: "PluginTopo"
-influx:
+influx: # 暂不启用
   addr: "http://localhost:8086"
   token: ""
   org: ""

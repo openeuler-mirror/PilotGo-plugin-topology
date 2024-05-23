@@ -10,8 +10,10 @@ System application architecture detection.
 2. 开发工具:
 - golang >= 1.18、vue3、typescript、node.js > 14
 3. 运行依赖组件:
-- pilotgo
-- neo4j
+- PilotGo
+- neo4j(jvm)
+- mysql
+- redis
 
 ![Alt text](docs/pilotgo-plugin-topo.png)
 
