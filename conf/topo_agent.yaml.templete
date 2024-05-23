@@ -3,7 +3,7 @@ topo:
   server_addr: "localhost:9991"
   datasource: "gopsutil"
   heartbeat: 60
-PilotGo:
+PilotGo: # 暂不启用
   http_addr: "localhost:8888"
 log:
   level: debug
