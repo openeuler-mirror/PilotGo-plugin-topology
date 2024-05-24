@@ -41,7 +41,7 @@ $ yarn build
 4. 后端编译
 ```bash
 $ go build -mod=vendor -o topoagent agent/main.go
-$ mv web/dist/* handler/
+$ mv web/dist/* server/handler/
 $ go build -mod=vendor -tags=production toposerver server/main.go
 ```
 5. 运行
@@ -52,6 +52,16 @@ $ ./toposerver -conf /path/to/topo_server.yaml
 $ ./topoagent -conf /path/to/topo_agent.yaml
 ```
 6. 打开pilotgo web UI页面，添加并启动topology插件，查看拓扑图页面
+
+#### 开发
+- gitee.com/openeuler/PilotGo-plugin-topology/server/agentmanager 插件集群agent管理模块
+- gitee.com/openeuler/PilotGo-plugin-topology/server/db 数据库管理模块，包含neo4j、mysql、redis
+- gitee.com/openeuler/PilotGo-plugin-topology/server/errormanager 异常管理模块
+- gitee.com/openeuler/PilotGo-plugin-topology/server/generator 拓扑图生成器模块，包含图数据采集、处理
+- gitee.com/openeuler/PilotGo-plugin-topology/server/graph 拓扑图图要素模块，包含节点、边
+- gitee.com/openeuler/PilotGo-plugin-topology/server/logger 日志管理模块(继承自PilotGo plugin SDK)
+- gitee.com/openeuler/PilotGo-plugin-topology/server/pluginclient 插件客户端模块(继承自PilotGo plugin SDK)
+- gitee.com/openeuler/PilotGo-plugin-topology/server/signal 系统信号处理模块，包含进程终止信号
 
 #### 特技
 
