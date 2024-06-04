@@ -97,25 +97,12 @@ export const graphInitOptions = {
       gravity: 1,
       factor: 2,
       preventOverlap: true,
-      linkDistance: (edge: any, source: any, target: any) => {
+      linkDistance: (_edge: any, source: any, target: any) => {
         const nodeSize = ((source.size?.[0] || 30) + (target.size?.[0] || 30)) / 2;
         return Math.min(nodeSize * 1.5, 700);
       }
     }),
-    // innerLayout: new G6.Layout['radial']({
-    //   unitRadius: 200,
-    //   maxIteration: 100,
-    //   linkDistance: 150,
-    //   preventOverlap: true,
-    //   strictRadial: false,
-    //   nodeSpacing: 200,
-    //   nodeSize: 30,
-    //   sortBy: 'layoutattr',
-    //   sortStrength: 100,
-    // }),
     innerLayout: new G6.Layout['concentric']({
-      // linkDistance: 500, // 无效
-      // nodeSpacing: 500, // 无效
       sweep: 6.28,
       preventOverlap: true,     
       nodeSize: 30,                    
