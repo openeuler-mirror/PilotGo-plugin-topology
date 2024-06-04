@@ -85,7 +85,7 @@ const icons = [More, Odometer, Files, Collection]
 // edge 基本信息
 const node_or_edge = reactive({
   type: '',
-  name: '',  
+  name: '',
 })
 // 内层抽屉
 const inner_drawer = reactive({
@@ -128,7 +128,7 @@ const grid = reactive({
 });
 
 // 监听点击节点的topo数据
-watch(() => useTopoStore().nodeData, (new_node_data, old_node_data) => {
+watch(() => useTopoStore().nodeData, (new_node_data, _old_node_data) => {
   if (new_node_data.id) {
     let node_data = new_node_data;
     display_drawer.value = true;
@@ -155,7 +155,7 @@ watch(() => useTopoStore().nodeData, (new_node_data, old_node_data) => {
 })
 
 // 监听点击边的topo数据
-watch(() => useTopoStore().edgeData, (new_edge_data, old_edge_data) => {
+watch(() => useTopoStore().edgeData, (new_edge_data, _old_edge_data) => {
   if (new_edge_data.id) {
     let edge_data = new_edge_data;
     display_drawer.value = true;
@@ -171,12 +171,12 @@ watch(() => useTopoStore().edgeData, (new_edge_data, old_edge_data) => {
     table_data = [];
     let metrics_arr = edge_data.metrics;
     metrics_arr.forEach((metrics: any) => {
-        for (let key in metrics as any) {
-          table_data.push({
-            name: key,
-            value: metrics[key],
-          })
-        };
+      for (let key in metrics as any) {
+        table_data.push({
+          name: key,
+          value: metrics[key],
+        })
+      };
     });
   }
 }, {

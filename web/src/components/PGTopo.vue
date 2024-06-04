@@ -1,5 +1,12 @@
 <template>
-  <div id="topo-container" class="container"></div>
+  <div id="topo-container" class="container">
+    <div class="topo_legend">
+      <p><img width="20" src="../assets/icon/server_blue.png" alt=""><span>主机</span></p>
+      <p><img width="20" src="../assets/icon/process.png" alt=""><span>进程</span></p>
+      <p><img width="20" src="../assets/icon/net.png" alt=""><span>网络</span></p>
+      <p><img width="20" src="../assets/icon/resource.png" alt=""><span>资源</span></p>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -53,8 +60,8 @@ const updateTopoData = (topoData: any) => {
 
   topo_data.edges.forEach((item: any) => {
     item.style = {
-       lineWidth: 3,
-       cursor: "all-scroll",
+      lineWidth: 3,
+      cursor: "all-scroll",
     };
     item.labelCfg = {
       position: 'middle',
@@ -64,7 +71,7 @@ const updateTopoData = (topoData: any) => {
         fontSize: 12,
         opacity: 0.5,
       },
-    
+
     };
     switch (item.Type) {
       case "belong":
@@ -143,27 +150,27 @@ const updateTopoData = (topoData: any) => {
     combo_collapse_status = new Map<string, boolean>();
     topo_data.combos.forEach((combo: any, _i: any) => {
       combo_collapse_status.set(combo.id as string, true);
-    });    
+    });
   }
   // 初始化combo颜色 combo_color
   if (!combo_color || combo_color.size < topo_data.combos.length) {
     combo_color = new Map<string, string[]>();
     topo_data.combos.forEach((combo: any, i: number) => {
       combo_color.set(combo.id, [colorSets[i].mainStroke as string, colorSets[i].mainFill as string]);
-    });      
+    });
   }
 
-  topo_data.combos.forEach((combo: any, i: number) => {
+  topo_data.combos.forEach((combo: any, _i: number) => {
     const colors = combo_color.get(combo.id);
     if (colors) {
       combo.style = {
         stroke: colors[0],
         fill: colors[1],
         opacity: 0.8
-      };   
+      };
     }
     combo.collapsed = true; // 图固定关键参数，原因未知
-  })    
+  })
 }
 
 function initGraph(data: any) {
@@ -267,68 +274,44 @@ function initGraph(data: any) {
 
   // 解决拖动产生残影问题
   graph.get('canvas').set('localRefresh', false);
-  
-  graph.on('wheelzoom', (e) => {
+
+  graph.on('wheelzoom', (_e) => {
     zoom_before = graph.getZoom();
   });
 
   // 渲染前的操作
-  graph.on('beforelayout', () => { 
-    // ttcode
-    // graph.getCombos().forEach((combo: ICombo, _i: any) => {
-    //   if (combo.getModel().id === '54bcecd3-ea5f-497e-9ccb-3bb1aa9c0864') {
-    //     console.log("54 before reset: ", combo.getModel().x, combo.getModel().y);
-    //   }
-    // });       
+  graph.on('beforelayout', () => {
+
     // 重置combo坐标
     if (combo_positions) {
       graph.getCombos().forEach((combo: ICombo, _i: any) => {
         const position = combo_positions.get(combo.getModel().id as string)
         if (position) {
-          combo.updatePosition({x: position[0], y: position[1]});
-        }     
-      });      
+          combo.updatePosition({ x: position[0], y: position[1] });
+        }
+      });
     } else {
       combo_positions = new Map<string, number[]>();
     }
-    // ttcode
-    // graph.getCombos().forEach((combo: ICombo, _i: any) => {
-    //   if (combo.getModel().id === '54bcecd3-ea5f-497e-9ccb-3bb1aa9c0864') {
-    //     console.log("54 after reset: ", combo.getModel().x, combo.getModel().y);
-    //     // console.log("54combo: ", combo.getModel());   
-    //   }
-    // });  
 
-    // ttcode
-    // graph.getNodes().forEach((node: INode, _i: any) => {
-    //   if (node.getModel().id === '3df830f0-cc71-48b4-8693-cd36098cc6d1_process_147139') {
-    //     console.log("node reset before: ", node.getModel().x, node.getModel().y);
-    //   }
-    // });
     // 重置process node坐标
     if (node_position_process) {
       graph.getNodes().forEach((node: any, _i: number) => {
         const process_position = node_position_process.get(node.id);
         if (node.getModel().Type === 'process' && process_position) {
-          node.updatePosition({x: process_position[0], y: process_position[1]})
+          node.updatePosition({ x: process_position[0], y: process_position[1] })
         }
       });
     } else {
       // 初始化node_position_process
       node_position_process = new Map<string, number[]>();
     }
-    // ttcode
-    // graph.getNodes().forEach((node: INode, _i: any) => {
-    //   if (node.getModel().id === '3df830f0-cc71-48b4-8693-cd36098cc6d1_process_147139') {
-    //     console.log("node reset after: ", node.getModel().x, node.getModel().y);
-    //   }
-    // });
 
     if (node_position_host) {
       graph.getNodes().forEach((node: any, _i: number) => {
         const host_position = node_position_host.get(node.id);
         if (node.getModel().Type === 'host' && host_position) {
-          node.updatePosition({x: host_position[0], y: host_position[1]})
+          node.updatePosition({ x: host_position[0], y: host_position[1] })
         }
       });
     } else {
@@ -338,15 +321,8 @@ function initGraph(data: any) {
 
   // 渲染后的操作
   graph.on('afterlayout', () => {
-    // ttcode
-    // graph.getNodes().forEach((node: INode, _i: any) => {
-    //   if (node.getModel().id === '3df830f0-cc71-48b4-8693-cd36098cc6d1_process_147139') {
-    //       console.log("node layout after: ", node.getModel().x, node.getModel().y);
-    //     }
-    // });
+    saveCombosPosition();
 
-    saveCombosPosition(); 
-    
     // 恢复combo收缩/展开状态
     graph.getCombos().forEach((combo: ICombo, _i: any) => {
       if (combo_collapse_status.get(combo.getModel().id as string) === true) {
@@ -362,11 +338,11 @@ function initGraph(data: any) {
   graph.data(data);
   graph.render();
 
-  
+
   while (!topo_container) {
-    setTimeout(() => {}, 50);
+    setTimeout(() => { }, 50);
   }
-  
+
   if (typeof window !== 'undefined') {
     window.onresize = () => {
       graph.changeSize(topo_container.clientWidth, topo_container.clientHeight)
@@ -383,29 +359,33 @@ function refreshDragedNodePosition(e: any) {
 
 // 保存当前combo坐标
 function saveCombosPosition() {
-  graph.getCombos().forEach((combo: ICombo, _i: any) => {
-    const x = combo.getModel().x;
-    const y = combo.getModel().y;
-    combo_positions.set(combo.getModel().id as string, [x as number, y as number]);
+  graph.getCombos().forEach((combo: ICombo, _i: number) => {
+    const { x, y, id } = combo.getModel();
+    if (x && y && id) {
+      combo_positions.set(id, [x, y]);
+    }
   });
+  console.log(combo_positions)
 }
 
 function saveNodePosition() {
-      graph.getNodes().forEach((node: INode, _i: any) => {
-        if (node.getModel().Type === "host") {
-          if (node.getModel().x && node.getModel().y) {
-            node_position_host.set(node.getModel().id as string, [node.getModel().x as number, node.getModel().y as number]);
-          }
-        }
-      });
+  graph.getNodes().forEach((node: INode, _i: number) => {
+    const { x, y, id } = node.getModel();
+    if (x && y && id) {
+      switch (node.getModel().Type) {
+        case 'host':
+          node_position_host.set(id, [x, y]);
+          break;
+        case 'process':
+          node_position_process.set(id, [x, y]);
+          break;
+        default:
+          break;
+      }
+    }
 
-      graph.getNodes().forEach((node: INode, _i: any) => {
-        if (node.getModel().Type === "process") {
-          if (node.getModel().x && node.getModel().y) {
-            node_position_process.set(node.getModel().id as string, [node.getModel().x as number, node.getModel().y as number]);
-          }
-        }
-      });     
+  });
+  console.log(node_position_host, node_position_process)
 }
 
 function changeZoom(zoom: number) {
@@ -428,7 +408,7 @@ watch(() => useTopoStore().topo_data, (new_topo_data) => {
     } else if (topo_data_raw.nodes) {
       updateTopoData(topo_data_raw);
       graph.changeData(topo_data);
-    } 
+    }
 
   });
 
@@ -443,7 +423,27 @@ watch(() => props.graph_mode, (newData) => {
 
 </script>
 
-<style scoped>
+<style scoped lang="scss">
+.topo_legend {
+  position: absolute;
+  top: 10;
+  width: 300px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+
+  p {
+    width: 25%;
+    display: flex;
+    align-items: center;
+
+    span {
+      color: #666;
+      padding-left: 2px;
+    }
+  }
+}
+
 .container {
   width: 100%;
   height: 100%;

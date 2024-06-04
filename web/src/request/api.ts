@@ -46,7 +46,7 @@ export function updateConfList(data: {}) {
 
 
 // 删除拓扑配置
-export function delConfig(data: { id: number }) {
+export function delConfig(data: { ids: number[] }) {
   return request({
     url: baseURL+'/api/delete_custom_topo',
     method: 'delete',
