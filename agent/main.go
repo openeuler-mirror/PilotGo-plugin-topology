@@ -9,7 +9,6 @@ import (
 	"gitee.com/openeuler/PilotGo-plugin-topology/agent/handler"
 	"gitee.com/openeuler/PilotGo-plugin-topology/agent/service"
 	"gitee.com/openeuler/PilotGo/sdk/logger"
-	"github.com/gin-gonic/gin"
 )
 
 func main() {
@@ -18,13 +17,9 @@ func main() {
 
 	InitLogger()
 
+	handler.InitWebServer()
+	
 	service.SendHeartbeat()
-
-	engine := gin.Default()
-	handler.InitRouter(engine)
-	if err := engine.Run(conf.Config().Topo.Agent_addr); err != nil {
-		logger.Fatal("failed to run web server")
-	}
 
 }
 
