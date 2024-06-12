@@ -12,8 +12,16 @@ func InitWebServer() {
 		gin.SetMode(gin.ReleaseMode)
 		InitRouter(engine)
 
-		if err := engine.Run(conf.Config().Topo.Agent_addr); err != nil {
-			logger.Fatal("failed to run web server")
+		if conf.Config().Topo.Https_enabled {
+			err := engine.RunTLS(conf.Config().Topo.Agent_addr, conf.Config().Topo.Public_certificate, conf.Config().Topo.Private_key)
+			if err != nil {
+				logger.Fatal("failed to run web server: %+v", err.Error())
+			}
+		} else {
+			err := engine.Run(conf.Config().Topo.Agent_addr)
+			if err != nil {
+				logger.Fatal("failed to run web server: %+v", err.Error())
+			}
 		}
 	}()
 }

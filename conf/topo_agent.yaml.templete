@@ -1,4 +1,7 @@
 topo:
+  https_enabled: false
+  cert_file: ""
+  key_file: ""
   agent_addr: "localhost:9992"
   server_addr: "localhost:9991"
   datasource: "gopsutil"
