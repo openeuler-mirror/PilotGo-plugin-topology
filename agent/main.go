@@ -8,6 +8,7 @@ import (
 	"gitee.com/openeuler/PilotGo-plugin-topology/agent/conf"
 	"gitee.com/openeuler/PilotGo-plugin-topology/agent/handler"
 	"gitee.com/openeuler/PilotGo-plugin-topology/agent/service"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/signal"
 	"gitee.com/openeuler/PilotGo/sdk/logger"
 )
 
@@ -18,9 +19,10 @@ func main() {
 	InitLogger()
 
 	handler.InitWebServer()
-	
+
 	service.SendHeartbeat()
 
+	signal.SignalMonitoring()
 }
 
 func InitLogger() {
