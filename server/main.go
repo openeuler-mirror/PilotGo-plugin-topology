@@ -46,6 +46,12 @@ func main() {
 	agentmanager.InitAgentManager()
 
 	/*
+		init database
+		neo4j mysql redis prometheus
+	*/
+	db.InitDB()
+
+	/*
 		init web server
 	*/
 	handler.InitWebServer()
@@ -59,12 +65,6 @@ func main() {
 		init machine agent list
 	*/
 	agentmanager.Global_AgentManager.InitMachineList()
-
-	/*
-		init database
-		neo4j mysql redis prometheus
-	*/
-	db.InitDB()
 
 	/*
 		topo插件自身数据采集模块周期性数据采集: 全局网络拓扑、单机拓扑

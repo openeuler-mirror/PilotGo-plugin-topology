@@ -11,6 +11,17 @@ import (
 )
 
 func request(method, url string, param *Params) (*Response, error) {
+	// 判断服务端是否是http协议
+	ishttp, err := ServerIsHttp(url)
+	if err != nil {
+		return nil, err
+	}
+	if ishttp {
+		url = fmt.Sprintf("http://%s", strings.Split(url, "://")[1])
+	} else {
+		url = fmt.Sprintf("https://%s", strings.Split(url, "://")[1])
+	}
+
 	// 处理form参数
 	if param != nil && len(param.Form) > 0 {
 		s := ""
