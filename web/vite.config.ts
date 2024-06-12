@@ -2,6 +2,7 @@ import { fileURLToPath, URL } from 'node:url'
 
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
+import basicSsl from '@vitejs/plugin-basic-ssl'
 
 const INVALID_CHAR_REGEX = /[\u0000-\u001F"#$&*+,:;<=>?[\]^`{|}\u007F]/g;
 const DRIVE_LETTER_REGEX = /^[a-z]:/i;
@@ -10,7 +11,7 @@ const DRIVE_LETTER_REGEX = /^[a-z]:/i;
 export default defineConfig({
   base: "/plugin/topology",
   plugins: [
-    vue(),
+    vue(),basicSsl()
   ],
   resolve: {
     alias: {
@@ -20,8 +21,8 @@ export default defineConfig({
   server:{
     proxy:{
       "/plugin/topology/api": {
-        // target: 'http://10.41.107.29:9991',
-        target: 'http://10.44.55.72:9991',
+        target: 'http://10.41.107.29:9991',
+        // target: 'http://10.44.55.72:9991',
         changeOrigin:true,
         // rewrite: (path)=> path.replace("/^\/api/", ""),
       },
