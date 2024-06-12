@@ -3,12 +3,15 @@ package conf
 import "time"
 
 type TopoConf struct {
-	Server_addr string `yaml:"server_addr"`
-	Agent_port  string `yaml:"agent_port"`
-	GraphDB     string `yaml:"graphDB"`
-	Period      int64  `yaml:"period"`
-	Retention   int64  `yaml:"retention"`
-	Cleartime   string `yaml:"cleartime"`
+	Https_enabled      bool   `yaml:"https_enabled"`
+	Public_certificate string `yaml:"cert_file"`
+	Private_key        string `yaml:"key_file"`
+	Server_addr        string `yaml:"server_addr"`
+	Agent_port         string `yaml:"agent_port"`
+	GraphDB            string `yaml:"graphDB"`
+	Period             int64  `yaml:"period"`
+	Retention          int64  `yaml:"retention"`
+	Cleartime          string `yaml:"cleartime"`
 }
 
 type PilotGoConf struct {
