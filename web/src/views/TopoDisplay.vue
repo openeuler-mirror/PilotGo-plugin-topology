@@ -23,6 +23,8 @@
     <PGTopo style="width: 100%;height: 100%;" :graph_mode="graphMode" :time_interval="timeInterval" />
     <!-- 嵌套抽屉组件展示数据 -->
     <nodeDetail />
+    <!-- 嵌套抽屉组件展示日志信息 -->
+    <LogChart />
   </div>
 </template>
 
@@ -33,6 +35,8 @@ import PGTopo from '@/components/PGTopo.vue';
 // import topodata from '@/assets/cluster2024-3-15.json'
 // import topodata from '@/utils/test.json';
 import nodeDetail from './nodeDetail.vue';
+import LogChart from './logs/index.vue';
+
 import { getCustomTopo, getTopoData, getUuidTopo } from "@/request/api";
 import { useTopoStore } from '@/stores/topo';
 import { useConfigStore } from '@/stores/config';
@@ -45,7 +49,7 @@ let timer: any;
 const showTopo = ref(false);
 const loading = ref(false);
 let request_type: string
-let request_id: string|number
+let request_id: string | number
 
 onMounted(() => {
   loading.value = true;
@@ -75,8 +79,8 @@ watchEffect(() => {
             // }, 200)
             useTopoStore().topo_data = topoData;
           } else {
-              ElMessage.error(res.data.msg);
-              router.push('topoList');
+            ElMessage.error(res.data.msg);
+            router.push('topoList');
           }
         })
 
@@ -93,8 +97,8 @@ watchEffect(() => {
               useTopoStore().topo_data = topoData;
             }, 200)
           } else {
-              ElMessage.error(res.data.msg);
-              router.push('topoList');
+            ElMessage.error(res.data.msg);
+            router.push('topoList');
           }
         })
         break;
@@ -129,50 +133,50 @@ function topoTimer(request_id: any, interval: string) {
   let topoData = {};
 
   if (interval === '关闭') {
-      clearInterval(timer)
+    clearInterval(timer)
   } else {
-      switch (timeInterval.value) {
-        case '5s':
-          time_interval_num = 5000
-          break;
-        case '10s':
-          time_interval_num = 10000
-          break;
-        case '15s':
-          time_interval_num = 15000
-          break;
-        case '1m':
-          time_interval_num = 60000
-          break;
-        case '5m':
-          time_interval_num = 300000
-          break;
-      }
+    switch (timeInterval.value) {
+      case '5s':
+        time_interval_num = 5000
+        break;
+      case '10s':
+        time_interval_num = 10000
+        break;
+      case '15s':
+        time_interval_num = 15000
+        break;
+      case '1m':
+        time_interval_num = 60000
+        break;
+      case '5m':
+        time_interval_num = 300000
+        break;
+    }
 
-      try {
-        if (timer) {
-          clearInterval(timer)
-        }
-        timer = setInterval(() => {
-          getCustomTopo({ id: request_id as number }).then(res => {
-            if (res.data.code === 200) {
-              topoData = res.data.data;
-              loading.value = false;
-              showTopo.value = true;
-              // setTimeout(() => {
-              //   useTopoStore().topo_data = topoData;
-              // }, 200)
-              useTopoStore().topo_data = topoData;
-            } else {
-                ElMessage.error(res.data.msg);
-                router.push('topoList');
-            }
-          })            
-        }, time_interval_num)
-      
-      } catch (error) {
-        console.error(error)
+    try {
+      if (timer) {
+        clearInterval(timer)
       }
+      timer = setInterval(() => {
+        getCustomTopo({ id: request_id as number }).then(res => {
+          if (res.data.code === 200) {
+            topoData = res.data.data;
+            loading.value = false;
+            showTopo.value = true;
+            // setTimeout(() => {
+            //   useTopoStore().topo_data = topoData;
+            // }, 200)
+            useTopoStore().topo_data = topoData;
+          } else {
+            ElMessage.error(res.data.msg);
+            router.push('topoList');
+          }
+        })
+      }, time_interval_num)
+
+    } catch (error) {
+      console.error(error)
+    }
   }
 }
 
