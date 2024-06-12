@@ -28,10 +28,20 @@ func InitWebServer() {
 		InitRouter(engine)
 		StaticRouter(engine)
 
-		err := engine.Run(conf.Global_Config.Topo.Server_addr)
-		if err != nil {
-			err = errors.Errorf("%s **errstackfatal**2", err.Error()) // err top
-			errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
+		if conf.Global_Config.Topo.Https_enabled {
+			pluginclient.PluginInfo.Url = "https://" + conf.Global_Config.Topo.Server_addr
+			err := engine.RunTLS(conf.Global_Config.Topo.Server_addr, conf.Global_Config.Topo.Public_certificate, conf.Global_Config.Topo.Private_key)
+			if err != nil {
+				err = errors.Errorf("%s **errstackfatal**2", err.Error()) // err top
+				errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
+			}
+		} else {
+			pluginclient.PluginInfo.Url = "http://" + conf.Global_Config.Topo.Server_addr
+			err := engine.Run(conf.Global_Config.Topo.Server_addr)
+			if err != nil {
+				err = errors.Errorf("%s **errstackfatal**2", err.Error()) // err top
+				errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
+			}
 		}
 	}()
 }
