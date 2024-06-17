@@ -173,6 +173,29 @@ const updateTopoData = (topoData: any) => {
   })
 }
 
+// 定义节点右键菜单
+const menu = new G6.Menu({
+  offsetX: 6,
+  offsetY: 10,
+  itemTypes: ['node'],
+  getContent(_e) {
+    const outDiv = document.createElement('div');
+    outDiv.style.width = '80px';
+    outDiv.innerHTML = `
+    <span style="font-size:14px; cursor:pointer;">
+      查看日志
+    </span>
+    `
+    return outDiv;
+  },
+  // _target：界面元素，item：节点内容
+  handleMenuClick(_target, item) {
+    if (item._cfg) {
+      useTopoStore().node_log_id = item._cfg.id!;
+    }
+  },
+});
+
 function initGraph(data: any) {
   if (graph) {
     graph.destroy();
@@ -188,6 +211,7 @@ function initGraph(data: any) {
     graph = new G6.Graph({
       ...graphBox,
       ...graphInitOptions,
+      plugins: [menu],
     });
   } else {
     graph = new G6.TreeGraph({
@@ -211,8 +235,6 @@ function initGraph(data: any) {
       graph.clearItemStates(node);
     });
     const nodeItem = e.item;
-    // ttcode
-    console.log(nodeItem);
     if (nodeItem) {
       graph.setItemState(nodeItem, 'click', true);
       // 抽屉组件展示的节点数据
@@ -232,7 +254,6 @@ function initGraph(data: any) {
       graph.clearItemStates(edge);
     });
     const edgeItem = e.item;
-    console.log(e);
     graph.setItemState(edgeItem, 'click', true);
     // 抽屉组件展示的边数据
     let selected_edge = e.item._cfg;
@@ -365,7 +386,7 @@ function saveCombosPosition() {
       combo_positions.set(id, [x, y]);
     }
   });
-  console.log(combo_positions)
+  // console.log(combo_positions)
 }
 
 function saveNodePosition() {
@@ -385,7 +406,7 @@ function saveNodePosition() {
     }
 
   });
-  console.log(node_position_host, node_position_process)
+  // console.log(node_position_host, node_position_process)
 }
 
 function changeZoom(zoom: number) {
