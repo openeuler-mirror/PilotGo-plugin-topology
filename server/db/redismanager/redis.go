@@ -2,6 +2,7 @@ package redismanager
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"sync"
@@ -39,6 +40,9 @@ func RedisInit(url, pass string, db int, dialTimeout time.Duration) *RedisClient
 		Addr:     r.Addr,
 		Password: r.Password,
 		DB:       r.DB,
+		TLSConfig: &tls.Config{
+			InsecureSkipVerify: true,
+		},
 	})
 
 	// 使用超时上下文，验证redis
