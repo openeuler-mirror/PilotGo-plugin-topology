@@ -4,7 +4,7 @@
 
 <script setup lang="ts">
 import { markRaw, nextTick, onMounted, ref } from 'vue';
-import bar_option from './chart_options.ts';
+import bar_option from './chart_options';
 import * as echarts from 'echarts';
 
 const chartDom = ref(null);
