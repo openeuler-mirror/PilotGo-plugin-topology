@@ -95,3 +95,8 @@ export interface TopoCustomFormType {
   description: string;
   [key: string]: unknown;
 }
+
+export type logData = {
+  name: string,
+  data: (string | number)[][]
+};
