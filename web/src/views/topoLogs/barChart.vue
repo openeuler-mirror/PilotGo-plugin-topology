@@ -133,7 +133,7 @@ const setBorderRadius = (series: any) => {
 <style scoped>
 #main {
   width: 1300px;
-  height: 300px;
+  height: 350px;
   margin: 0 auto;
 }
 </style>

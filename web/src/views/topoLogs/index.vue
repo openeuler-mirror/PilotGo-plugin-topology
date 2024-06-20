@@ -1,7 +1,7 @@
 <!-- elk插件展示日志页面 -->
 <template>
-  <div class="log_containt">
-    <el-tabs v-model="activeName" class="log_containt_tabs shadow" @tab-click="handleClick">
+  <div class="log_containt shadow">
+    <el-tabs v-model="activeName" class="log_containt_tabs " @tab-click="handleClick">
       <el-tab-pane label="日志" name="log">
         <barChart :results="logs" @firstClick="getLogData" @secondClick="handleShowLog" />
       </el-tab-pane>
@@ -9,7 +9,9 @@
         <barChart :results="event_logs" />
       </el-tab-pane>
     </el-tabs>
-
+    <el-dialog v-model="dialog" :title="title" width="80%">
+      <logStream />
+    </el-dialog>
   </div>
 
 </template>
@@ -19,6 +21,7 @@ import { onMounted, ref, watch } from 'vue'
 import type { TabsPaneContext } from 'element-plus'
 
 import barChart from './barChart.vue';
+import logStream from './logStream.vue'
 import { useTopoStore } from '@/stores/topo';
 import type { logData } from '@/types/index';
 
@@ -27,6 +30,9 @@ import type { logData } from '@/types/index';
 const activeName = ref('log');
 const logs = ref([] as logData[]);
 const event_logs = ref([] as logData[]);
+
+const dialog = ref(false);
+const title = ref('日志详情');
 
 onMounted(() => {
   getLogData();
@@ -49,7 +55,10 @@ const handleClick = (_tab: TabsPaneContext, _event: Event) => {
 
 // 相应点击进程柱状图事件
 const handleShowLog = (_process_info: any) => {
-  // console.log('进程信息：', process_info)
+  if (_process_info) {
+    dialog.value = true;
+    title.value = _process_info.seriesName + '日志流';
+  }
 }
 
 watch(() => useTopoStore().node_log_id, (new_node_id) => {
@@ -64,14 +73,19 @@ watch(() => useTopoStore().node_log_id, (new_node_id) => {
 <style scoped lang="scss">
 .log_containt {
   width: 96%;
-  height: 400px;
+  height: 500px;
   position: fixed;
   bottom: 0;
   background-color: #fff;
 
+  &_query {
+    width: 100%;
+    height: 10%;
+  }
+
   &_tabs {
     width: 100%;
-    height: 100%;
+    height: 90%;
   }
 
 }
