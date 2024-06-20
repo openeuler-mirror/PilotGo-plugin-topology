@@ -3,42 +3,66 @@
 </template>
 
 <script setup lang="ts">
-import { markRaw, nextTick, onMounted, ref } from 'vue';
+import { markRaw, nextTick, onMounted, ref, watchEffect } from 'vue';
 import bar_option from './chart_options';
 import * as echarts from 'echarts';
+import type { logData } from '@/types/index';
 
 const chartDom = ref(null);
 const myChart = ref<any>(null);
+let isSecondClick = ref(false);
 
 let props = defineProps({
-  logs: {
-    type: Array,
+  results: {
+    type: Array as () => logData[],
     required: false,
     default: []
   }
 })
+let emit = defineEmits(["firstClick", "secondClick"]);
 
 onMounted(() => {
   myChart.value = markRaw(echarts.init(chartDom.value!))
-  /* option.value = bar_option;
-  myChart.value.setOption(option.value, true) */
-  handleBarData();
+  // 柱状图点击事件
+  myChart.value.on('click', function (bar_item_params: any) {
+    // console.log(`图的信息：${bar_item_params},图的纵坐标：${bar_item_params.value}`);
+    if (!isSecondClick.value) {
+      // 第一次点击
+      emit('firstClick', bar_item_params)
+      isSecondClick.value = true;
+    } else {
+      // 第二次点击
+      isSecondClick.value = true;
+      emit('secondClick', bar_item_params)
+    }
+  });
   window.addEventListener('resize', resize)
 })
+
+watchEffect(() => {
+  if (props.results) {
+    nextTick(() => {
+      handleBarData(props.results);
+    })
+  }
+})
+
 const resize = () => {
   nextTick(() => {
     myChart.value.resize()
   })
 }
 
-declare type serieItem = {
+interface serieItem {
   name: string,
   type: string,
   stack: string,
   data: any
 }
 // 处理柱状图数据
-const handleBarData = () => {
+const handleBarData = (_data: logData[]) => {
+  if (!_data.length) return;
+  bar_option.xAxis!.data = _data[0].data.map((item: any) => item[0]);
   let series: any = [];
   let seriesI: serieItem = {
     name: '',
@@ -46,14 +70,16 @@ const handleBarData = () => {
     stack: '',
     data: []
   };
-  bar_option.xAxis!.data = props.logs.map((item: any) => item[0]);
-  // 对接口数据进行处理
-  seriesI.name = '类别1';
-  seriesI.stack = 'A';
-  seriesI.data = props.logs.map(function (item: any) {
-    return item[1];
-  });
-  series.push(seriesI);
+
+  _data.forEach((item: any) => {
+    seriesI.stack = 'A';
+    seriesI.name = item.name;
+    seriesI.data = item.data.map(function (d_item: any) {
+      return d_item[1];
+    });
+    series.push(JSON.parse(JSON.stringify(seriesI)));
+  })
+
   setBorderRadius(series);
   bar_option.series = series;
   myChart.value.setOption(bar_option, true)
