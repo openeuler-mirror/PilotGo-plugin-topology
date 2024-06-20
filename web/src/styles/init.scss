@@ -7,12 +7,13 @@
 html {
   width: 100%;
   height: 100%;
+  font-family: Inter, 'Helvetica Neue', Helvetica, 'PingFang SC',
+  'Hiragino Sans GB', 'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
 }
 /* 2.盒模型 */  
 body {
   width: 100%;
-  height: 100%;  
-  font-family: Arial, sans-serif;  
+  height: 100%;    
   line-height: 2.4;  
 }  
   
