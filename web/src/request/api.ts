@@ -1,5 +1,5 @@
 import request from './request';
-let baseURL = 'plugin/topology';
+let baseURL = '/plugin/topology';
 // 请求批次信息
 export function getBatchList() {
   return request({
