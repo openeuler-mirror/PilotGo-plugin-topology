@@ -8,6 +8,7 @@ import (
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/conf"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/errormanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/pluginclient"
+	"gitee.com/openeuler/PilotGo/sdk/utils/httputils"
 	"github.com/pkg/errors"
 )
 
@@ -31,7 +32,7 @@ func WaitingForHandshake() {
 func Wait4TopoServerReady() {
 	for {
 		url := "http://" + conf.Global_Config.Topo.Server_addr + "/plugin_manage/info"
-		resp, err := http.Get(url)
+		resp, err := httputils.Get(url, nil)
 		if err == nil && resp != nil && resp.StatusCode == http.StatusOK {
 			break
 		}
