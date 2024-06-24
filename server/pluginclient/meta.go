@@ -10,6 +10,6 @@ var PluginInfo = &client.PluginInfo{
 	Description: "System application architecture detection.",
 	Author:      "wangjunqi",
 	Email:       "wangjunqi@kylinos.cn",
-	Url:         "http://10.1.10.131:9991",
+	Url:         "https://10.41.107.29:9991",
 	PluginType:  "micro-app",
 }
