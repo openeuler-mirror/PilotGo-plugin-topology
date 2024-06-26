@@ -62,21 +62,20 @@ interface serieItem {
 // 处理柱状图数据
 const handleBarData = (_data: logData[]) => {
   if (!_data.length) return;
-  bar_option.xAxis!.data = _data[0].data.map((item: any) => item[0]);
+  bar_option.xAxis!.data = _data[0].data.map((item: any) => item[0])
+    .concat(_data[1].data.map((item: any) => item[0]));
   let series: any = [];
-  let seriesI: serieItem = {
-    name: '',
-    type: 'bar',
-    stack: '',
-    data: []
-  };
 
   _data.forEach((item: any) => {
+    let seriesI: serieItem = {
+      name: '',
+      type: 'bar',
+      stack: '',
+      data: []
+    };
     seriesI.stack = 'A';
     seriesI.name = item.name;
-    seriesI.data = item.data.map(function (d_item: any) {
-      return d_item[1];
-    });
+    seriesI.data = item.data;
     series.push(JSON.parse(JSON.stringify(seriesI)));
   })
 
@@ -126,7 +125,6 @@ const setBorderRadius = (series: any) => {
     }
   }
 }
-
 
 </script>
 
