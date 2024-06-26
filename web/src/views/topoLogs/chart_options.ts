@@ -3,14 +3,22 @@ import * as echarts from 'echarts';
 type EChartsOption = echarts.EChartsOption;
 let bar_option: EChartsOption & {
   xAxis: {
-    data?: any
+    data?: any[];
+    type?: string;
+    boundaryGap?: boolean;
+    axisLabel?: unknown;
+  },
+  title: {
+    text?: string;
   }
 };
 
+let colors = ['#5470c6', '#91cc75', '#fac858', '#ee6666', '#73c0de', '#3ba272', '#fc8452', '#9a60b4', '#ea7ccc'];
+
 bar_option = {
   title: {
-        text: '日志数量',
-        left: '1%'
+        text: '集群日志数量',
+        left: '0'
       },
   tooltip: {
     confine: true,
@@ -28,17 +36,24 @@ bar_option = {
     bottom: '8%',
     containLabel: true
   },
-  xAxis: {},
-  yAxis: {},
+  xAxis: {
+    type: 'time',
+    boundaryGap:false
+  },
+  yAxis: {
+    type:'value'
+  },
   dataZoom: [
     {
       start: 0,
-      end: 50,
+      end: 100,
       bottom: 4,
       height: 18,
     },
     {
-      type: 'inside'
+      type: 'inside',
+      start: 0,
+      end: 10,
     }
   ],
   /* visualMap: {
@@ -70,7 +85,20 @@ bar_option = {
       color: '#999'
     }
   }, */
-  series: []
+  series: [
+    {
+      name: "类别1",
+      stack: "A",
+      type: "bar",
+      data: [],
+    },
+    {
+      name: "类别2",
+      stack: "A",
+      type: "bar",
+      data: [],
+    }
+  ]
 };
 
 export default bar_option;
