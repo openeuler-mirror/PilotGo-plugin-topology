@@ -28,8 +28,9 @@
           <!-- 2.时间范围选择 -->
           <div class="time">
             时间范围：
-            <el-date-picker v-model="log_time" type="datetimerange" range-separator="To" start-placeholder="Start date"
-              end-placeholder="End date" @change="ChangeEventTimeRange" @clear="ChangeEventTimeRange" />
+            <el-date-picker v-model="event_time" type="datetimerange" range-separator="To"
+              start-placeholder="Start date" end-placeholder="End date" @change="ChangeEventTimeRange"
+              @clear="ChangeEventTimeRange" />
           </div>
           <!-- 3.按钮 -->
           <el-button type="primary" :icon="Search" @click="handleGetData()">搜索</el-button>
@@ -54,7 +55,7 @@ import logStream from './logStream.vue'
 import { useTopoStore } from '@/stores/topo';
 import type { logData } from '@/types/index';
 import { getELKLogData } from '@/request/elk';
-
+import { calculate_interval } from './utils';
 // import result, { host_result, log_query } from './test';
 
 const activeName = ref('log');
@@ -96,22 +97,28 @@ const handleParams = (_id?: string) => {
   let log_query = {
     id: 'log_timeaxis',
     params: {
-      "query_data_stream_dataset": "system.syslog",
-      "query_range_gte": 1719226716185,
-      "query_range_lte": 1719226836185,
-      "aggs_field": "host.hostname",
-      "size": 0
+      query_data_stream_dataset: "system.syslog",
+      query_range_gte: 1719226716185,
+      query_range_lte: 1719226836185,
+      aggs_field: "host.hostname",
+      size: 0,
+      fixed_interval: "5s"
     }
   }
+  // calculate_interval(log_time.value[0], log_time.value[1])
+
+
   switch (log_type.value) {
     case 'log':
       log_query.params.query_range_gte = log_time.value[0].getTime();
       log_query.params.query_range_lte = log_time.value[1].getTime();
+      log_query.params.fixed_interval = calculate_interval(log_time.value[0], log_time.value[1]) + 's';
       break;
 
     default:
       log_query.params.query_range_gte = event_time.value[0].getTime();
       log_query.params.query_range_lte = event_time.value[1].getTime();
+      log_query.params.fixed_interval = calculate_interval(event_time.value[0], event_time.value[1]) + 's';
       break;
   }
   return log_query;

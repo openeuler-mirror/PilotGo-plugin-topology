@@ -7,6 +7,7 @@ import { markRaw, nextTick, onMounted, ref, watchEffect } from 'vue';
 import bar_option from './chart_options';
 import * as echarts from 'echarts';
 import type { logData } from '@/types/index';
+import { setBorderRadius } from './utils'
 
 const chartDom = ref(null);
 const myChart = ref<any>(null);
@@ -38,6 +39,11 @@ onMounted(() => {
   });
   window.addEventListener('resize', resize)
 })
+const resize = () => {
+  nextTick(() => {
+    myChart.value.resize()
+  })
+}
 
 watchEffect(() => {
   if (props.results) {
@@ -47,11 +53,6 @@ watchEffect(() => {
   }
 })
 
-const resize = () => {
-  nextTick(() => {
-    myChart.value.resize()
-  })
-}
 
 interface serieItem {
   name: string,
@@ -82,48 +83,6 @@ const handleBarData = (_data: logData[]) => {
   setBorderRadius(series);
   bar_option.series = series;
   myChart.value.setOption(bar_option, true)
-}
-
-// 设置柱状图圆角
-const setBorderRadius = (series: any) => {
-  const stackInfo: any = {};
-  for (let i = 0; i < series[0].data.length; ++i) {
-    for (let j = 0; j < series.length; ++j) {
-      const stackName = series[j].stack;
-      if (!stackName) {
-        continue;
-      }
-      if (!stackInfo[stackName]) {
-        stackInfo[stackName] = {
-          stackStart: [],
-          stackEnd: []
-        };
-      }
-      const info = stackInfo[stackName];
-      const data = series[j].data[i];
-      if (data && data !== '-') {
-        if (info.stackStart[i] == null) {
-          info.stackStart[i] = j;
-        }
-        info.stackEnd[i] = j;
-      }
-    }
-  }
-  for (let i = 0; i < series.length; ++i) {
-    const data: any = series[i].data;
-    const info = stackInfo[series[i].stack];
-    for (let j = 0; j < series[i].data.length; ++j) {
-      const isEnd = info.stackEnd[j] === i;
-      const topBorder = isEnd ? 20 : 0;
-      const bottomBorder = 0;
-      data[j] = {
-        value: data[j],
-        itemStyle: {
-          borderRadius: [topBorder, topBorder, bottomBorder, bottomBorder]
-        }
-      };
-    }
-  }
 }
 
 </script>
