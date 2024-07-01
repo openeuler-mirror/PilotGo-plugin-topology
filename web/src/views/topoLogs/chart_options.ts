@@ -17,7 +17,7 @@ let colors = ['#5470c6', '#91cc75', '#fac858', '#ee6666', '#73c0de', '#3ba272', 
 
 bar_option = {
   title: {
-        text: '集群日志数量',
+        text: '集群',
         left: '0'
       },
   tooltip: {
