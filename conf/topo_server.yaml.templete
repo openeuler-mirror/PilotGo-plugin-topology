@@ -8,8 +8,6 @@ topo:
   period: 86400 # 数据采集时间间隔，单位秒(s)
   retention: 24 # 图历史数据保留时间，单位小时(h)
   cleartime: "02:30:00" # 执行清理图历史数据的时间(h:m:s)
-PilotGo:
-  http_addr: "localhost:8888"
 log:
   level: debug
   driver: file # 可选stdout和file。stdout：输出到终端控制台；file：输出到path下的指定文件。

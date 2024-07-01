@@ -31,7 +31,7 @@ func WaitingForHandshake() {
 
 func Wait4TopoServerReady() {
 	for {
-		url := "http://" + conf.Global_Config.Topo.Server_addr + "/plugin_manage/info"
+		url := "http://" + conf.Global_Config.Topo.Addr + "/plugin_manage/info"
 		resp, err := httputils.Get(url, nil)
 		if err == nil && resp != nil && resp.StatusCode == http.StatusOK {
 			break

@@ -29,13 +29,13 @@ func InitWebServer() {
 		StaticRouter(engine)
 
 		if conf.Global_Config.Topo.Https_enabled {
-			err := engine.RunTLS(conf.Global_Config.Topo.Server_addr, conf.Global_Config.Topo.Public_certificate, conf.Global_Config.Topo.Private_key)
+			err := engine.RunTLS(conf.Global_Config.Topo.Addr, conf.Global_Config.Topo.Public_certificate, conf.Global_Config.Topo.Private_key)
 			if err != nil {
 				err = errors.Errorf("%s **errstackfatal**2", err.Error()) // err top
 				errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
 			}
 		} else {
-			err := engine.Run(conf.Global_Config.Topo.Server_addr)
+			err := engine.Run(conf.Global_Config.Topo.Addr)
 			if err != nil {
 				err = errors.Errorf("%s **errstackfatal**2", err.Error()) // err top
 				errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
