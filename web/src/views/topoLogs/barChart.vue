@@ -18,8 +18,20 @@ let props = defineProps({
     type: Array as () => logData[],
     required: false,
     default: []
+  },
+  clickChange: {
+    type: String,
+    required: false,
+    default: 'first'
   }
 })
+watchEffect(() => {
+  if (props.clickChange === 'first') {
+    isSecondClick.value = false;
+    bar_option.title.text = '集群';
+  }
+})
+
 let emit = defineEmits(["firstClick", "secondClick"]);
 
 onMounted(() => {
@@ -27,6 +39,7 @@ onMounted(() => {
   // 柱状图点击事件
   myChart.value.on('click', function (bar_item_params: any) {
     // console.log(`图的信息：${bar_item_params},图的纵坐标：${bar_item_params.value}`);
+    bar_option.title.text = bar_item_params.seriesName;
     if (!isSecondClick.value) {
       // 第一次点击
       emit('firstClick', bar_item_params)

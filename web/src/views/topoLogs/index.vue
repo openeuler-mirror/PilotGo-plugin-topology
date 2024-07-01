@@ -15,9 +15,13 @@
               end-placeholder="End date" @change="ChangeTimeRange" @clear="ChangeTimeRange" />
           </div>
           <!-- 3.按钮 -->
-          <el-button type="primary" :icon="Search" @click="handleGetData()">搜索</el-button>
+          <div class="bt">
+            <el-button type="primary" :icon="Search" @click="handleGetData()">搜索</el-button>
+            <el-button type="primary" v-show="back_btn" :icon="Back" @click="handleReset()">集群</el-button>
+          </div>
+
         </div>
-        <barChart :results="logs" @firstClick="getLogData" @secondClick="handleShowLog" />
+        <barChart :results="logs" :clickChange="clickChange" @firstClick="getLogData" @secondClick="handleShowLog" />
       </el-tab-pane>
       <el-tab-pane label="事件" name="event" :lazy="true">
         <div class="log_containt_query">
@@ -48,13 +52,13 @@
 <script setup lang="ts">
 import { onMounted, ref, watch } from 'vue'
 import type { TabsPaneContext } from 'element-plus'
-import { Search } from '@element-plus/icons-vue'
+import { Search, Back } from '@element-plus/icons-vue'
 
 import barChart from './barChart.vue';
 import logStream from './logStream.vue'
 import { useTopoStore } from '@/stores/topo';
 import type { logData } from '@/types/index';
-import { getELKLogData } from '@/request/elk';
+import { getELKLogData, getELKProcessLogData } from '@/request/elk';
 import { calculate_interval } from './utils';
 // import result, { host_result, log_query } from './test';
 
@@ -65,10 +69,19 @@ const event_logs = ref([] as logData[]);
 const dialog = ref(false);
 const title = ref('日志详情');
 const log_type = ref('log');
+const back_btn = ref(false);
+const clickChange = ref('first');
 
 onMounted(() => {
   getLogData();
 })
+const handleReset = () => {
+  // 页面回到集群
+  back_btn.value = false;
+  log_type.value = 'log';
+  getLogData();
+  clickChange.value = 'first';
+}
 
 const log_time = ref<[Date, Date]>([
   new Date(new Date().getTime() - 2 * 60 * 60 * 1000),
@@ -93,19 +106,24 @@ const ChangeEventTimeRange = (value: any) => {
 }
 
 // 处理请求体参数
-const handleParams = (_id?: string) => {
+const handleParams = (_params?: any) => {
   let log_query = {
-    id: 'log_timeaxis',
+    id: 'log_clusterhost_timeaxis',
     params: {
       query_data_stream_dataset: "system.syslog",
       query_range_gte: 1719226716185,
       query_range_lte: 1719226836185,
       aggs_field: "host.hostname",
       size: 0,
-      fixed_interval: "5s"
+      fixed_interval: "5s",
     }
   }
-  // calculate_interval(log_time.value[0], log_time.value[1])
+  if (_params) {
+    log_query.id = 'log_hostprocess_timeaxis';
+    // log_query.params.aggs_field = 'process.name';
+    Object.assign(log_query.params, { 'hostname': _params.seriesName })
+    Object.assign(log_query.params, { 'aggs_1-1_field': 'process.name' })
+  }
 
 
   switch (log_type.value) {
@@ -126,15 +144,27 @@ const handleParams = (_id?: string) => {
 }
 
 // 请求日志数据
-const getLogData = () => {
+const getLogData = (_params?: any) => {
   // logs.value = result;
   switch (log_type.value) {
     case 'log':
-      getELKLogData(handleParams()).then(res => {
-        if (res.data.code === 200) {
-          logs.value = res.data.data;
-        }
-      })
+      if (_params) {
+        // 第一次点击
+        back_btn.value = true;
+        clickChange.value = 'second';
+        getELKProcessLogData(handleParams(_params)).then(res => {
+          if (res.data.code === 200) {
+            logs.value = res.data.data;
+          }
+        })
+      } else {
+        getELKLogData(handleParams()).then(res => {
+          if (res.data.code === 200) {
+            logs.value = res.data.data;
+          }
+        })
+      }
+
       break;
 
     default:
