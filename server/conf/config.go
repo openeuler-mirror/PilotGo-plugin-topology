@@ -19,15 +19,14 @@ const config_type = "topo_server.yaml"
 var config_dir string
 
 type ServerConfig struct {
-	Topo       *TopoConf
-	PilotGo    *PilotGoConf
-	Logopts    *logger.LogOpts `yaml:"log"`
-	Arangodb   *ArangodbConf
-	Neo4j      *Neo4jConf
-	Prometheus *PrometheusConf
-	Redis      *RedisConf
-	Mysql      *MysqlConf
-	Influx     *InfluxConf
+	Topo          *TopoConf
+	Logopts       *logger.LogOpts `yaml:"log"`
+	Arangodb      *ArangodbConf
+	Neo4j         *Neo4jConf
+	Prometheus    *PrometheusConf
+	Redis         *RedisConf
+	Mysql         *MysqlConf
+	Influx        *InfluxConf
 }
 
 func ConfigFile() string {
