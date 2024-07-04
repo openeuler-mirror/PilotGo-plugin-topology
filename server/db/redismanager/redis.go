@@ -36,14 +36,24 @@ func RedisInit(url, pass string, db int, dialTimeout time.Duration) *RedisClient
 		DB:       db,
 	}
 
-	r.Client = *redis.NewClient(&redis.Options{
-		Addr:     r.Addr,
-		Password: r.Password,
-		DB:       r.DB,
-		TLSConfig: &tls.Config{
-			InsecureSkipVerify: true,
-		},
-	})
+	var cfg *redis.Options
+	if conf.Global_Config.Redis.UseTLS {
+		cfg = &redis.Options{
+			Addr:     r.Addr,
+			Password: r.Password,
+			DB:       r.DB,
+			TLSConfig: &tls.Config{
+				InsecureSkipVerify: true,
+			},
+		}
+	} else {
+		cfg = &redis.Options{
+			Addr:     r.Addr,
+			Password: r.Password,
+			DB:       r.DB,
+		}
+	}
+	r.Client = *redis.NewClient(cfg)
 
 	// 使用超时上下文，验证redis
 	timeoutCtx, cancelFunc := context.WithTimeout(context.Background(), dialTimeout)

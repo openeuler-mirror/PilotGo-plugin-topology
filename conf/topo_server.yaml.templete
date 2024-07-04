@@ -23,6 +23,7 @@ prometheus: # 暂不启用
   addr: "http://localhost:9090"
 redis:
   addr: "localhost:6379"
+  use_tls: false
   password: ''
   DB: 1
   dialTimeout: 5s

@@ -32,6 +32,7 @@ type PrometheusConf struct {
 
 type RedisConf struct {
 	Addr        string        `yaml:"addr"`
+	UseTLS      bool          `yaml:"use_tls"`
 	Password    string        `yaml:"password"`
 	DB          int           `yaml:"DB"`
 	DialTimeout time.Duration `yaml:"dialTimeout"`
