@@ -43,7 +43,8 @@
       </el-tab-pane>
     </el-tabs>
     <el-dialog v-model="dialog" :title="title" width="80%">
-      <logStream />
+      <logStream v-if="dialog" :log_data="log_stream" :log_total="log_total" v-on:get-more="getMoreLogStream"
+        destroy-on-close />
     </el-dialog>
   </div>
 
@@ -58,8 +59,9 @@ import barChart from './barChart.vue';
 import logStream from './logStream.vue'
 import { useTopoStore } from '@/stores/topo';
 import type { logData } from '@/types/index';
-import { getELKLogData, getELKProcessLogData } from '@/request/elk';
+import { getELKLogData, getELKProcessLogData, getELKProcessLogStream } from '@/request/elk';
 import { calculate_interval } from './utils';
+import { ElMessage } from 'element-plus';
 // import result, { host_result, log_query } from './test';
 
 const activeName = ref('log');
@@ -105,7 +107,7 @@ const ChangeEventTimeRange = (value: any) => {
   }
 }
 
-// 处理请求体参数
+// 处理渲染柱状图接口请求体参数
 const handleParams = (_params?: any) => {
   let log_query = {
     id: 'log_clusterhost_timeaxis',
@@ -144,12 +146,13 @@ const handleParams = (_params?: any) => {
 }
 
 // 请求日志数据
+const bar_params = ref({} as any); // 记录每次点击柱状图的参数
 const getLogData = (_params?: any) => {
-  // logs.value = result;
+  bar_params.value = _params;
   switch (log_type.value) {
     case 'log':
-      if (_params) {
-        // 第一次点击
+      if (_params || clickChange.value === 'first') {
+        // 第一次点击,请求进程信息
         back_btn.value = true;
         clickChange.value = 'second';
         getELKProcessLogData(handleParams(_params)).then(res => {
@@ -158,6 +161,7 @@ const getLogData = (_params?: any) => {
           }
         })
       } else {
+        // 初始，请求集群信息
         getELKLogData(handleParams()).then(res => {
           if (res.data.code === 200) {
             logs.value = res.data.data;
@@ -183,22 +187,54 @@ const handleClick = (_tab: TabsPaneContext, _event: Event) => {
 const handleGetData = () => {
   switch (log_type.value) {
     case 'log':
-      getLogData();
+      getLogData(bar_params.value);
       break;
 
     default:
-      // getEventData(type);
+      //
       break;
   }
 }
 
-// 相应点击进程柱状图事件
-const handleShowLog = (_process_info: any) => {
-  console.log('进程信息：', _process_info)
+// 请求某一个日志文件流
+const log_stream = ref([]);
+const logfile_params = ref({} as any);
+const log_total = ref(0);
+const handleShowLog = (_process_info: any, _size?: number) => {
+  logfile_params.value = _process_info;
   if (_process_info) {
     dialog.value = true;
     title.value = _process_info.seriesName + '日志流';
   }
+  let log_query = {
+    id: "log_stream",
+    params: {
+      query_data_stream_dataset: "system.syslog",
+      query_range_gte: _process_info.value[0],
+      query_range_lte: _process_info.value[0] + 1000 * 60,
+      hostname: bar_params.value.seriesName,
+      processname: _process_info.seriesName,
+      from: 0,
+      size: 20
+    }
+  }
+  if (_size) {
+    log_query.params.size = _size;
+  }
+  getELKProcessLogStream(log_query).then((res: any) => {
+    if (res.data.code === 200) {
+      if (res.data.data.hits.length > 0) {
+        log_stream.value = res.data.data.hits;
+        log_total.value = res.data.data.total;
+      }
+    } else {
+      ElMessage.error('日志请求失败，请重试')
+    }
+  })
+}
+
+const getMoreLogStream = (size: number) => {
+  handleShowLog(logfile_params.value, size);
 }
 
 watch(() => useTopoStore().node_log_id, (new_node_id) => {

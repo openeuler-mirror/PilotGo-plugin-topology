@@ -76,8 +76,7 @@ interface serieItem {
 // 处理柱状图数据
 const handleBarData = (_data: logData[]) => {
   if (!_data.length) return;
-  bar_option.xAxis!.data = _data[0].data.map((item: any) => item[0])
-    .concat(_data[1].data.map((item: any) => item[0]));
+  bar_option.xAxis!.data = _data[0].data.map((item: any) => item[0]);
   let series: any = [];
 
   _data.forEach((item: any) => {
@@ -102,7 +101,7 @@ const handleBarData = (_data: logData[]) => {
 
 <style scoped>
 #main {
-  width: 1300px;
+  width: 1600px;
   height: 350px;
   margin: 0 auto;
 }

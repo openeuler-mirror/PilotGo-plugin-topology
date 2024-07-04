@@ -16,3 +16,12 @@ export function getELKProcessLogData(data:any) {
     data
   })
 }
+
+// 请求elk进程单个日志文件流
+export function getELKProcessLogStream(data:any) {
+  return request({
+    url: '/plugin/elk/api/log_stream_data',
+    method: 'post',
+    data
+  })
+}

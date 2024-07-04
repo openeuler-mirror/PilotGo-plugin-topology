@@ -1,17 +1,7 @@
 import * as echarts from 'echarts';
 
 type EChartsOption = echarts.EChartsOption;
-let bar_option: EChartsOption & {
-  xAxis: {
-    data?: any[];
-    type?: string;
-    boundaryGap?: boolean;
-    axisLabel?: unknown;
-  },
-  title: {
-    text?: string;
-  }
-};
+let bar_option: any;
 
 let colors = ['#5470c6', '#91cc75', '#fac858', '#ee6666', '#73c0de', '#3ba272', '#fc8452', '#9a60b4', '#ea7ccc'];
 
@@ -25,11 +15,22 @@ bar_option = {
     trigger: 'axis',
     axisPointer: {
       type: 'shadow'
+    },
+    formatter: function (params: any) {
+      let res = params[0].axisValueLabel + '<br/>';
+      params.forEach((item:any) => {  
+        if (item.value[1] > 0) { 
+          res += `<span>
+          <span style="display:inline-block;border-radius:10px;width:10px;height:10px;background-color:${item.color}"></span>
+          <span>${item.seriesName}</span>
+          <span style="font-weight:bold; float:right">${item.value[1]}</span>
+          </span><br/>`;  
+        }  
+      });  
+      return res; 
     }
   },
-  legend: {
-
-  },
+  legend: {},
   grid: {
     left: '0',
     right: '2%',
