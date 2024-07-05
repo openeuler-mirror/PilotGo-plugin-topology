@@ -1,15 +1,16 @@
 import { ref, computed, reactive } from 'vue'
 import { defineStore } from 'pinia'
-
-export const useConfigStore = defineStore('config', () => {
-  const topo_config = ref({} as any);
-  interface TopoRequest {
+interface TopoRequest {
     type: string;
     id: string | number;
   }
-  const topo_request = reactive<TopoRequest>({
-    type: '',
-    id:''
-  })
-  return { topo_config,topo_request}
+export const useConfigStore = defineStore('config', {
+  state: () => ({
+    topo_config: {} as any,
+    topo_request:{
+      type: '',
+      id:''
+    } as TopoRequest
+  }),
+  persist:true
 })

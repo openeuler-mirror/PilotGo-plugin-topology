@@ -8,10 +8,12 @@ import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 import App from './App.vue'
 import router from './router'
 import VueGridLayout from 'vue-grid-layout'
+import pinia from '@/stores/persist'
 
 const app = createApp(App)
 
 app.use(createPinia())
+app.use(pinia);
 app.use(router)
 app.use(ElementPlus)
 app.use(VueGridLayout)
