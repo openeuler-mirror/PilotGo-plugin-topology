@@ -69,6 +69,9 @@ watchEffect(() => {
     total_logs.value = props.log_total;
     loading.value = false;
     isloading.value = false;
+    for (let i = 0; i < props.log_data.length; i++) {
+      activeNames.value.push(i);
+    }
   }
 })
 

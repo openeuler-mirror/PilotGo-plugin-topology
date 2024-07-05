@@ -200,6 +200,7 @@ function topoTimer(request_id: any, interval: string) {
   width: 96%;
   height: 100%;
   margin: 0 auto;
+  position: relative;
 
   @keyframes bounce {
 

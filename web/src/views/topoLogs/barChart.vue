@@ -44,10 +44,12 @@ onMounted(() => {
       // 第一次点击
       emit('firstClick', bar_item_params)
       isSecondClick.value = true;
-    } else {
+    } else if (props.results.length > 0) {
       // 第二次点击
       isSecondClick.value = true;
       emit('secondClick', bar_item_params)
+    } else {
+      console.log('error')
     }
   });
   window.addEventListener('resize', resize)
@@ -101,7 +103,7 @@ const handleBarData = (_data: logData[]) => {
 
 <style scoped>
 #main {
-  width: 1600px;
+  width: 94%;
   height: 350px;
   margin: 0 auto;
 }
