@@ -30,7 +30,10 @@ bar_option = {
       return res; 
     }
   },
-  legend: {},
+  legend: {
+    left: '10%',
+    right:'30%'
+  },
   grid: {
     left: '0',
     right: '2%',

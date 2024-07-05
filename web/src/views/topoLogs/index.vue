@@ -5,9 +5,9 @@
       <el-tab-pane label="日志" name="log" :lazy="true">
         <div class="log_containt_query">
           <!-- 1.简单语句拼写 -->
-          <div class="category">
+          <!-- <div class="category">
             分类类别：
-          </div>
+          </div> -->
           <!-- 2.时间范围选择 -->
           <div class="time">
             时间范围：
@@ -26,9 +26,9 @@
       <el-tab-pane label="事件" name="event" :lazy="true">
         <div class="log_containt_query">
           <!-- 1.简单语句拼写 -->
-          <div class="category">
+          <!-- <div class="category">
             分类类别：
-          </div>
+          </div> -->
           <!-- 2.时间范围选择 -->
           <div class="time">
             时间范围：
@@ -158,6 +158,8 @@ const getLogData = (_params?: any) => {
         getELKProcessLogData(handleParams(_params)).then(res => {
           if (res.data.code === 200) {
             logs.value = res.data.data;
+          } else {
+            ElMessage.error(res.data.msg)
           }
         })
       } else {
@@ -165,6 +167,8 @@ const getLogData = (_params?: any) => {
         getELKLogData(handleParams()).then(res => {
           if (res.data.code === 200) {
             logs.value = res.data.data;
+          } else {
+            ElMessage.error(res.data.msg)
           }
         })
       }
@@ -228,7 +232,7 @@ const handleShowLog = (_process_info: any, _size?: number) => {
         log_total.value = res.data.data.total;
       }
     } else {
-      ElMessage.error('日志请求失败，请重试')
+      ElMessage.error(res.data.msg)
     }
   })
 }
@@ -248,10 +252,11 @@ watch(() => useTopoStore().node_log_id, (new_node_id) => {
 
 <style scoped lang="scss">
 .log_containt {
-  width: 96%;
+  width: 100%;
   height: 500px;
-  position: fixed;
+  position: absolute;
   bottom: 0;
+  right: 0;
   background-color: #fff;
 
   &_query {
