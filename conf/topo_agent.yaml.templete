@@ -6,8 +6,6 @@ topo:
   server_addr: "localhost:9991"
   datasource: "gopsutil"
   heartbeat: 60
-PilotGo: # 暂不启用
-  http_addr: "localhost:8888"
 log:
   level: debug
   driver: file # 可选stdout和file。stdout：输出到终端控制台；file：输出到path下的指定文件。
