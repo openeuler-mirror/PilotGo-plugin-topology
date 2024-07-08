@@ -20,6 +20,8 @@ import resource_logo from "@/assets/icon/resource.png";
 import { useTopoStore } from '@/stores/topo';
 import { colorSets, graphInitOptions, graphTreeInitOptions } from './PGOptions';
 
+const emit = defineEmits(['clickTopoCanvas'])
+
 const props = defineProps({
   graph_mode: {
     type: String,
@@ -53,6 +55,11 @@ onMounted(() => {
   topo_container = document.getElementById("topo-container")!;
   topoW.value = topo_container.clientWidth;
   topoH.value = topo_container.clientHeight;
+  document.getElementById('topo-container')!.addEventListener('click', function (_event: any) {
+    // 点击画布时，关闭日志弹窗和tab页面 
+    console.log(_event)
+    emit('clickTopoCanvas', _event)
+  });
 })
 
 const updateTopoData = (topoData: any) => {

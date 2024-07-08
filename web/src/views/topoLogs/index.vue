@@ -43,7 +43,7 @@
       </el-tab-pane>
     </el-tabs>
     <el-dialog v-model="dialog" :title="title" width="80%" @close="closeDialog" destroy-on-close>
-      <logStream v-show="dialog" :log_data="log_stream" :log_total="log_total" v-on:get-more="getMoreLogStream"
+      <logStream v-if="dialog" :log_data="log_stream" :log_total="log_total" v-on:get-more="getMoreLogStream"
         v-on:get-time-range-log="getRangeTimeLog" />
     </el-dialog>
   </div>
@@ -72,7 +72,7 @@ const dialog = ref(false);
 const title = ref('日志详情');
 const log_type = ref('log');
 const back_btn = ref(false);
-const clickChange = ref('first');
+const clickChange = ref('');
 
 onMounted(() => {
   getLogData();
@@ -152,13 +152,13 @@ const getLogData = (_params?: any) => {
     case 'log':
       if (_params || clickChange.value === 'first') {
         // 第一次点击,请求进程信息
-        back_btn.value = true;
-        clickChange.value = 'second';
         console.log('请求进程图表')
         getELKProcessLogData(handleParams(_params)).then(res => {
           if (res.data.code === 200) {
             if (res.data.data.length > 0) {
               logs.value = res.data.data;
+              back_btn.value = true;
+              clickChange.value = 'second';
             } else {
               ElMessage.info('无数据，请稍后重试')
             }
@@ -244,6 +244,8 @@ const handleShowLog = (_process_info?: any, _size?: number) => {
       if (res.data.data.hits.length > 0) {
         log_stream.value = res.data.data.hits;
         log_total.value = res.data.data.total;
+      } else {
+        ElMessage.info('当前时段日志文件无数据')
       }
     } else {
       ElMessage.error(res.data.msg)
