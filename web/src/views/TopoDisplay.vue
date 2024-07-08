@@ -20,7 +20,8 @@
       </template>
     </el-page-header>
     <!-- 展示topo图 -->
-    <PGTopo style="width: 100%;height: calc(100% - 50px);" :graph_mode="graphMode" :time_interval="timeInterval" />
+    <PGTopo ref="topoRef" style="width: 100%;height: calc(100% - 50px);" :graph_mode="graphMode"
+      :time_interval="timeInterval" v-on:click-topo-canvas="clickTopoCanvas" />
     <!-- 嵌套抽屉组件展示数据 -->
     <nodeDetail />
     <!-- 嵌套抽屉组件展示日志信息 -->
@@ -64,23 +65,23 @@ let request_id: string | number
 let showLogChart = ref(false);
 const logChart = ref(null)
 
+const topoRef = ref(null)
+
 const dialog = ref(false);
 const title = ref('日志详情');
 onMounted(() => {
   loading.value = true;
-  document.getElementById('topoDisplay')!.addEventListener('click', function (_event: any) {
-    // 点击画布时，关闭日志弹窗和tab页面 
-    if (_event.target.nodeName === 'CANVAS') {
-      dialog.value = false;
-      showLogChart.value = false;
-    }
-
-  });
 })
 onBeforeUnmount(() => {
   // 离开页面，清空点击事件缓存数据
   useTopoStore().$reset();
 })
+
+const clickTopoCanvas = (_e: any) => {
+  console.log('点击了topo的画布')
+  dialog.value = false;
+  showLogChart.value = false;
+}
 
 
 const goBack = () => {

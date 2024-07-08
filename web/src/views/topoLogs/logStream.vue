@@ -82,6 +82,9 @@ watchEffect(() => {
     for (let i = 0; i < props.log_data.length; i++) {
       activeNames.value.push(i);
     }
+  } else {
+    log_stream.value = [];
+    total_logs.value = 0;
   }
 })
 interface TimeRange {

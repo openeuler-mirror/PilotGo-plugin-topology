@@ -169,9 +169,9 @@ const handleRuleType = (type: string, index: number) => {
 
 // 获取批次所有主机
 const handlebatchDetail = (e: string) => {
-  let baychInfo = e.split('~');
-  customForm.batchId = Number(baychInfo[0]);
-  customForm.batchName = baychInfo[1];
+  let batchInfo = e.split('~');
+  customForm.batchId = Number(batchInfo[0]);
+  customForm.batchName = batchInfo[1];
   getBatchDetail({ batchId: customForm.batchId }).then(res => {
     if (res.data.code === 200) {
       hosts.value = res.data.data;
@@ -264,6 +264,7 @@ watch(() => useConfigStore().topo_config, (newConfig) => {
     configId.value = currentConf.id;
     setTimeout(() => {
       customForm.batchName = batchs.value.filter(item => item.id === customForm.batchId)[0].name;
+      handlebatchDetail(customForm.batchId + '~' + customForm.batchName);
     }, 100)
   }
 }, { immediate: true, deep: true })
