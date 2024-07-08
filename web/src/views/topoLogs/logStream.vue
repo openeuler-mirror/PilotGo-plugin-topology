@@ -1,9 +1,16 @@
 <template>
   <div style="width: 100%;" v-loading="isloading">
     <div class="search">
-      选择等级：<el-select v-model="level_key" placeholder="请选择日志等级" style="width: 240px" @change="searchLevel">
-        <el-option v-for="item in level_options" :key="item.value" :label="item.label" :value="item.value" />
-      </el-select>
+      <div class="level">
+        选择等级：<el-select v-model="level_key" placeholder="请选择日志等级" style="width: 240px" @change="searchLevel">
+          <el-option v-for="item in level_options" :key="item.value" :label="item.label" :value="item.value" />
+        </el-select>
+      </div>&emsp;
+      <div class="time">
+        时间范围：
+        <el-date-picker v-model="log_time" type="datetimerange" range-separator="To" start-placeholder="Start date"
+          end-placeholder="End date" @change="ChangeTimeRange" @clear="ChangeTimeRange" />
+      </div>
     </div>
     <div class="infinite-list">
       <p class="head">
@@ -52,7 +59,7 @@ let props = defineProps({
   log_data: {
     type: Array as () => logItem[],
     require: false,
-    default: [{ date: '暂无', level: '暂无', message: '暂无' }]
+    default: []
   },
   log_total: {
     type: Number,
@@ -62,6 +69,9 @@ let props = defineProps({
 })
 onMounted(() => {
   isloading.value = true;
+  if (props.log_data.length == 0) {
+    isloading.value = false;
+  }
 })
 watchEffect(() => {
   if (props.log_data.length > 0) {
@@ -74,9 +84,13 @@ watchEffect(() => {
     }
   }
 })
-
+interface TimeRange {
+  start: Date,
+  end: Date
+}
 let emit = defineEmits<{
-  getMore: [value: number]
+  getMore: [value: number],
+  getTimeRangeLog: [time_range: TimeRange]
 }>()
 
 // 等级搜索功能
@@ -86,11 +100,22 @@ const searchLevel = (level: string) => {
   console.log(level)
 }
 
+// 时间筛选功能
+const log_time = ref<[Date, Date]>([
+  new Date(new Date().getTime() - 2 * 60 * 60 * 1000),
+  new Date(),
+])
+const ChangeTimeRange = (value: any) => {
+  if (value) {
+    log_time.value[0] = value[0]
+    log_time.value[1] = value[1]
+    emit('getTimeRangeLog', { start: value[0], end: value[1] });
+  }
+}
 
 const log_size = ref(20);
 let is_continue = ref(true);
 const load = () => {
-
   if (!total_logs.value || !is_continue.value) return;
   if (log_size.value >= total_logs.value) {
     log_size.value = total_logs.value;
@@ -107,6 +132,9 @@ const load = () => {
 <style scoped lang="scss">
 .search {
   height: 44px;
+  display: flex;
+  align-items: center;
+
 }
 
 .infinite-list {

@@ -178,6 +178,12 @@ const menu = new G6.Menu({
   offsetX: 6,
   offsetY: 10,
   itemTypes: ['node'],
+  shouldBegin(_e: any) {
+    if (_e.item._cfg.model.Type === 'host') {
+      return false;
+    }
+    return true;
+  },
   getContent(_e) {
     const outDiv = document.createElement('div');
     outDiv.style.width = '80px';
@@ -189,12 +195,12 @@ const menu = new G6.Menu({
     return outDiv;
   },
   // _target：界面元素，item：节点内容
-  handleMenuClick(_target, item) {
+  handleMenuClick(_target, item: any) {
     if (item._cfg) {
       let host_name = '' as any; let process_name = '' as any;
-      let node_type = item._cfg.model!.Type;
+      let node_type = item._cfg.model.Type;
       if (node_type === 'process') {
-        process_name = item._cfg.model!.name;
+        process_name = item._cfg.model.name;
         host_name = graph.getNeighbors(item._cfg.id!)[0]._cfg!.model!.metrics?.Hostname;
       } else if (node_type === 'host') {
         process_name = host_name = item._cfg.model!.name;

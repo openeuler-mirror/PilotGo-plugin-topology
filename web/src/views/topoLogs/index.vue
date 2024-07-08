@@ -42,8 +42,9 @@
         <barChart :results="event_logs" />
       </el-tab-pane>
     </el-tabs>
-    <el-dialog v-model="dialog" :title="title" width="80%" destroy-on-close>
-      <logStream v-show="dialog" :log_data="log_stream" :log_total="log_total" v-on:get-more="getMoreLogStream" />
+    <el-dialog v-model="dialog" :title="title" width="80%" @close="closeDialog" destroy-on-close>
+      <logStream v-show="dialog" :log_data="log_stream" :log_total="log_total" v-on:get-more="getMoreLogStream"
+        v-on:get-time-range-log="getRangeTimeLog" />
     </el-dialog>
   </div>
 
@@ -211,6 +212,8 @@ const handleGetData = () => {
 const log_stream = ref([]);
 const logfile_params = ref({} as any);
 const log_total = ref(0);
+const isRangeLog = ref(false);
+const timeRange = ref({} as TimeRange);
 const handleShowLog = (_process_info?: any, _size?: number) => {
   logfile_params.value = _process_info;
   if (_process_info) {
@@ -232,6 +235,10 @@ const handleShowLog = (_process_info?: any, _size?: number) => {
   if (_size) {
     log_query.params.size = _size;
   }
+  if (isRangeLog.value) {
+    log_query.params.queryfield_range_gte = timeRange.value.start.getTime()
+    log_query.params.queryfield_range_lte = timeRange.value.end.getTime()
+  }
   getELKProcessLogStream(log_query).then((res: any) => {
     if (res.data.code === 200) {
       if (res.data.data.hits.length > 0) {
@@ -246,6 +253,23 @@ const handleShowLog = (_process_info?: any, _size?: number) => {
 
 const getMoreLogStream = (size: number) => {
   handleShowLog(logfile_params.value, size);
+}
+interface TimeRange {
+  start: Date,
+  end: Date
+}
+const getRangeTimeLog = (time_range: TimeRange) => {
+  if (time_range) {
+    isRangeLog.value = true;
+    timeRange.value = time_range;
+    handleShowLog(logfile_params.value, 20);
+  }
+}
+
+// 关闭日志流弹窗事件
+const closeDialog = () => {
+  isRangeLog.value = false;
+  timeRange.value = { start: new Date(new Date().getTime() - 2 * 60 * 60 * 1000), end: new Date() }
 }
 
 </script>
