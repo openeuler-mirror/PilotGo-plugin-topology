@@ -19,7 +19,7 @@ func FileReadString(filePath string) (string, error) {
 func FileReadBytes(filePath string) ([]byte, error) {
 	f, err := os.Open(filePath)
 	if err != nil {
-		return nil, errors.Errorf("%s **errstack**0", err.Error())
+		return nil, errors.New(err.Error())
 	}
 	defer f.Close()
 
@@ -34,7 +34,7 @@ func FileReadBytes(filePath string) ([]byte, error) {
 				}
 				break
 			}
-			return nil, errors.Errorf("%s **errstack**0", err.Error())
+			return nil, errors.New(err.Error())
 		}
 		content = append(content, readbuff[:n]...)
 	}

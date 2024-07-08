@@ -45,8 +45,8 @@ func InitConfig() {
 	bytes, err := global.FileReadBytes(ConfigFile())
 	if err != nil {
 		flag.Usage()
-		err = errors.Wrapf(err, "open file failed: %s, %s", ConfigFile(), err.Error()) // err top
-		fmt.Printf("%+v\n", err)
+		// err = errors.Wrapf(err, "open file failed: %s, %s", ConfigFile(), err.Error()) // err top
+		fmt.Printf("%s\n", err.Error())
 		os.Exit(1)
 	}
 
