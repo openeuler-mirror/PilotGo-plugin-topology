@@ -42,16 +42,15 @@
         <barChart :results="event_logs" />
       </el-tab-pane>
     </el-tabs>
-    <el-dialog v-model="dialog" :title="title" width="80%">
-      <logStream v-if="dialog" :log_data="log_stream" :log_total="log_total" v-on:get-more="getMoreLogStream"
-        destroy-on-close />
+    <el-dialog v-model="dialog" :title="title" width="80%" destroy-on-close>
+      <logStream v-show="dialog" :log_data="log_stream" :log_total="log_total" v-on:get-more="getMoreLogStream" />
     </el-dialog>
   </div>
 
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue'
+import { onMounted, ref, watch, nextTick } from 'vue'
 import type { TabsPaneContext } from 'element-plus'
 import { Search, Back } from '@element-plus/icons-vue'
 
@@ -112,41 +111,40 @@ const handleParams = (_params?: any) => {
   let log_query = {
     id: 'log_clusterhost_timeaxis',
     params: {
-      query_data_stream_dataset: "system.syslog",
-      query_range_gte: 1719226716185,
-      query_range_lte: 1719226836185,
-      aggs_field: "host.hostname",
+      queryfield_datastream_dataset: "system.syslog",
+      queryfield_range_gte: 1719226716185,
+      queryfield_range_lte: 1719226836185,
+      aggsfield: "host.hostname",
       size: 0,
       fixed_interval: "5s",
     }
   }
   if (_params) {
     log_query.id = 'log_hostprocess_timeaxis';
-    // log_query.params.aggs_field = 'process.name';
-    Object.assign(log_query.params, { 'hostname': _params.seriesName })
-    Object.assign(log_query.params, { 'aggs_1-1_field': 'process.name' })
+    log_query.params.aggsfield = 'process.name';
+    Object.assign(log_query.params, { 'queryfield_hostname': _params.seriesName })
+    // Object.assign(log_query.params, { 'aggs_1-1_field': 'process.name' })
   }
 
 
   switch (log_type.value) {
     case 'log':
-      log_query.params.query_range_gte = log_time.value[0].getTime();
-      log_query.params.query_range_lte = log_time.value[1].getTime();
+      log_query.params.queryfield_range_gte = log_time.value[0].getTime();
+      log_query.params.queryfield_range_lte = log_time.value[1].getTime();
       log_query.params.fixed_interval = calculate_interval(log_time.value[0], log_time.value[1]) + 's';
       break;
 
     default:
-      log_query.params.query_range_gte = event_time.value[0].getTime();
-      log_query.params.query_range_lte = event_time.value[1].getTime();
+      log_query.params.queryfield_range_gte = event_time.value[0].getTime();
+      log_query.params.queryfield_range_lte = event_time.value[1].getTime();
       log_query.params.fixed_interval = calculate_interval(event_time.value[0], event_time.value[1]) + 's';
       break;
   }
   return log_query;
-
 }
 
 // 请求日志数据
-const bar_params = ref({} as any); // 记录每次点击柱状图的参数
+const bar_params = ref({ hostname: '' } as any); // 记录每次点击柱状图的参数
 const getLogData = (_params?: any) => {
   bar_params.value = _params;
   switch (log_type.value) {
@@ -155,9 +153,14 @@ const getLogData = (_params?: any) => {
         // 第一次点击,请求进程信息
         back_btn.value = true;
         clickChange.value = 'second';
+        console.log('请求进程图表')
         getELKProcessLogData(handleParams(_params)).then(res => {
           if (res.data.code === 200) {
-            logs.value = res.data.data;
+            if (res.data.data.length > 0) {
+              logs.value = res.data.data;
+            } else {
+              ElMessage.info('无数据，请稍后重试')
+            }
           } else {
             ElMessage.error(res.data.msg)
           }
@@ -166,7 +169,11 @@ const getLogData = (_params?: any) => {
         // 初始，请求集群信息
         getELKLogData(handleParams()).then(res => {
           if (res.data.code === 200) {
-            logs.value = res.data.data;
+            if (res.data.data.length > 0) {
+              logs.value = res.data.data;
+            } else {
+              ElMessage.info('无数据，请稍后重试')
+            }
           } else {
             ElMessage.error(res.data.msg)
           }
@@ -204,7 +211,7 @@ const handleGetData = () => {
 const log_stream = ref([]);
 const logfile_params = ref({} as any);
 const log_total = ref(0);
-const handleShowLog = (_process_info: any, _size?: number) => {
+const handleShowLog = (_process_info?: any, _size?: number) => {
   logfile_params.value = _process_info;
   if (_process_info) {
     dialog.value = true;
@@ -213,11 +220,11 @@ const handleShowLog = (_process_info: any, _size?: number) => {
   let log_query = {
     id: "log_stream",
     params: {
-      query_data_stream_dataset: "system.syslog",
-      query_range_gte: _process_info.value[0],
-      query_range_lte: _process_info.value[0] + 1000 * 60,
-      hostname: bar_params.value.seriesName,
-      processname: _process_info.seriesName,
+      queryfield_datastream_dataset: "system.syslog",
+      queryfield_range_gte: _process_info.value[0],
+      queryfield_range_lte: _process_info.value[0] + 1000 * 60,
+      queryfield_hostname: bar_params.value.hostname ? bar_params.value.hostname : bar_params.value.seriesName,
+      queryfield_processname: _process_info.seriesName,
       from: 0,
       size: 20
     }
@@ -241,12 +248,6 @@ const getMoreLogStream = (size: number) => {
   handleShowLog(logfile_params.value, size);
 }
 
-watch(() => useTopoStore().node_log_id, (new_node_id) => {
-  if (new_node_id) {
-    // 发送接口请求
-    getLogData();
-  }
-})
 </script>
 
 

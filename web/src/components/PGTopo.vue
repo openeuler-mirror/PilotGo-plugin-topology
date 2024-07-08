@@ -191,7 +191,18 @@ const menu = new G6.Menu({
   // _target：界面元素，item：节点内容
   handleMenuClick(_target, item) {
     if (item._cfg) {
-      useTopoStore().node_log_id = item._cfg.id!;
+      let host_name = '' as any; let process_name = '' as any;
+      let node_type = item._cfg.model!.Type;
+      if (node_type === 'process') {
+        process_name = item._cfg.model!.name;
+        host_name = graph.getNeighbors(item._cfg.id!)[0]._cfg!.model!.metrics?.Hostname;
+      } else if (node_type === 'host') {
+        process_name = host_name = item._cfg.model!.name;
+      }
+
+      useTopoStore().node_click_info.node_id = item._cfg.id!;
+      useTopoStore().node_click_info.host_name = host_name;
+      useTopoStore().node_click_info.process_name = process_name;
     }
   },
 });

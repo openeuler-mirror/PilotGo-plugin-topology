@@ -3,7 +3,7 @@
 </template>
 
 <script setup lang="ts">
-import { markRaw, nextTick, onMounted, ref, watchEffect } from 'vue';
+import { markRaw, nextTick, onMounted, ref, watchEffect, watch } from 'vue';
 import bar_option from './chart_options';
 import * as echarts from 'echarts';
 import type { logData } from '@/types/index';
@@ -23,12 +23,6 @@ let props = defineProps({
     type: String,
     required: false,
     default: 'first'
-  }
-})
-watchEffect(() => {
-  if (props.clickChange === 'first') {
-    isSecondClick.value = false;
-    bar_option.title.text = '集群';
   }
 })
 
@@ -61,6 +55,10 @@ const resize = () => {
 }
 
 watchEffect(() => {
+  if (props.clickChange === 'first') {
+    isSecondClick.value = false;
+    bar_option.title.text = '集群';
+  }
   if (props.results) {
     nextTick(() => {
       handleBarData(props.results);
@@ -103,7 +101,7 @@ const handleBarData = (_data: logData[]) => {
 
 <style scoped>
 #main {
-  width: 94%;
+  width: 1300px;
   height: 350px;
   margin: 0 auto;
 }

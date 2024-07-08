@@ -31,8 +31,8 @@ bar_option = {
     }
   },
   legend: {
-    left: '10%',
-    right:'30%'
+    left: '6%',
+    type:'scroll'
   },
   grid: {
     left: '0',

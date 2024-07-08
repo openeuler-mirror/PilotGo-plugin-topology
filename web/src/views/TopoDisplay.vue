@@ -1,6 +1,6 @@
 <template>
 
-  <div class="topoContaint" v-loading="loading">
+  <div id="topoDisplay" class="topoContaint" v-loading="loading">
     <el-page-header @back="goBack">
       <template #content>
         <span style="font-size: 14px;"> 拓扑图 </span>
@@ -25,13 +25,15 @@
     <nodeDetail />
     <!-- 嵌套抽屉组件展示日志信息 -->
     <Transition name="fade">
-      <LogChart v-if="showLogChart" />
+      <LogChart v-show="showLogChart" ref="logChart" />
     </Transition>
     <el-icon class="upLog" @click="showLogChart = !showLogChart">
       <ArrowUpBold class="up_log_up" v-if="!showLogChart" />
       <ArrowDownBold class="up_log_down" v-else />
     </el-icon>
-
+    <el-dialog v-model="dialog" :title="title" width="80%" destroy-on-close>
+      <logStream v-if="dialog" :log_data="log_stream" :log_total="log_total" v-on:get-more="getMoreLogStream" />
+    </el-dialog>
   </div>
 </template>
 
@@ -41,8 +43,10 @@ import { onMounted, ref, watch, watchEffect, nextTick } from 'vue';
 import PGTopo from '@/components/PGTopo.vue';
 import nodeDetail from './nodeDetail.vue';
 import LogChart from './topoLogs/index.vue';
+import logStream from './topoLogs/logStream.vue';
 
 import { getCustomTopo, getTopoData, getUuidTopo } from "@/request/api";
+import { getELKProcessLogStream } from '@/request/elk';
 import { useTopoStore } from '@/stores/topo';
 import { useConfigStore } from '@/stores/config';
 import router from '@/router';
@@ -57,9 +61,20 @@ let request_type: string
 let request_id: string | number
 
 let showLogChart = ref(false);
+const logChart = ref(null)
 
+const dialog = ref(false);
+const title = ref('日志详情');
 onMounted(() => {
   loading.value = true;
+  document.getElementById('topoDisplay')!.addEventListener('click', function (_event: any) {
+    // 点击画布时，关闭日志弹窗和tab页面 
+    if (_event.target.nodeName === 'CANVAS') {
+      dialog.value = false;
+      showLogChart.value = false;
+    }
+
+  });
 })
 
 const goBack = () => {
@@ -131,12 +146,6 @@ watch(() => timeInterval.value, (newdata) => {
   topoTimer(request_id, newdata);
 })
 
-watch(() => useTopoStore().node_log_id, (new_log_id) => {
-  if (new_log_id) {
-    showLogChart.value = true;
-  }
-})
-
 function changeInterval(command: string) {
   timeInterval.value = command;
 }
@@ -193,6 +202,65 @@ function topoTimer(request_id: any, interval: string) {
   }
 }
 
+// 请求某一个日志文件流
+const log_stream = ref([]);
+const logfile_params = ref({} as any);
+const log_total = ref(0);
+const handleShowLog = (node_info?: any, _size?: number) => {
+  logfile_params.value = node_info;
+  if (node_info) {
+    dialog.value = true;
+    title.value = node_info.process_name + '日志流';
+  }
+  let log_query = {
+    id: "log_stream",
+    params: {
+      queryfield_datastream_dataset: "application",
+      queryfield_range_gte: new Date().getTime() - 2 * 60 * 60 * 1000,
+      queryfield_range_lte: new Date().getTime(),
+      queryfield_hostname: node_info.host_name,
+      queryfield_processname: node_info.process_name,
+      from: 0,
+      size: 20
+    }
+  }
+  if (_size) {
+    log_query.params.size = _size;
+  }
+  getELKProcessLogStream(log_query).then((res: any) => {
+    if (res.data.code === 200) {
+      if (res.data.data.hits.length > 0) {
+        log_stream.value = res.data.data.hits;
+        log_total.value = res.data.data.total;
+      } else {
+        ElMessage.info('当前文件无日志数据')
+      }
+    } else {
+      ElMessage.error(res.data.msg)
+    }
+  })
+}
+
+const getMoreLogStream = (size: number) => {
+  handleShowLog(logfile_params.value, size);
+}
+
+/* 
+* 监听topo图节点右键查看日志事件
+* node_click_info:{host_name:节点|父节点name,node_id:节点id,process_name:进程name}
+*/
+watch(() => useTopoStore().node_click_info, (node_click_info) => {
+  if (node_click_info.node_id) {
+    dialog.value = true;
+    let query_params = {
+      process_name: node_click_info.process_name,
+      value: [new Date().getTime() - 60 * 1000],
+      host_name: node_click_info.host_name,
+    };
+    handleShowLog(query_params);
+  }
+
+}, { immediate: true, deep: true })
 </script>
 
 <style scoped lang="scss">
