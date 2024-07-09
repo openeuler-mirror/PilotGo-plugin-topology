@@ -77,9 +77,8 @@ onBeforeUnmount(() => {
   useTopoStore().$reset();
 })
 
+// 点击画布关闭日志tab
 const clickTopoCanvas = (_e: any) => {
-  console.log('点击了topo的画布')
-  dialog.value = false;
   showLogChart.value = false;
 }
 
