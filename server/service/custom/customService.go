@@ -1,6 +1,7 @@
 package custom
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -9,9 +10,9 @@ import (
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/db/mysqlmanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/db/redismanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/errormanager"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/generator"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/graph"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/pluginclient"
-	"gitee.com/openeuler/PilotGo-plugin-topology/server/generator"
 
 	"gitee.com/openeuler/PilotGo/sdk/response"
 	"github.com/pkg/errors"
@@ -100,7 +101,7 @@ func RunCustomTopoService(tcid uint) ([]*graph.Node, []*graph.Edge, []map[string
 		if node.Type == "host" {
 			combos = append(combos, map[string]string{
 				"id":    node.UUID,
-				"label": node.UUID,
+				"label": fmt.Sprintf("%s/%s", node.Metrics["Hostname"], strings.Split(node.ID, "_")[len(strings.Split(node.ID, "_"))-1]),
 			})
 		}
 	}
