@@ -208,7 +208,8 @@ const menu = new G6.Menu({
       let node_type = item._cfg.model.Type;
       if (node_type === 'process') {
         process_name = item._cfg.model.name;
-        host_name = graph.getNeighbors(item._cfg.id!)[0]._cfg!.model!.metrics?.Hostname;
+        let nodeNeighbors = graph.getNeighbors(item._cfg.id!) as any;
+        host_name = nodeNeighbors[0]._cfg.model.metrics.Hostname;
       } else if (node_type === 'host') {
         process_name = host_name = item._cfg.model!.name;
       }
