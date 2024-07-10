@@ -21,16 +21,22 @@ import (
 )
 
 func InitPeriodCollectWorking(batch []string, noderules [][]mysqlmanager.Filter_rule) {
-	graphperiod := conf.Global_Config.Topo.Period
+	if graphmanager.Global_GraphDB == nil {
+		err := errors.New("global_graphdb is nil **debug**0")
+		errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
+		return 
+	}
+
+	graphperiod := conf.Global_Config.Neo4j.Period
 
 	if agentmanager.Global_AgentManager == nil {
-		err := errors.New("Global_AgentManager is nil **errstackfatal**0") // err top
+		err := errors.New("Global_AgentManager is nil **errstackfatal**0")
 		errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
 		return
 	}
 
 	if redismanager.Global_Redis == nil {
-		err := errors.New("Global_Redis is nil **errstackfatal**1") // err top
+		err := errors.New("Global_Redis is nil **errstackfatal**1")
 		errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
 		return
 	}
@@ -58,7 +64,7 @@ func DataProcessWorking(unixtime int64, agentnum int, graphdb graphmanager.Graph
 	nodes, edges, collect_errlist, process_errlist := topogenerator.ProcessingData(agentnum)
 	if len(collect_errlist) != 0 {
 		for i, cerr := range collect_errlist {
-			collect_errlist[i] = errors.Wrap(cerr, "**errstack**3") // err top
+			collect_errlist[i] = errors.Wrap(cerr, "**errstack**3")
 			errormanager.ErrorTransmit(pluginclient.Global_Context, collect_errlist[i], false)
 		}
 		collect_errlist_string := []string{}
@@ -69,7 +75,7 @@ func DataProcessWorking(unixtime int64, agentnum int, graphdb graphmanager.Graph
 	}
 	if len(process_errlist) != 0 {
 		for i, perr := range process_errlist {
-			process_errlist[i] = errors.Wrap(perr, "**errstack**14") // err top
+			process_errlist[i] = errors.Wrap(perr, "**errstack**14")
 			errormanager.ErrorTransmit(pluginclient.Global_Context, process_errlist[i], false)
 		}
 		process_errlist_string := []string{}
@@ -79,13 +85,13 @@ func DataProcessWorking(unixtime int64, agentnum int, graphdb graphmanager.Graph
 		return nil, nil, nil, errors.Errorf("process data failed: %+v **errstack**21", strings.Join(process_errlist_string, "/e/"))
 	}
 	if nodes == nil || edges == nil {
-		err := errors.New("nodes or edges is nil **errstack**24") // err top
+		err := errors.New("nodes or edges is nil **errstack**24")
 		errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
 		return nil, nil, nil, err
 	}
 
 	if graphmanager.Global_GraphDB == nil {
-		err := errors.New("Global_GraphDB is nil **errstackfatal**0") // err top
+		err := errors.New("Global_GraphDB is nil **errstackfatal**0")
 		errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
 		return nil, nil, nil, err
 	}
@@ -122,7 +128,7 @@ func DataProcessWorking(unixtime int64, agentnum int, graphdb graphmanager.Graph
 
 							err := graphmanager.Global_GraphDB.Node_create(_unixtime, _node)
 							if err != nil {
-								err = errors.Wrapf(err, "create neo4j node failed; %s **errstack**2", cqlIN) // err top
+								err = errors.Wrapf(err, "create neo4j node failed; %s **errstack**2", cqlIN)
 								errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
 							}
 						}
@@ -145,7 +151,7 @@ func DataProcessWorking(unixtime int64, agentnum int, graphdb graphmanager.Graph
 				for _, _edge := range ___edges {
 					err := graphmanager.Global_GraphDB.Edge_create(_unixtime, _edge)
 					if err != nil {
-						err = errors.Wrapf(err, "create neo4j edge failed **errstack**2") // err top
+						err = errors.Wrapf(err, "create neo4j edge failed **errstack**2")
 						errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
 					}
 				}

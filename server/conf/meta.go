@@ -9,9 +9,6 @@ type TopoConf struct {
 	Addr               string `yaml:"server_addr"`
 	Agent_port         string `yaml:"agent_port"`
 	GraphDB            string `yaml:"graphDB"`
-	Period             int64  `yaml:"period"`
-	Retention          int64  `yaml:"retention"`
-	Cleartime          string `yaml:"cleartime"`
 }
 
 type ArangodbConf struct {
@@ -24,6 +21,9 @@ type Neo4jConf struct {
 	Username string `yaml:"username"`
 	Password string `yaml:"password"`
 	DB       string `yaml:"DB"`
+	Period             int64  `yaml:"period"`
+	Retention          int64  `yaml:"retention"`
+	Cleartime          string `yaml:"cleartime"`
 }
 
 type PrometheusConf struct {
