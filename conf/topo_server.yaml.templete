@@ -1,39 +1,70 @@
+#------------------------------- topo server -------------------------------
 topo:
+#
   https_enabled: false
   cert_file: ""
   key_file: ""
   server_addr: "localhost:9991"
   agent_port: "9992"
-  graphDB: "neo4j"
-  period: 86400 # 数据采集时间间隔，单位秒(s)
-  retention: 24 # 图历史数据保留时间，单位小时(h)
-  cleartime: "02:30:00" # 执行清理图历史数据的时间(h:m:s)
+#
+# 指定图数据库，若为""，则不启用图数据库来保存并查看历史图数据（支持的图数据库：neo4j）
+  graphDB: "" 
+#
+#------------------------------- log -------------------------------
 log:
+#
   level: debug
-  driver: file # 可选stdout和file。stdout：输出到终端控制台；file：输出到path下的指定文件。
+#
+# 可选stdout和file。stdout：输出到终端控制台；file：输出到path下的指定文件。
+  driver: file
+#
   path: /opt/PilotGo/plugin/topology/server/log/toposerver.log
   max_file: 1
   max_size: 10485760
+#
+#------------------------------- neo4j -------------------------------
 neo4j:
+#
   addr: "bolt://localhost:7687"
   username: ""
   password: ""
   DB: "neo4j"
-prometheus: # 暂不启用
-  addr: "http://localhost:9090"
+#
+# 数据采集时间间隔，单位秒(s)
+  period: 86400
+#
+# 图历史数据保留时间，单位小时(h)
+  retention: 24
+#
+# 执行清理图历史数据的时间(h:m:s)
+  cleartime: "02:30:00"
+#
+#------------------------------- redis -------------------------------
 redis:
+#
   addr: "localhost:6379"
   use_tls: false
   password: ''
   DB: 1
   dialTimeout: 5s
+#
+#------------------------------- mysql -------------------------------
 mysql:
+#
   addr: "localhost:3306"
   username: ''
   password: ''
   DB: "PluginTopo"
-influx: # 暂不启用
+#
+#------------------------------- influxdb 暂不启用 -------------------------------
+influx:
+#
   addr: "http://localhost:8086"
   token: ""
   org: ""
   bucket: ""
+#
+#------------------------------- prometheus 暂不启用 -------------------------------
+prometheus:
+#
+  addr: "http://localhost:9090"

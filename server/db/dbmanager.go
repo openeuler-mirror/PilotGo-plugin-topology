@@ -16,15 +16,19 @@ import (
 )
 
 func InitDB() {
-	initGraphDB()
+	if conf.Global_Config.Topo.GraphDB != "" {
+		initGraphDB()
+		go ClearGraphData(conf.Global_Config.Neo4j.Retention)
+	} else {
+		err := errors.New("do not save graph data **warn**0")
+		errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
+	}
 
 	initRedis()
 
 	initMysql()
 
 	// initInflux()
-
-	go ClearGraphData(conf.Global_Config.Topo.Retention)
 }
 
 // 初始化图数据库
@@ -86,9 +90,9 @@ func ClearGraphData(retention int64) {
 
 	for {
 		current := time.Now()
-		clear, err := time.Parse("15:04:05", conf.Global_Config.Topo.Cleartime)
+		clear, err := time.Parse("15:04:05", conf.Global_Config.Neo4j.Cleartime)
 		if err != nil {
-			logger.Error("ClearGraphData time parse error: %s, %s", err.Error(), conf.Global_Config.Topo.Cleartime)
+			logger.Error("ClearGraphData time parse error: %s, %s", err.Error(), conf.Global_Config.Neo4j.Cleartime)
 		}
 
 		next := time.Date(current.Year(), current.Month(), current.Day()+1, clear.Hour(), clear.Minute(), clear.Second(), 0, current.Location())
