@@ -1,10 +1,8 @@
 package graph
 
 import (
-	"fmt"
 	"sync"
 
-	"gitee.com/openeuler/PilotGo/sdk/logger"
 	"github.com/pkg/errors"
 )
 
@@ -46,7 +44,7 @@ func (ns *Nodes) Remove(node *Node) error {
 		if ns.Nodes[i].ID != node.ID {
 			continue
 		}
-
+		// 移除ns.lookupbytype中的node节点
 		if typenodes, ok := ns.LookupByType[ns.Nodes[i].Type]; ok && len(typenodes) > 0 {
 			for j, n := range typenodes {
 				if n.ID == node.ID {
@@ -55,9 +53,9 @@ func (ns *Nodes) Remove(node *Node) error {
 				}
 			}
 		} else {
-			logger.Error("failed to remove node: %v from nodes.lookupbytype", node)
+			return errors.Errorf("failed to remove node: %v from nodes.lookupbytype **errstack**0", node)
 		}
-
+		// 移除ns.lookupbyuuid中的node节点
 		if uuidnodes, ok := ns.LookupByUUID[ns.Nodes[i].UUID]; ok && len(uuidnodes) > 0 {
 			for j, n := range uuidnodes {
 				if n.ID == node.ID {
@@ -66,14 +64,14 @@ func (ns *Nodes) Remove(node *Node) error {
 				}
 			}
 		} else {
-			logger.Error("failed to remove node: %v from nodes.lookupbyuuid", node)
+			return errors.Errorf("failed to remove node: %v from nodes.lookupbyuuid **errstack**0", node)
 		}
-
+		// 移除ns.nodes和ns.lookup中的node节点
 		ns.Nodes = append(ns.Nodes[:i], ns.Nodes[i+1:]...)
 		delete(ns.Lookup, node.ID)
 
 		return nil
 	}
 
-	return errors.New(fmt.Sprintf("node %s not found**errstack**9", node.ID))
+	return errors.Errorf("node %s not found**errstack**0", node.ID)
 }
