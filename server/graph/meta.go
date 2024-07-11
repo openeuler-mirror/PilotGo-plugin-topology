@@ -11,6 +11,14 @@ import (
 	"github.com/shirou/gopsutil/process"
 )
 
+var Global_TopoDataBuffer *TopoDataBuffer
+
+type TopoDataBuffer struct {
+	Nodes  *Nodes
+	Edges  *Edges
+	Combos []map[string]string
+}
+
 type Host struct {
 	Hostname             string `json:"hostname"`
 	Uptime               uint64 `json:"uptime"`

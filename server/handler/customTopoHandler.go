@@ -8,6 +8,7 @@ import (
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/errormanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/graph"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/pluginclient"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/service"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/service/custom"
 	"gitee.com/openeuler/PilotGo/sdk/response"
 	"github.com/gin-gonic/gin"
@@ -129,21 +130,17 @@ func UpdateCustomTopoHandle(ctx *gin.Context) {
 
 func RunCustomTopoHandle(ctx *gin.Context) {
 	// TODO: 执行业务之前先判断batch集群中的机器是否部署且运行topo-agent
-	type alldata struct {
-		Nodes  []*graph.Node
-		Edges  []*graph.Edge
-		Combos []map[string]string
-	}
-	doneChan := make(chan *alldata, 1)
+
+	doneChan := make(chan *graph.TopoDataBuffer, 1)
 
 	go func() {
-		var topodata *alldata = new(alldata)
+		var custom_topodata *graph.TopoDataBuffer = new(graph.TopoDataBuffer)
 
 		tcid_str := ctx.Query("id")
 		if tcid_str == "" {
 			err := errors.New("id is nil **errstack**2") // err top
 			errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
-			doneChan <- topodata
+			doneChan <- custom_topodata
 			response.Fail(ctx, nil, errors.Cause(err).Error())
 			return
 		}
@@ -152,49 +149,48 @@ func RunCustomTopoHandle(ctx *gin.Context) {
 		if err != nil {
 			err = errors.Wrap(err, "**errstack**2") // err top
 			errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
-			doneChan <- topodata
+			doneChan <- custom_topodata
 			response.Fail(ctx, nil, errors.Cause(err).Error())
 			return
 		}
 
-		topodata.Nodes, topodata.Edges, topodata.Combos, err = custom.RunCustomTopoService(uint(tcid_int))
+		custom_topodata.Nodes, custom_topodata.Edges, custom_topodata.Combos, err = custom.RunCustomTopoService(uint(tcid_int))
 		if err != nil {
 			switch strings.Split(errors.Cause(err).Error(), "**")[1] {
 			case "errstack":
 				err = errors.Wrap(err, " **errstack**2") // err top
 				errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
-				doneChan <- topodata
+				doneChan <- custom_topodata
 				response.Fail(ctx, nil, errors.Cause(err).Error())
 				return
 			case "errstackfatal":
 				err = errors.Wrap(err, " **errstackfatal**2") // err top
-				doneChan <- topodata
+				doneChan <- custom_topodata
 				response.Fail(ctx, nil, errors.Cause(err).Error())
 				errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
 				return
 			}
-
 		}
-
-		if len(topodata.Nodes) == 0 || len(topodata.Edges) == 0 {
+		if len(custom_topodata.Nodes.Nodes) == 0 || len(custom_topodata.Edges.Edges) == 0 {
 			err := errors.New("nodes list is null or edges list is null **errstack**0") // err top
 			errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
-			doneChan <- topodata
+			doneChan <- custom_topodata
 			response.Fail(ctx, nil, errors.Cause(err).Error())
 			return
 		}
 
-		doneChan <- topodata
+		service.UpdateGlobalTopoDataBuffer(custom_topodata)
+		doneChan <- graph.Global_TopoDataBuffer
 	}()
 
 	select {
 	case <-ctx.Request.Context().Done():
 		return
 	case res := <-doneChan:
-		if len(res.Combos) != 0 && len(res.Edges) != 0 && len(res.Nodes) != 0 {
+		if len(res.Combos) != 0 && len(res.Edges.Edges) != 0 && len(res.Nodes.Nodes) != 0 {
 			response.Success(ctx, map[string]interface{}{
-				"nodes":  res.Nodes,
-				"edges":  res.Edges,
+				"nodes":  res.Nodes.Nodes,
+				"edges":  res.Edges.Edges,
 				"combos": res.Combos,
 			}, "")
 		}

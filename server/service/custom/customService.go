@@ -18,7 +18,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func RunCustomTopoService(tcid uint) ([]*graph.Node, []*graph.Edge, []map[string]string, error) {
+func RunCustomTopoService(tcid uint) (*graph.Nodes, *graph.Edges, []map[string]string, error) {
 	if pluginclient.Global_Client == nil {
 		err := errors.New("Global_Client is nil **errstackfatal**2")
 		return nil, nil, nil, err
@@ -106,7 +106,7 @@ func RunCustomTopoService(tcid uint) ([]*graph.Node, []*graph.Edge, []map[string
 		}
 	}
 
-	return nodes.Nodes, edges.Edges, combos, nil
+	return nodes, edges, combos, nil
 }
 
 func CustomTopoListService(query *response.PaginationQ) ([]*mysqlmanager.Topo_configuration, int, error) {
