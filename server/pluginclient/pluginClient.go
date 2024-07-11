@@ -2,8 +2,12 @@ package pluginclient
 
 import (
 	"context"
+	"os"
+	"time"
 
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/conf"
 	"gitee.com/openeuler/PilotGo/sdk/common"
+	"gitee.com/openeuler/PilotGo/sdk/logger"
 	"gitee.com/openeuler/PilotGo/sdk/plugin/client"
 )
 
@@ -32,4 +36,34 @@ func InitPluginClient() {
 	Global_Client.RegisterExtention(ex)
 
 	Global_Context = context.Background()
+
+	go uploadResource()
+}
+
+func uploadResource() {
+	for !Global_Client.IsBind() {
+		time.Sleep(100 * time.Millisecond)
+	}
+	
+	dirPath := conf.Global_Config.Topo.Path
+	filename_list := []string{}
+
+	files, err := os.ReadDir(dirPath)
+	if err != nil {
+		logger.Error("fail to read files: %s", err.Error())
+		return
+	}
+	for _, file := range files {
+		if file.IsDir() {
+			continue
+		}
+		filename_list = append(filename_list, file.Name())
+	}
+
+	for _, filename := range filename_list {
+		err := Global_Client.FileUpload(dirPath, filename)
+		if err != nil {
+			logger.Error("fail to upload file: %s", err.Error())
+		}
+	}
 }

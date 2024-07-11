@@ -24,5 +24,6 @@ web/dist/
 web/src/assets/*.json
 docs/time-series.json
 *.jsonc
+resource/
 
 go.work*

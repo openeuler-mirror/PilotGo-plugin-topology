@@ -9,6 +9,7 @@ type TopoConf struct {
 	Addr               string `yaml:"server_addr"`
 	Agent_port         string `yaml:"agent_port"`
 	GraphDB            string `yaml:"graphDB"`
+	Path               string `yaml:"path"`
 }
 
 type ArangodbConf struct {
@@ -17,13 +18,13 @@ type ArangodbConf struct {
 }
 
 type Neo4jConf struct {
-	Addr     string `yaml:"addr"`
-	Username string `yaml:"username"`
-	Password string `yaml:"password"`
-	DB       string `yaml:"DB"`
-	Period             int64  `yaml:"period"`
-	Retention          int64  `yaml:"retention"`
-	Cleartime          string `yaml:"cleartime"`
+	Addr      string `yaml:"addr"`
+	Username  string `yaml:"username"`
+	Password  string `yaml:"password"`
+	DB        string `yaml:"DB"`
+	Period    int64  `yaml:"period"`
+	Retention int64  `yaml:"retention"`
+	Cleartime string `yaml:"cleartime"`
 }
 
 type PrometheusConf struct {
