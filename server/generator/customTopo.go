@@ -73,15 +73,16 @@ func (c *CustomTopo) CreateNodeEntities(agent *agentmanager.Agent, nodes *graph.
 						atomic.AddInt32(c.Agent_node_count, int32(1))
 						return errors.Errorf("there is no name field in node rule_condition: %+v **errstack**3", condition.Rule_condition)
 					} else if utils.ProcessMatching(agent, process.ExeName, process.Cmdline, _name.(string)) {
+						metrics_map := *graph.ProcessToMap(process)
 						proc_node := &graph.Node{
-							ID:         fmt.Sprintf("%s%s%s%s%d", agent.UUID, global.NODE_CONNECTOR, global.NODE_PROCESS, global.NODE_CONNECTOR, process.Pid),
+							ID:         fmt.Sprintf("%s%s%s%s%s%s%s", agent.UUID, global.NODE_CONNECTOR, global.NODE_PROCESS, global.NODE_CONNECTOR, _name.(string), global.NODE_CONNECTOR, global.GenerateRandomID(5)),
 							Name:       _name.(string),
 							Type:       global.NODE_PROCESS,
 							UUID:       agent.UUID,
 							LayoutAttr: global.INNER_LAYOUT_2,
 							ComboId:    agent.UUID,
 							Network:    process.Connections,
-							Metrics:    *graph.ProcessToMap(process),
+							Metrics:    metrics_map,
 						}
 
 						proc_node.Tags = append(proc_node.Tags, proc_node.UUID, proc_node.Type)
@@ -101,15 +102,16 @@ func (c *CustomTopo) CreateNodeEntities(agent *agentmanager.Agent, nodes *graph.
 						atomic.AddInt32(c.Agent_node_count, int32(1))
 						return errors.Errorf("there is no tag_name field in node rule_condition: %+v **errstack**3", condition.Rule_condition)
 					} else if utils.ProcessMatching(agent, process.ExeName, process.Cmdline, _tag.(string)) {
+						metrics_map := *graph.ProcessToMap(process)
 						proc_node := &graph.Node{
-							ID:         fmt.Sprintf("%s%s%s%s%d", agent.UUID, global.NODE_CONNECTOR, global.NODE_PROCESS, global.NODE_CONNECTOR, process.Pid),
+							ID:         fmt.Sprintf("%s%s%s%s%s%s%s", agent.UUID, global.NODE_CONNECTOR, global.NODE_PROCESS, global.NODE_CONNECTOR,  _tag.(string), global.NODE_CONNECTOR, global.GenerateRandomID(5)),
 							Name:       _tag.(string),
 							Type:       global.NODE_PROCESS,
 							UUID:       agent.UUID,
 							LayoutAttr: global.INNER_LAYOUT_2,
 							ComboId:    agent.UUID,
 							Network:    process.Connections,
-							Metrics:    *graph.ProcessToMap(process),
+							Metrics:    metrics_map,
 						}
 
 						proc_node.Tags = append(proc_node.Tags, proc_node.UUID, proc_node.Type)
