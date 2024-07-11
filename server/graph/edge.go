@@ -10,11 +10,10 @@ import (
 )
 
 type Edges struct {
-	Lock      sync.Mutex
-	SrcToDsts map[string][]string
-	DstToSrcs map[string][]string
-	Lookup    sync.Map
-	Edges     []*Edge
+	Lock           sync.Mutex
+	Node_Edges_map sync.Map // key: node_id, value: []edge_id
+	Lookup         sync.Map // key: edge_id, value: *Edge
+	Edges          []*Edge
 }
 
 type Edge struct {
@@ -47,6 +46,21 @@ func (e *Edges) Add(edge *Edge) {
 		if _, ok := e.Lookup.Load(mirror_id); !ok {
 			e.Lookup.Store(edge.ID, edge)
 			e.Edges = append(e.Edges, edge)
+
+			src_edges_any, ok := e.Node_Edges_map.Load(edge.Src)
+			if ok {
+				src_edges := src_edges_any.([]string)
+				e.Node_Edges_map.Store(edge.Src, append(src_edges, edge.ID))
+			} else {
+				e.Node_Edges_map.Store(edge.Src, []string{edge.ID})
+			}
+			dst_edges_any, ok := e.Node_Edges_map.Load(edge.Dst)
+			if ok {
+				dst_edges := dst_edges_any.([]string)
+				e.Node_Edges_map.Store(edge.Dst, append(dst_edges, edge.ID))
+			} else {
+				e.Node_Edges_map.Store(edge.Dst, []string{edge.ID})
+			}
 		}
 		e.Lock.Unlock()
 
@@ -56,6 +70,21 @@ func (e *Edges) Add(edge *Edge) {
 	e.Lock.Lock()
 	if _, ok := e.Lookup.LoadOrStore(edge.ID, edge); !ok {
 		e.Edges = append(e.Edges, edge)
+
+		src_edges_any, ok := e.Node_Edges_map.Load(edge.Src)
+		if ok {
+			src_edges := src_edges_any.([]string)
+			e.Node_Edges_map.Store(edge.Src, append(src_edges, edge.ID))
+		} else {
+			e.Node_Edges_map.Store(edge.Src, []string{edge.ID})
+		}
+		dst_edges_any, ok := e.Node_Edges_map.Load(edge.Dst)
+		if ok {
+			dst_edges := dst_edges_any.([]string)
+			e.Node_Edges_map.Store(edge.Dst, append(dst_edges, edge.ID))
+		} else {
+			e.Node_Edges_map.Store(edge.Dst, []string{edge.ID})
+		}
 	}
 	e.Lock.Unlock()
 }
@@ -65,13 +94,18 @@ func (e *Edges) Remove(id string) error {
 		if e.Edges[i].ID != id {
 			continue
 		}
+		// 从e.edges中移除边
 		e.Edges = append(e.Edges[:i], e.Edges[i+1:]...)
+		// 从e.lookup中移除边
 		if _, ok := e.Lookup.LoadAndDelete(id); !ok {
-			return errors.Errorf("edge %+v not fount in sync.map**errstack**1", id)
+			return errors.Errorf("edge %+v not fount in lookup sync.map **errstack**0", id)
 		}
-
+		// 从e.node_edges_map中移除边
+		if _, ok := e.Node_Edges_map.LoadAndDelete(id); !ok {
+			return errors.Errorf("edge %+v not fount in node_edges_map sync.map **errstack**0", id)
+		}
 		return nil
 	}
 
-	return errors.Errorf("edge %+v not fount in slice**errstack**12", id)
+	return errors.Errorf("edge %+v not fount in slice **errstack**0", id)
 }
