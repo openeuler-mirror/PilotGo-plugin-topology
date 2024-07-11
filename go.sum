@@ -1,5 +1,5 @@
-gitee.com/openeuler/PilotGo/sdk v0.0.0-20240612062829-11adb82d6774 h1:F7APS9ICH2CrzJOC4qe1XV0uskplbweQxm6vTx0d3cI=
-gitee.com/openeuler/PilotGo/sdk v0.0.0-20240612062829-11adb82d6774/go.mod h1:87giU5v2IkUx78GRfezNBHhDGqzlwhNICOVY+hUYSJM=
+gitee.com/openeuler/PilotGo/sdk v0.0.0-20240711084602-e34bc1158484 h1:cb21Q6oVVLH5mCQ7Tb9lWpmpp3ZGYLtX4Y4DvkvgMtw=
+gitee.com/openeuler/PilotGo/sdk v0.0.0-20240711084602-e34bc1158484/go.mod h1:87giU5v2IkUx78GRfezNBHhDGqzlwhNICOVY+hUYSJM=
 github.com/AdaLogics/go-fuzz-headers v0.0.0-20210715213245-6c3934b029d8 h1:V8krnnfGj4pV65YLUm3C0/8bl7V5Nry2Pwvy3ru/wLc=
 github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 h1:UQHMgLO+TxOElx5B5HZ4hJQsoJ/PvUvKRhJHDQXO8P8=
 github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1/go.mod h1:xomTg63KZ2rFqZQzSB4Vz2SUXa1BpHTVz9L5PTmPC4E=
