@@ -55,8 +55,7 @@ func (t *TopoGenerator) ProcessingData(agentnum int) (*graph.Nodes, *graph.Edges
 	edges := &graph.Edges{
 		Lock:      sync.Mutex{},
 		Lookup:    sync.Map{},
-		SrcToDsts: make(map[string][]string, 0),
-		DstToSrcs: make(map[string][]string, 0),
+		Node_Edges_map: sync.Map{},
 		Edges:     make([]*graph.Edge, 0),
 	}
 
