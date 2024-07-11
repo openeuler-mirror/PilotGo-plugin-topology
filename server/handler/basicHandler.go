@@ -108,7 +108,7 @@ func AgentListHandle(ctx *gin.Context) {
 	agentmap := make(map[string]string)
 
 	if agentmanager.Global_AgentManager == nil {
-		err := errors.New("Global_AgentManager is nil **errstackfatal**0") // err top
+		err := errors.New("Global_AgentManager is nil **errstackfatal**0")
 		response.Fail(ctx, nil, err.Error())
 		errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
 		return
@@ -130,7 +130,7 @@ func AgentListHandle(ctx *gin.Context) {
 
 func BatchListHandle(ctx *gin.Context) {
 	if pluginclient.Global_Client == nil {
-		err := errors.New("Global_Client is nil **errstackfatal**2") // err top
+		err := errors.New("Global_Client is nil **errstackfatal**0")
 		response.Fail(ctx, nil, err.Error())
 		errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
 		return
@@ -138,7 +138,7 @@ func BatchListHandle(ctx *gin.Context) {
 
 	batchlist, err := pluginclient.Global_Client.BatchList()
 	if err != nil {
-		err = errors.Errorf("%+v **errstack**2", err.Error()) // err top
+		err = errors.Errorf("%s **errstack**0", err.Error())
 		errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
 		response.Fail(ctx, nil, err.Error())
 		return
@@ -157,7 +157,7 @@ func BatchMachineListHandle(ctx *gin.Context) {
 	}
 
 	if pluginclient.Global_Client == nil {
-		err := errors.New("Global_Client is nil **errstackfatal**2") // err top
+		err := errors.New("Global_Client is nil **errstackfatal**0")
 		response.Fail(ctx, nil, err.Error())
 		errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
 		return
@@ -165,14 +165,14 @@ func BatchMachineListHandle(ctx *gin.Context) {
 
 	machine_uuids, err := pluginclient.Global_Client.BatchUUIDList(BatchId)
 	if err != nil {
-		err = errors.Errorf("%+v **errstack**2", err.Error()) // err top
+		err = errors.Errorf("%s **errstack**0", err.Error())
 		errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
 		response.Fail(ctx, nil, err.Error())
 		return
 	}
 
 	if agentmanager.Global_AgentManager == nil {
-		err := errors.New("Global_AgentManager is nil **errstackfatal**0") // err top
+		err := errors.New("Global_AgentManager is nil **errstackfatal**0")
 		response.Fail(ctx, nil, err.Error())
 		errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
 		return
