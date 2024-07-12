@@ -50,17 +50,23 @@ func InitRouter(router *gin.Engine) {
 		api.POST("/heartbeat", HeartbeatHandle)
 		api.GET("/timestamps", TimestampsHandle)
 		api.GET("/agentlist", AgentListHandle)
-		api.GET("/custom_topo_list", CustomTopoListHandle)
 		api.GET("/batch_list", BatchListHandle)
 		api.GET("/batch_uuid", BatchMachineListHandle)
+	}
 
-		// api.GET("/single_host/:uuid", SingleHostHandle)
-		api.GET("/single_host_tree/:uuid", SingleHostTreeHandle)
-		api.GET("/multi_host", MultiHostHandle)
-		api.POST("/create_custom_topo", CreateCustomTopoHandle)
-		api.DELETE("/delete_custom_topo", DeleteCustomTopoHandle)
-		api.PUT("/update_custom_topo", UpdateCustomTopoHandle)
+	custom := router.Group("/plugin/topology/api")
+	{
+		custom.GET("/custom_topo_list", CustomTopoListHandle)
+		custom.POST("/create_custom_topo", CreateCustomTopoHandle)
+		custom.DELETE("/delete_custom_topo", DeleteCustomTopoHandle)
+		custom.PUT("/update_custom_topo", UpdateCustomTopoHandle)
+	}
 
+	public := router.Group("/plugin/topology/api")
+	{
+		// public.GET("/single_host/:uuid", SingleHostHandle)
+		public.GET("/single_host_tree/:uuid", SingleHostTreeHandle)
+		public.GET("/multi_host", MultiHostHandle)
 	}
 
 	timeoutapi := router.Group("/plugin/topology/api")

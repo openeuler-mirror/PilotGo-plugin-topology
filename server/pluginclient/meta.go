@@ -10,6 +10,6 @@ var PluginInfo = &client.PluginInfo{
 	Description: "System application architecture detection.",
 	Author:      "wangjunqi",
 	Email:       "wangjunqi@kylinos.cn",
-	Url:         "https://10.41.107.29:9991",
+	Url:         "https://10.41.107.29:9991",  // 远端访问插件服务端的地址
 	PluginType:  "micro-app",
 }
