@@ -1,7 +1,7 @@
 #!/bin/bash
 
 
-WORK_DIR="/root/test-topo"
+WORK_DIR="/root/topo-collect"
 
 TLS_ENABLED=true
 
@@ -118,19 +118,19 @@ while true
 do
 	case "$1" in
 		--workdir)
-			${WORK_DIR}="$2"
+			WORK_DIR="$2"
 			shift 2
 			;;
 		--pilotgoserver)
-		  	${PILOTGO_SERVER_ADDR}="$2"
+		  	PILOTGO_SERVER_ADDR="$2"
 		  	shift 2
 		  	;;
 		--toposerver)
-		  	${TOPO_SERVER_ADDR}="$2"
+		  	TOPO_SERVER_ADDR="$2"
 		  	shift 2
 		  	;;
 		--fleet)
-		  	${FLEET_SERVER_ADDR}="$2"
+		  	FLEET_SERVER_ADDR="$2"
 		  	shift 2
 		  	;;
 		--)

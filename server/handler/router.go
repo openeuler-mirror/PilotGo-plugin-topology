@@ -57,6 +57,7 @@ func InitRouter(router *gin.Engine) {
 	collect := router.Group("/plugin/topology/api")
 	{
 		collect.POST("/deploy_collect_endpoint", DeployCollectEndpointHandle)
+		collect.POST("/collect_endpoint", CollectEndpointHandle)
 	}
 
 	custom := router.Group("/plugin/topology/api")
