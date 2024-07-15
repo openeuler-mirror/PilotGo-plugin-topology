@@ -54,6 +54,11 @@ func InitRouter(router *gin.Engine) {
 		api.GET("/batch_uuid", BatchMachineListHandle)
 	}
 
+	collect := router.Group("/plugin/topology/api")
+	{
+		collect.POST("/deploy_collect_endpoint", DeployCollectEndpointHandle)
+	}
+
 	custom := router.Group("/plugin/topology/api")
 	{
 		custom.GET("/custom_topo_list", CustomTopoListHandle)
