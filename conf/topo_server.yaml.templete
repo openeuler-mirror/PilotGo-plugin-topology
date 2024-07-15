@@ -4,7 +4,14 @@ topo:
   https_enabled: false
   cert_file: ""
   key_file: ""
-  server_addr: "localhost:9991"
+#
+# 插件服务端服务器监听地址
+  server_listen_addr: "0.0.0.0:9991"
+#
+# 远程客户端与插件服务端建立连接时插件的地址
+  server_target_addr: "192.168.75.133:9991"
+#
+# 插件agent端口号
   agent_port: "9992"
 #
 # 指定图数据库，若为""，则不启用图数据库来保存并查看历史图数据（支持的图数据库：neo4j）

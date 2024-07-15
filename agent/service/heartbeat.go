@@ -20,8 +20,8 @@ func SendHeartbeat() {
 		for {
 			err := sendHeartbeat(agent_addr)
 			if err != nil {
-				err = errors.Wrap(err, " ") // err top
-				fmt.Printf("%+v\n", err)
+				err = errors.Wrap(err, " ")
+				logger.Error(err.Error())
 			}
 			time.Sleep(time.Duration(conf.Config().Topo.Heartbeat) * time.Second)
 		}
