@@ -17,7 +17,7 @@ topo:
 # 指定图数据库，若为""，则不启用图数据库来保存并查看历史图数据（支持的图数据库：neo4j）
   graphDB: "" 
 #
-# 静态资源目录：*.tar.gz *.rpm，用于通过PilotGo平台向业务节点远程部署topology plugin agent或其他资源
+# 静态资源目录：*.tar.gz *.rpm *.sh，用于通过PilotGo平台向业务节点远程部署topology plugin agent或其他资源
 # path: ""
 #
 #------------------------------- log -------------------------------

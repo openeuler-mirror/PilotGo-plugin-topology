@@ -87,7 +87,19 @@ func GetExtentions() {
 		URL:        "/plugin/topology/api/deploy_collect_endpoint",
 		Permission: "plugin.topology.agent/install",
 	}
-	ex = append(ex, pe1, pe2, me1)
+	me2 := &common.MachineExtention{
+		Type:       common.ExtentionMachine,
+		Name:       "停用topo-collect",
+		URL:        "/plugin/topology/api/collect_endpoint?action=stop",
+		Permission: "plugin.topology.agent/stop",
+	}
+	me3 := &common.MachineExtention{
+		Type:       common.ExtentionMachine,
+		Name:       "卸载topo-collect",
+		URL:        "/plugin/topology/api/collect_endpoint?action=remove",
+		Permission: "plugin.topology.agent/remove",
+	}
+	ex = append(ex, pe1, pe2, me1, me2, me3)
 	Global_Client.RegisterExtention(ex)
 }
 
