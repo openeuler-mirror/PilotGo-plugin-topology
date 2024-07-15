@@ -6,7 +6,8 @@ type TopoConf struct {
 	Https_enabled      bool   `yaml:"https_enabled"`
 	Public_certificate string `yaml:"cert_file"`
 	Private_key        string `yaml:"key_file"`
-	Addr               string `yaml:"server_addr"`
+	Addr               string `yaml:"server_listen_addr"`
+	Addr_target        string `yaml:"server_target_addr"`
 	Agent_port         string `yaml:"agent_port"`
 	GraphDB            string `yaml:"graphDB"`
 	Path               string `yaml:"path"`
