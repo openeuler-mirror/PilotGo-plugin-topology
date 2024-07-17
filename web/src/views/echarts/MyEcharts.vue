@@ -1,22 +1,29 @@
 <template>
-  <div :style="{ 'width': '100%', 'height': '100%' }">
-    <div v-show="isChart" ref="chartDom" :style="{ 'width': '100%', 'height': '100%' }"></div>
+  <div class="cont">
+    <div v-show="isChart" class='echart' ref="chartDom"></div>
+    <span v-show="!isChart && (type === 'value')" class="text">{{ char_value }}<span class="text-unit">{{
+      char_value_unit
+    }}</span></span>
+    <chart-table class="table" v-show="!isChart && (type === 'table')" :columnList="columnList"
+      :tableData="tableData" />
   </div>
 </template>
 
 <script setup lang='ts' scoped>
-import { ref, onMounted, reactive, watch, markRaw, nextTick, computed } from 'vue'
+import { ref, onMounted, reactive, watch, markRaw, nextTick } from 'vue'
 import { getPromeCurrent, getPromeRange } from '@/request/prometheus';
-import { filterProm, deepClone, handle_byte, line_opt, gauge_opt } from './index';
+import ChartTable from './chartTable.vue';
+import { filterProm, deepClone, handle_byte, nestedArray, line_opt, gauge_opt, filterNonEmptyObjects } from './index';
 import { formatDate } from '@/utils/dateFormat';
 import { useMacStore } from '@/stores/mac';
 import * as echarts from "echarts";
-
 let macIp = ref('');
+
 const chartDom = ref(null)
 const option = ref({});
 const myChart = ref<any>(null);
 const char_value = ref('0.00');
+const char_value_unit = ref('');
 const line_arr = ref([] as any[]); // 存放多请求的折线图数据集合
 let line_option = reactive(deepClone(line_opt));
 let gauge_option = reactive(deepClone(gauge_opt));
@@ -33,18 +40,27 @@ const props = defineProps({
     default: {},
     required: true
   },
+  timeChange: {
+    type: Number,
+    default: 0
+  },
   startTime: {
     type: Number,
-    default: (new Date() as any) / 1000 - 60 * 60 * 2,
+    default: 0,//(new Date() as any) / 1000 - 60 * 60 * 2,
     required: false,
   },
   endTime: {
     type: Number,
-    default: (new Date() as any) / 1000,
+    default: 0,//(new Date() as any) / 1000,
     required: false,
   },
+  isNewTime: {
+    type: Boolean,
+    default: false,
+    required: false
+  }
 })
-const search_step = 15; // 查询区间数据的步长
+let search_step = 15; // 查询区间数据的步长
 const isChart = props.query.isChart;
 
 const type = props.query.type;
@@ -57,30 +73,18 @@ const resize = () => {
   }, 0);
 }
 
-onMounted(() => {
-  myChart.value = markRaw(echarts.init(chartDom.value))
-  if (props.query.isChart) {
-    myChart.value.setOption(option.value, true)
-  }
-  macIp.value = useMacStore().newIp + ':9100';
-  getPromeData(props.query);
-  /* setTimeout(() => {
-    macIp.value = useMacStore().macIp;
-    getPromeData(props.query);
-  }, 8) */
-  window.addEventListener("resize", () => { myChart.value.resize(); })
-  // window.addEventListener('resize', resize)
-})
-
 // 获取prometheus数据
-const getPromeData = (item: any) => {
+const getPromeData = (item: any, query_ip: String) => {
   if (item.range) {
+    // 计算step,控制数据点在11000以下
+    let new_step: number = (props.endTime - props.startTime) / 10000;
+    search_step = new_step > 15 ? Math.floor(new_step) : 15;
     let proms = [] as any;
-    item.sqls.forEach((sqlItem: any, index: number) => {
+    item.sqls.forEach((sqlItem: any, _index: number) => {
       // 1.使用new promise来进行异步处理,避免乱序
       proms.push(
         new Promise((resolve, reject) => {
-          getPromeRange({ query: sqlItem.sql.replace(/{macIp}/g, macIp.value), start: props.startTime, end: props.endTime, step: sqlItem.step || search_step }).then(res => {
+          getPromeRange({ query: sqlItem.sql.replace(/{macIp}/g, query_ip), start: props.startTime, end: props.endTime, step: search_step }).then((res: any) => {
             return resolve(filterProm(res) && filterProm(res))
           }).catch(err => {
             return reject(err)
@@ -95,10 +99,10 @@ const getPromeData = (item: any) => {
   }
   else if (!item.range) {
     let proms = [] as any;
-    item.sqls.forEach(async (sqlItem: any, index: number) => {
+    item.sqls.forEach(async (sqlItem: any, _index: number) => {
       proms.push(
         new Promise((resolve, reject) => {
-          getPromeCurrent({ query: sqlItem.sql.replace(/{macIp}/g, macIp.value) }).then(res => {
+          getPromeCurrent({ query: sqlItem.sql.replace(/{macIp}/g, query_ip) }).then(res => {
             return resolve(filterProm(res) && filterProm(res))
           }).catch(err => {
             return reject(err)
@@ -122,11 +126,10 @@ const filterCurrentData = (item: any, result: any) => {
         set_gauge_type(item, result[0]);
         break;
       case 'table':
-        if (result.length != props.query.sqls.length) {
+        if (result.length != props.query.sqls.length || filterNonEmptyObjects(result).length === 0) {
           return false;
-        } else if (result.length > 0) {
-          set_table_type(item, result);
         }
+        set_table_type(item, nestedArray(result))
         break;
       default:
         break;
@@ -166,15 +169,16 @@ const handle_line_data = (values: any, target: string) => {
 }
 
 // 设置折线类型的数据
-const set_line_type = (item: any, result: any) => {
+const set_line_type = (item: any, _result: any) => {
   seriesCount = 0;
   let value_unit = item.unit;
   line_option = reactive(deepClone(line_opt));
-  line_option.yAxis.axisLabel.formatter = '{value}' + item.unit;
+  line_option.yAxis.axisLabel.formatter = '{value}' + value_unit;
   let series = {
     name: '', type: 'line', smooth: false, showSymbol: false,
-    z: 1, zlevel: 1, lineStyle: { width: 1 }, areaStyle: { opacity: 0.1, }, data: [],
+    z: 1, zlevel: 1, lineStyle: { width: 2 }, areaStyle: { opacity: 0.1, }, data: [],
   } as any;
+  // 配置折线图的数据系列data
   line_arr.value.forEach((line: any, lineIndex: number) => {
     let legendName = deepClone(item.sqls[lineIndex].series_name);
     if (line instanceof Array) {
@@ -182,7 +186,7 @@ const set_line_type = (item: any, result: any) => {
       if (line.length > 0) {
         // 数组有数据
         line.forEach(lineItem => {
-
+          seriesCount++;
           let init_series: string = lineItem.metric && deepClone(lineItem.metric.device) || '';
           // 针对此应用折现图系列名字进行汉化操作
           switch (init_series) {
@@ -191,8 +195,6 @@ const set_line_type = (item: any, result: any) => {
               break;
             case 'dm-1':
               series.name = 'swap';
-              break;
-            case 'dm-2':
               break;
             case 'sr0':
               series.name = '光驱';
@@ -205,12 +207,8 @@ const set_line_type = (item: any, result: any) => {
               }
               break;
           }
-          if (init_series != 'dm-2') {
-            // 针对监控插件含有dm-2特殊处理
-            seriesCount++;
-            series.data = deepClone(handle_line_data(lineItem.values, item.target));
-            line_option.series.push(deepClone(series))
-          }
+          series.data = deepClone(handle_line_data(lineItem.values, item.target));
+          line_option.series.push(deepClone(series))
         })
       } else {
         seriesCount++;
@@ -239,7 +237,7 @@ const set_line_type = (item: any, result: any) => {
     let startDiv = `<div style='height:100px; width:100%; background-color:transparent; display:flex; 
       flex-direction:column;flex-wrap:wrap;justify-content:flex-start;align-items:start; display:-moz-flex; '>`;
     let endDiv = '</div>';
-    data.map((item: any, index: number) => {
+    data.map((item: any, _index: number) => {
       if (item.data.empty) {
         result = ''
       } else {
@@ -254,23 +252,25 @@ const set_line_type = (item: any, result: any) => {
     return result;
   }
 
+  // 赋值option实时渲染折线图
   option.value = line_option;
 }
 
 // 设置数值类型的数据
 const set_value_type = (item: any, result: any) => {
+  char_value_unit.value = item.unit;
   switch (item.target) {
     case 'value_series':
       // 数值系列
-      char_value.value = (result && result.value ? parseFloat(result.value[1]) : 0.00).toFixed(item.float) + item.unit;
+      char_value.value = (result && result.value ? parseFloat(result.value[1]) : 0.00).toFixed(item.float);
       break;
     case 'byte2GB_series':
       // 字节GB系列
-      char_value.value = (result && result.value ? handle_byte(result.value[1], item.float, 'GB') : 0.00) + 'G';
+      char_value.value = (result && result.value ? handle_byte(result.value[1], item.float, 'GB') : 0.00) + '';
       break;
     case 'byte2KB_series':
-      // 字节KB系列
-      char_value.value = (result && result.value ? handle_byte(result.value[1], item.float, 'KB') : 0.00) + 'K';
+      // 字节GB系列
+      char_value.value = (result && result.value ? handle_byte(result.value[1], item.float, 'KB') : 0.00) + '';
       break;
     case 'num_series':
       // 数值描述符
@@ -280,7 +280,7 @@ const set_value_type = (item: any, result: any) => {
       } else {
         char_value.value = num.toFixed(item.float);
       }
-
+      break;
     default:
       break;
   }
@@ -290,16 +290,16 @@ const set_value_type = (item: any, result: any) => {
 const set_gauge_type = (item: any, result: any) => {
   gauge_option.series[0].min = item.min || 0;
   gauge_option.series[0].max = item.max || 100;
-  gauge_option.series[0].axisLine.lineStyle.color = item.color;
+  gauge_option.series[0].progress.itemStyle.color.colorStops = item.color;
   gauge_option.series[0].detail.formatter = '{value}' + item.unit;
   switch (item.target) {
     case 'percent_series':
       // 百分比系列
-      gauge_option.series[0].data[0].value = result && result.value ? parseFloat(result.value[1]).toFixed(item.float) : 0;
+      gauge_option.series[0].data[0].value = (result && result.value ? parseFloat(result.value[1]) : 0.00).toFixed(item.float);
       break;
     case 'num_series':
       // 数值系列
-      let num = result && result.value ? parseFloat(result.value[1]) / 1000 : 0;
+      let num = (result && result.value ? parseFloat(result.value[1]) : 0) / 1000;
       if (num <= 1) {
         gauge_option.series[0].data[0].value = num * 1000;//(parseInt(result.value[1]) / 1000).toFixed(item.float);
       } else {
@@ -327,6 +327,7 @@ const set_table_type = (item: any, result: any) => {
     let cols = deepClone(sqlItem.columnValue);
     let tableItem = {} as any;
     result[index].forEach((item: any, resIndex: number) => {
+      let pointer = item; // 使用item跳过ts检查,无实际意义，可删除
       cols.forEach(async (vItem: any) => {
         switch (vItem.type) {
           case 'byte':
@@ -346,7 +347,7 @@ const set_table_type = (item: any, result: any) => {
       tableData1[`res${resIndex}.${index}`] = deepClone(tableItem);
     })
   })
-  result[0].forEach((key: any, index: number) => {
+  result[0].forEach((_key: any, index: number) => {
     let rowData = {} as any;
     for (let i = 0; i < item.sqls.length; i++) {
       let resString = 'res' + index + '.' + i;
@@ -357,14 +358,15 @@ const set_table_type = (item: any, result: any) => {
 
 }
 
-/* setInterval(() => {
-  getPromeData(props.query)
-}, 5000); */
 
-
-
-const timeChange = computed(() => {
-  return props.startTime + '' + props.endTime;
+onMounted(() => {
+  myChart.value = markRaw(echarts.init(chartDom.value))
+  macIp.value = useMacStore().newIp + ':9100';
+  getPromeData(props.query, macIp.value);
+  if (props.query.isChart) {
+    myChart.value.setOption(option.value, true)
+  }
+  window.addEventListener('resize', resize)
 })
 
 watch(() => option.value, (new_option) => {
@@ -372,17 +374,24 @@ watch(() => option.value, (new_option) => {
     myChart.value.dispose();
     myChart.value = markRaw(echarts.init(chartDom.value))
   }
-  myChart.value.setOption(new_option, true)
+  nextTick(() => {
+    myChart.value.setOption(new_option, true)
+  })
 }, {
   deep: true
 })
 
-watch(() => timeChange, (newVal) => {
+// 监听时间的变化
+watch(() => props.timeChange, (newVal) => {
   if (newVal) {
-    getPromeData(props.query);
+    // 加延迟防止ip还没监听到就调用接口
+    setTimeout(() => {
+      getPromeData(props.query, macIp.value);
+    }, 200)
   }
 }, {
-  deep: true
+  deep: true,
+  immediate: true
 })
 
 watch(() => line_arr.value, (new_line_arr) => {
@@ -394,10 +403,10 @@ watch(() => line_arr.value, (new_line_arr) => {
   deep: true
 })
 
-watch(() => useMacStore().newIp, (new_macIp, old_macIp) => {
+watch(() => useMacStore().newIp, (new_macIp, _old_macIp) => {
   if (new_macIp) {
     macIp.value = new_macIp + ':9100';
-    getPromeData(props.query);
+    getPromeData(props.query, macIp.value);
   }
 }, { deep: true })
 
@@ -406,26 +415,31 @@ defineExpose({
 })
 </script>
 
-<style scoped>
-.echart {
+<style lang='scss' scoped>
+.cont {
   width: 100%;
   height: 100%;
-}
 
-.table {
-  width: 100%;
-  height: 100%;
-}
+  .echart,
+  .text,
+  .table {
+    width: 96%;
+    height: 98%;
+  }
 
-.text {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-weight: bold;
-  font-size: 20px;
-  color: #222;
-  user-select: none;
+  .text {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    font-size: 28px;
+    color: #262626;
+    user-select: none;
+
+    &-unit {
+      font-size: 14px;
+      margin-top: 4%;
+    }
+  }
 }
 </style>
