@@ -4,7 +4,7 @@ export let endTime = (new Date() as any) / 1000;
 
 // 过滤prometheus接口返回的数据
 export const filterProm = (res: any) => {
-  if (res.data.status === 'success' && res.data.data.result.length > 0) {
+  if (res && res.data.status === 'success' && res.data.data.result.length > 0) {
     return res.data.data.result.length === 1 ? res.data.data.result[0] : res.data.data.result;
   } else {
     return [];
@@ -14,6 +14,37 @@ export const filterProm = (res: any) => {
 export const deepClone = (res: any) => {
   return JSON.parse(JSON.stringify(res))
 }
+
+// 测试数组是否为空,为空返回[],不为空返回有值元素的 ogject[]
+export const filterNonEmptyObjects = (arr:any[]) => {  
+  return arr.reduce((acc, innerArr) => {  
+    // 遍历内部数组中的每个元素  
+    if (!Array.isArray(innerArr)) {
+      acc.push(innerArr);
+    } else {
+      innerArr.forEach((item:any) => {  
+        // 检查当前项是否是一个非空对象  
+        if (item && typeof item === 'object' && Object.keys(item).length > 0) {  
+          // 如果是非空对象，则添加到累加器数组中  
+          acc.push(item);  
+        }  
+      });  
+    }
+    return acc;  
+  }, []); // 初始累加器数组为空数组  
+} 
+
+// 给对象数组的每个元素嵌套数组
+export const nestedArray = (arr:any) => {
+  return arr.map((item:any) => {
+    if (Array.isArray(item)) {
+      return item;
+    } else {
+      return [item];
+    }
+  })
+}
+
 
 // 处理字节类型数据
 export const handle_byte = (value: string, float: number, unit: string) => {
@@ -35,7 +66,7 @@ export const handle_byte = (value: string, float: number, unit: string) => {
 }
 
 // echart颜色表
-let e_colors = ['#4980c9', '#67e0e3', '#ef6874', '#4ab92e', '#E6A23C', '#74a465', '#e24d42', '#ba43a9'];
+let e_colors = ['#2988f1', '#f8b238', '#b477f7', '#00c69e', '#ff79c2', '#40b85b', '#e24d42', '#ba43a9'];
 
 // 柱状图
 export const bar_opt = {
@@ -65,6 +96,7 @@ export const line_opt = {
   tooltip: {
     show: true,
     trigger: 'axis',
+    confine: true,
     transitionDuration: 0.4,
     backgroundColor: 'rgba(255,255,255,1)',
     extraCssText: 'min-height:130px;',

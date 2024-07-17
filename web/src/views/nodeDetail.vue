@@ -1,7 +1,7 @@
 <!-- 抽屉组件展示节点详情 -->
 <template>
   <!-- 外层抽屉组件 -->
-  <el-drawer class="drawer" v-model="display_drawer" :with-header="false" direction="rtl" size="560px"
+  <el-drawer class="drawer" v-model="display_drawer" :with-header="false" direction="rtl" size="1200px"
     :before-close="handleClose" :modal="true" :append-to-body="false">
     <div class="drawer_top_div">
       <el-descriptions title="节点信息" :column="1" class="info">
@@ -28,23 +28,25 @@
       <el-date-picker v-model="dateRange" type="datetimerange" :shortcuts="pickerOptions" range-separator="至"
         start-placeholder="开始日期" end-placeholder="结束日期" @change="changeDate">
       </el-date-picker>
-      <grid-layout :col-num="3" :is-draggable="grid.draggable" :is-resizable="grid.resizable" :layout.sync="layout"
-        :row-height="100" :use-css-transforms="true" :vertical-compact="true" :responsive="true">
-        <template v-for="(item, i) in layout">
-          <grid-item :key="i" :h="item.h" :i="item.i" :static="item.static" :w="item.w" :x="item.x" :y="item.y"
-            :min-w="2" :min-h="2" @resize="SizeAutoChange(item.i, item.query.isChart)" @resized="SizeAutoChange"
-            drag-allow-from=".drag" drag-ignore-from=".noDrag" v-if="item.display">
-            <div class="drag">
-              <span class="drag-title">{{ item.title }}</span>
-            </div>
-            <div class="noDrag">
-              <MyEcharts :query="item.query" :startTime="startTime" :endTime="endTime"
-                :style="{ 'width': '100%', 'height': '100%' }">
-              </MyEcharts>
-            </div>
-          </grid-item>
-        </template>
-      </grid-layout>
+      <el-scrollbar height="580px">
+        <grid-layout :is-draggable="grid.draggable" :is-resizable="grid.resizable" :layout.sync="layout"
+          :row-height="100" :use-css-transforms="true" :vertical-compact="true" :responsive="true" :margin="[10, 10]">
+          <template v-for="(item, i) in layout">
+            <grid-item :key="i" :h="item.h" :i="item.i" :static="item.static" :w="item.w" :x="item.x" :y="item.y"
+              :min-w="1" :min-h="1" @resize="SizeAutoChange(item.i, item.query.isChart)" @resized="SizeAutoChange"
+              drag-allow-from=".drag" drag-ignore-from=".noDrag" v-if="item.display">
+              <div class="drag">
+                <span class="drag-title">{{ item.title }}</span>
+              </div>
+              <div class="noDrag">
+                <MyEcharts :query="item.query" :timeChange="time_change" :startTime="startTime" :endTime="endTime"
+                  :style="{ 'width': '100%', 'height': '100%' }">
+                </MyEcharts>
+              </div>
+            </grid-item>
+          </template>
+        </grid-layout>
+      </el-scrollbar>
     </div>
 
     <!-- 嵌套抽屉组件 -->
@@ -66,7 +68,7 @@ import { ref, reactive, watch } from "vue";
 import { More, Odometer, Files, Collection } from '@element-plus/icons-vue';
 import { useLayoutStore } from '@/stores/charts';
 import { useTopoStore } from '@/stores/topo';
-import MyEcharts from '@/views/MyEcharts.vue';
+import MyEcharts from '@/views/echarts/MyEcharts.vue';
 import { pickerOptions } from '@/utils/datePicker';
 import { useMacStore } from "@/stores/mac";
 
@@ -201,11 +203,13 @@ function handleClose() {
 
 // 选择展示时间范围
 let dateRange = ref([new Date() as any - 2 * 60 * 60 * 1000, new Date() as any - 0])
+const time_change = ref(0);
 const startTime = ref(0);
 const endTime = ref(0);
 startTime.value = (new Date() as any) / 1000 - 60 * 60 * 2;
 endTime.value = (new Date() as any) / 1000;
 const changeDate = (value: number[]) => {
+  time_change.value = Math.random() * 1000;
   if (value) {
     startTime.value = (new Date(value[0]) as any) / 1000;
     endTime.value = (new Date(value[1]) as any) / 1000;
