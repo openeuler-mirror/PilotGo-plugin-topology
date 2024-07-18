@@ -117,7 +117,7 @@ const handleParams = (_params?: any) => {
       queryfield_datastream_dataset: "system.syslog",
       queryfield_range_gte: 1719226716185,
       queryfield_range_lte: 1719226836185,
-      aggsfield: "host.hostname",
+      aggsfield: "agent.hostname",
       size: 0,
       fixed_interval: "5s",
     }
