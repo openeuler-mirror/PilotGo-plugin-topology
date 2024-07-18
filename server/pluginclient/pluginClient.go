@@ -66,8 +66,8 @@ func uploadResource() {
 	}
 }
 
+// 注册插件扩展点
 func GetExtentions() {
-	// 注册插件扩展点
 	var ex []common.Extention
 	pe1 := &common.PageExtention{
 		Type:       common.ExtentionPage,

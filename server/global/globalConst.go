@@ -24,8 +24,8 @@ const (
 )
 
 const (
-	NODE_CONNECTOR = "_"
-	EDGE_CONNECTOR = "__"
+	NODE_CONNECTOR = "_._"
+	EDGE_CONNECTOR = "_._._"
 	STR_CONNECTOR  = "___"
 )
 
