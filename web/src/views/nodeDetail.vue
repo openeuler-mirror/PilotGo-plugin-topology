@@ -139,7 +139,7 @@ watch(() => useTopoStore().nodeData, (new_node_data, _old_node_data) => {
     // 是否是host类型
     if (node_data.Type === 'host') {
       isHost.value = true;
-      useMacStore().setMacIp(node_data.id.split("_")[2]);
+      useMacStore().setMacIp(node_data.id.split("_._")[2]);
     }
     node_or_edge.name = node_data.label || node_data.name;
     node_or_edge.type = node_data.Type;
@@ -166,9 +166,9 @@ watch(() => useTopoStore().edgeData, (new_edge_data, _old_edge_data) => {
     // 是否是host类型
     // if (node_data.Type === 'host') {
     //   isHost.value = true;
-    //   useMacStore().setMacIp(node_data.id.split("_")[2]);
+    //   useMacStore().setMacIp(node_data.id.split("_._")[2]);
     // }
-    node_or_edge.name = edge_data.id.split("__")[1];
+    node_or_edge.name = edge_data.id.split("_._._")[1];
     node_or_edge.type = edge_data.Type;
     tags = edge_data.tags;
     table_data = [];

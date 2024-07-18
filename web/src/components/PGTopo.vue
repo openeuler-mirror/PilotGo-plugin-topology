@@ -89,11 +89,11 @@ const updateTopoData = (topoData: any) => {
         // item.label = item.Type;
         break;
       case "tcp":
-        // item.label = item.id.split("__")[1];
+        // item.label = item.id.split("_._._")[1];
         item.label = item.Type;
         break;
       case "udp":
-        // item.label = item.id.split("__")[1];
+        // item.label = item.id.split("_._._")[1];
         item.label = item.Type;
         break;
     }
@@ -107,7 +107,7 @@ const updateTopoData = (topoData: any) => {
         item.type = "image";
         item.size = 40;
         item.nodeStrength = -200;
-        item.label = item.id.split("_").pop();
+        item.label = item.id.split("_._").pop();
         item.style = {
           cursor: "all-scroll"
         };
