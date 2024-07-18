@@ -5,6 +5,7 @@ package public
 
 // 	"gitee.com/openeuler/PilotGo-plugin-topology-server/meta"
 // 	"gitee.com/openeuler/PilotGo-plugin-topology-server/processor"
+//  "gitee.com/openeuler/PilotGo-plugin-topology/server/global"
 // 	"github.com/pkg/errors"
 // )
 
@@ -42,7 +43,7 @@ package public
 
 // 	single_edges := []*meta.Edge{}
 // 	for _, edge1 := range edges.Edges {
-// 		if strings.Split(edge1.Src, "_")[0] == uuid {
+// 		if strings.Split(edge1.Src, global.NODE_CONNECTOR)[0] == uuid {
 // 			repeat_edge := false
 // 			for _, edge2 := range single_edges {
 // 				if edge2.ID == edge1.ID {

@@ -11,6 +11,7 @@ import (
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/db/redismanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/errormanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/generator"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/global"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/graph"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/pluginclient"
 
@@ -101,7 +102,7 @@ func RunCustomTopoService(tcid uint) (*graph.Nodes, *graph.Edges, []map[string]s
 		if node.Type == "host" {
 			combos = append(combos, map[string]string{
 				"id":    node.UUID,
-				"label": fmt.Sprintf("%s/%s", node.Metrics["Hostname"], strings.Split(node.ID, "_")[len(strings.Split(node.ID, "_"))-1]),
+				"label": fmt.Sprintf("%s/%s", node.Metrics["Hostname"], strings.Split(node.ID, global.NODE_CONNECTOR)[len(strings.Split(node.ID, global.NODE_CONNECTOR))-1]),
 			})
 		}
 	}
