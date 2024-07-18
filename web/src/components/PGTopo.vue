@@ -57,7 +57,6 @@ onMounted(() => {
   topoH.value = topo_container.clientHeight;
   document.getElementById('topo-container')!.addEventListener('click', function (_event: any) {
     // 点击画布时，关闭日志弹窗和tab页面 
-    console.log(_event)
     emit('clickTopoCanvas', _event)
   });
 })

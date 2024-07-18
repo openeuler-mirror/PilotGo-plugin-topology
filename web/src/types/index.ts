@@ -63,6 +63,7 @@ type GraphData = {
 }
 
 export interface Config {
+  batchId: number;
   id: number;
   conf_name: string;
   create_time: string;
