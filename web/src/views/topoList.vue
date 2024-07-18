@@ -78,7 +78,7 @@ const select_type = ref('single');
 const showDialog = ref(false);
 let configJson = reactive<TopoCustomFormType>;
 const formInline = reactive({
-  batchId: null,
+  batchId: 0,
   uuid: '',
 })
 
@@ -133,7 +133,7 @@ const handleClose = () => {
 }
 // 选中
 const handleConfirm = () => {
-  useConfigStore().topo_request = { type: select_type.value, id: formInline.uuid }
+  useConfigStore().topo_request = { type: select_type.value, id: formInline.uuid, batch_id: formInline.batchId }
   router.push('topoDisplay');
 }
 // 删除
@@ -142,7 +142,7 @@ const handleDelete = () => {
 };
 // 查看topo图
 const handleDetail = (row: Config) => {
-  useConfigStore().topo_request = { type: 'custom', id: row.id }
+  useConfigStore().topo_request = { type: 'custom', id: row.id, batch_id: row.batchId }
   router.push('topoDisplay');
 };
 </script>

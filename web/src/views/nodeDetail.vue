@@ -1,7 +1,7 @@
 <!-- 抽屉组件展示节点详情 -->
 <template>
   <!-- 外层抽屉组件 -->
-  <el-drawer class="drawer" v-model="display_drawer" :with-header="false" direction="rtl" size="1200px"
+  <el-drawer class="drawer" v-model="display_drawer" :with-header="false" direction="rtl" size="900px"
     :before-close="handleClose" :modal="true" :append-to-body="false">
     <div class="drawer_top_div">
       <el-descriptions title="节点信息" :column="1" class="info">
@@ -29,8 +29,8 @@
         start-placeholder="开始日期" end-placeholder="结束日期" @change="changeDate">
       </el-date-picker>
       <el-scrollbar height="580px">
-        <grid-layout :is-draggable="grid.draggable" :is-resizable="grid.resizable" :layout.sync="layout"
-          :row-height="100" :use-css-transforms="true" :vertical-compact="true" :responsive="true" :margin="[10, 10]">
+        <grid-layout :col-num="9" :is-draggable="grid.draggable" :is-resizable="grid.resizable" :layout.sync="layout"
+          :row-height="100" :use-css-transforms="true" :vertical-compact="true" :responsive="true">
           <template v-for="(item, i) in layout">
             <grid-item :key="i" :h="item.h" :i="item.i" :static="item.static" :w="item.w" :x="item.x" :y="item.y"
               :min-w="1" :min-h="1" @resize="SizeAutoChange(item.i, item.query.isChart)" @resized="SizeAutoChange"
@@ -39,8 +39,8 @@
                 <span class="drag-title">{{ item.title }}</span>
               </div>
               <div class="noDrag">
-                <MyEcharts :query="item.query" :timeChange="time_change" :startTime="startTime" :endTime="endTime"
-                  :style="{ 'width': '100%', 'height': '100%' }">
+                <MyEcharts :query="item.query" :ref="(el: any) => { if (el) chart[i] = el }" :timeChange="time_change"
+                  :startTime="startTime" :endTime="endTime" :style="{ 'width': '100%', 'height': '100%' }">
                 </MyEcharts>
               </div>
             </grid-item>
@@ -64,7 +64,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, watch } from "vue";
+import { ref, reactive, watch, onMounted } from "vue";
 import { More, Odometer, Files, Collection } from '@element-plus/icons-vue';
 import { useLayoutStore } from '@/stores/charts';
 import { useTopoStore } from '@/stores/topo';
@@ -79,12 +79,6 @@ const isHost = ref(false); // 节点类型是否为host
 const chart = ref([] as any);
 const icons = [More, Odometer, Files, Collection]
 
-// // node 基本信息
-// const node = reactive({
-//   type: '',
-//   name: '',
-// })
-// edge 基本信息
 const node_or_edge = reactive({
   type: '',
   name: '',
@@ -128,6 +122,13 @@ const grid = reactive({
   resizable: true,
   responsive: true,
 });
+
+onMounted(async () => {
+  // 页面dom加载完成后初始化图表大小
+  chart.value.forEach((_item: any, index: number) => {
+    chart.value[index].resize();
+  });
+})
 
 // 监听点击节点的topo数据
 watch(() => useTopoStore().nodeData, (new_node_data, _old_node_data) => {
@@ -214,6 +215,7 @@ const changeDate = (value: number[]) => {
     startTime.value = (new Date(value[0]) as any) / 1000;
     endTime.value = (new Date(value[1]) as any) / 1000;
   } else {
+    dateRange.value = [];
     startTime.value = (new Date() as any) / 1000 - 60 * 60 * 2;
     endTime.value = (new Date() as any) / 1000;
   }
@@ -232,10 +234,10 @@ const SizeAutoChange = (i: string, isChart?: boolean) => {
   overflow: hidden;
 }
 
-.drawer_body_div {
-  width: 100%;
+/* .drawer_body_div {
+  width: 90%;
   display: relative;
-}
+} */
 
 .drawer_top_div {
   display: flex;

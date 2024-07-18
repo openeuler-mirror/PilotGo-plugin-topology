@@ -33,7 +33,7 @@ export const useLayoutStore = defineStore('layoutOption', {
 
           }
         },
-        {
+        /* {
           x: 6, y: 0, w: 2, h: 1, i: '3',
           static: true, display: true, title: '当前打开的文件描述符',
           query: {
@@ -42,7 +42,7 @@ export const useLayoutStore = defineStore('layoutOption', {
             target: 'num_series', unit: 'K', float: 2, min: 0, max: 9,
             color: []
           }
-        },
+        }, */
         {
           x: 0, y: 1, w: 2, h: 2, i: '4',
           static: true, display: true, title: 'CPU总使用率',
@@ -85,7 +85,7 @@ export const useLayoutStore = defineStore('layoutOption', {
             }]
           }
         },
-        {
+        /* {
           x: 6, y: 1, w: 2, h: 2, i: '7',
           static: true, display: true, title: '根分区使用率',
           query: {
@@ -98,7 +98,7 @@ export const useLayoutStore = defineStore('layoutOption', {
               offset: 1, color: '#1de3cf'
             }]
           }
-        },
+        }, */
         {
           x: 0, y: 3, w: 8, h: 3, i: '8',
           static: false, display: true, title: '系统平均负载',
@@ -128,7 +128,7 @@ export const useLayoutStore = defineStore('layoutOption', {
           }
         },
         {
-          x: 0, y: 3, w: 4, h: 3, i: '9',
+          x: 0, y: 3, w: 8, h: 3, i: '9',
           static: false, display: true, title: '内存信息',
           query: {
             type: 'line', range: true, isChart: true,
@@ -160,7 +160,7 @@ export const useLayoutStore = defineStore('layoutOption', {
           }
         },
         {
-          x: 4, y: 6, w: 4, h: 3, i: '10',
+          x: 0, y: 6, w: 8, h: 3, i: '10',
           static: false, display: true, title: 'cpu使用率',
           query: {
             type: 'line', range: true, isChart: true,
@@ -205,7 +205,7 @@ export const useLayoutStore = defineStore('layoutOption', {
           }
         },
         {
-          x: 0, y: 9, w: 4, h: 3, i: '11',
+          x: 0, y: 9, w: 8, h: 3, i: '11',
           static: false, display: true, title: '磁盘总空间',
           query: {
             type: 'table', range: false, isChart: false, interval: 5,
@@ -226,7 +226,7 @@ export const useLayoutStore = defineStore('layoutOption', {
           }
         },
         {
-          x: 4, y: 9, w: 4, h: 3, i: '12',
+          x: 0, y: 9, w: 8, h: 3, i: '12',
           static: false, display: true, title: '各分区可用空间',
           query: {
             type: 'table', range: false, isChart: false, interval: 5,
@@ -256,7 +256,7 @@ export const useLayoutStore = defineStore('layoutOption', {
           }
         },
         {
-          x: 0, y: 12, w: 4, h: 3, i: '13',
+          x: 0, y: 12, w: 8, h: 3, i: '13',
           static: false, display: true, title: '磁盘读取容量',
           query: {
             type: 'line', range: true, isChart: true,
@@ -275,7 +275,7 @@ export const useLayoutStore = defineStore('layoutOption', {
           }
         },
         {
-          x: 4, y: 12, w: 4, h: 3, i: '14',
+          x: 0, y: 12, w: 8, h: 3, i: '14',
           static: false, display: true, title: '磁盘写入容量',
           query: {
             type: 'line', range: true, isChart: true,

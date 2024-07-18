@@ -62,6 +62,7 @@ import type { logData } from '@/types/index';
 import { getELKLogData, getELKProcessLogData, getELKProcessLogStream } from '@/request/elk';
 import { calculate_interval } from './utils';
 import { ElMessage } from 'element-plus';
+import { useConfigStore } from '@/stores/config';
 // import result, { host_result, log_query } from './test';
 
 const activeName = ref('log');
@@ -111,6 +112,7 @@ const ChangeEventTimeRange = (value: any) => {
 const handleParams = (_params?: any) => {
   let log_query = {
     id: 'log_clusterhost_timeaxis',
+    batchId: useConfigStore().topo_request.batch_id,
     params: {
       queryfield_datastream_dataset: "system.syslog",
       queryfield_range_gte: 1719226716185,
@@ -152,7 +154,6 @@ const getLogData = (_params?: any) => {
     case 'log':
       if (_params || clickChange.value === 'first') {
         // 第一次点击,请求进程信息
-        console.log('请求进程图表')
         getELKProcessLogData(handleParams(_params)).then(res => {
           if (res.data.code === 200) {
             if (res.data.data.length > 0) {
