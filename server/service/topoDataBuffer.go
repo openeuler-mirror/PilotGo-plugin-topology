@@ -44,12 +44,12 @@ func IsSamePstreeBranch(old_node, new_node *graph.Node, new_process_slice []*gra
 	for _, process := range new_process_slice {
 		new_process_map[int32(process.Pid)] = process.Cpid
 	}
-	return searchTargetPid(new_process_map, small_pid, big_pid)
+	return (old_node.Metrics["Ppid"] == new_node.Metrics["Ppid"] || searchTargetPid(new_process_map, small_pid, big_pid))
 }
 
 // 更新全局图数据缓存
 func UpdateGlobalTopoDataBuffer(custom_topodata *graph.TopoDataBuffer) {
-	if graph.Global_TopoDataBuffer == nil {
+	if graph.Global_TopoDataBuffer == nil || graph.Global_TopoDataBuffer.TopoConfId != custom_topodata.TopoConfId {
 		graph.Global_TopoDataBuffer = custom_topodata
 	} else {
 		var wg sync.WaitGroup
