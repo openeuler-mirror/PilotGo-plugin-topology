@@ -3,9 +3,11 @@
 
 WORK_DIR="/root/topo-collect"
 
+ARCH="$(/usr/bin/uname -i)"
+
 TLS_ENABLED=true
 
-PILOTGO_SERVER_ADDR="10.41.107.29:8888"
+PILOTGO_SERVER_ADDR="10.41.161.101:8888"
 DOWNLOAD_URL="https://${PILOTGO_SERVER_ADDR}/api/v1/download"
 
 CERT_FILE="${WORK_DIR}/cert/server1.crt"
@@ -14,12 +16,12 @@ KEY_FILE="${WORK_DIR}/cert/server1.key"
 FLEET_SERVER_ADDR="10.41.161.101:8220"
 ELASTIC_AGENT_DIR="elastic-agent-7.17.16-linux-arm64"
 
-TOPO_SERVER_ADDR="10.41.107.29:9991"
-TOPO_AGENT_RPM="PilotGo-plugin-topology-agent-beta-20240619153637.aarch64.rpm"
+TOPO_SERVER_ADDR="10.41.161.101:9991"
+TOPO_AGENT_RPM="PilotGo-plugin-topology-agent-1.0.3-ky10.${ARCH}.rpm"
 TOPO_AGENT_DIR="/opt/PilotGo/plugin/topology/agent"
 TOPO_AGENT_ADDR="$(/usr/sbin/ip route get 10.41.161.101 | awk 'NR==1' | grep -oP 'src \K[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+'):9992"
 
-NODE_EXPORTER_RPM="node_exporter-1.7.0-3.oe2403.aarch64.rpm"
+NODE_EXPORTER_RPM="node_exporter-1.7.0-3.oe2403.${ARCH}.rpm"
 
 
 function deploy_collect() {
@@ -100,6 +102,14 @@ EOF
 	# 部署elastic-agent
 	ls /opt/Elastic/Agent/ >/dev/null 2>&1
 	if [ $? -ne 0 ];then
+		case "$ARCH" in
+			"x86_64")
+				ELASTIC_AGENT_DIR="elastic-agent-7.17.16-linux-x86_64"
+				;;
+			"aarch64")
+				ELASTIC_AGENT_DIR="elastic-agent-7.17.16-linux-arm64"
+				;;
+		esac
 		/usr/bin/curl -k -L -O "${DOWNLOAD_URL}/${ELASTIC_AGENT_DIR}.tar.gz"
 		/usr/bin/tar -xvzf ${ELASTIC_AGENT_DIR}.tar.gz
 		cd $ELASTIC_AGENT_DIR
