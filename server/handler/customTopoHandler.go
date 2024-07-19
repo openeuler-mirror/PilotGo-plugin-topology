@@ -144,6 +144,7 @@ func RunCustomTopoHandle(ctx *gin.Context) {
 			response.Fail(ctx, nil, errors.Cause(err).Error())
 			return
 		}
+		custom_topodata.TopoConfId = tcid_str
 
 		tcid_int, err := strconv.Atoi(tcid_str)
 		if err != nil {

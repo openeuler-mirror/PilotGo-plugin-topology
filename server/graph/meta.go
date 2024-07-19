@@ -14,9 +14,10 @@ import (
 var Global_TopoDataBuffer *TopoDataBuffer
 
 type TopoDataBuffer struct {
-	Nodes  *Nodes
-	Edges  *Edges
-	Combos []map[string]string
+	TopoConfId string
+	Nodes      *Nodes
+	Edges      *Edges
+	Combos     []map[string]string
 }
 
 type Host struct {
