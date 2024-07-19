@@ -49,6 +49,10 @@ func ProcessMatching(agent *agentmanager.Agent, exename, cmdline, component stri
 		match_count := 0
 
 		for i := 1; i < len(cmdline_lower_arr); i++ {
+			if cmdline_lower_arr[i] == "-jar" && strings.Contains(cmdline_lower_arr[i+1], component_lower) {
+				return true
+			}
+
 			if !strings.HasPrefix(cmdline_lower_arr[i], "-") && !strings.HasPrefix(cmdline_lower_arr[i], "/") {
 				if strings.Contains(cmdline_lower_arr[i], component_lower) {
 					mainclass_match = true
