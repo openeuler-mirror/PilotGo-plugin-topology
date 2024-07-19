@@ -5,7 +5,7 @@
 # elastic-agent组件stop remove时间略长
 
 
-WORK_DIR="$2"
+WORK_DIR="/root/topo-collect"
 
 
 function watchStatus() {
@@ -53,6 +53,9 @@ case "$1" in
 		watchStatus 6789 elastic-agent stop
 		elastic-agent uninstall --force
 		cd /root
+		if [ -n "$2" ];then
+			WORK_DIR="$2"
+		fi
 		rm -rf $WORK_DIR
 		;;
 	*)
