@@ -149,7 +149,7 @@ func (t *TopoGenerator) collectInstantData() []error {
 
 			go func() {
 				defer wg.Done()
-				// ttcode
+
 				temp_start := time.Now()
 				agent := value.(*agentmanager.Agent)
 				agent.Port = conf.Global_Config.Topo.Agent_port
@@ -160,7 +160,7 @@ func (t *TopoGenerator) collectInstantData() []error {
 					errorlist_rwlock.Unlock()
 				}
 				agentmanager.Global_AgentManager.AddAgent_T(agent)
-				// ttcode
+
 				temp_elapse := time.Since(temp_start)
 				logger.Info("\033[32mtopo server 采集数据获取时间\033[0m: %s, %v, total\n", agent.UUID, temp_elapse)
 			}()

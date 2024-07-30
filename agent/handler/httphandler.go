@@ -17,8 +17,8 @@ import (
 func RawMetricDataHandle(ctx *gin.Context) {
 	// 验证topo server请求来源
 	if ctx.RemoteIP() != strings.Split(conf.Config().Topo.Server_addr, ":")[0] {
-		err := errors.Errorf("unknow topo server: %s", ctx.RemoteIP())
-		logger.ErrorStack("", err)
+		err := errors.Errorf("unknow client request from %s: %s", ctx.RemoteIP(), ctx.Request.URL)
+		logger.Error(err.Error())
 		// errors.EORE(err)
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"code":  -1,
@@ -51,8 +51,8 @@ func RawMetricDataHandle(ctx *gin.Context) {
 func HealthCheckHandle(ctx *gin.Context) {
 	// 验证topo server请求来源
 	if ctx.RemoteIP() != strings.Split(conf.Config().Topo.Server_addr, ":")[0] {
-		err := errors.Errorf("unknow topo server: %s", ctx.RemoteIP())
-		logger.ErrorStack("", err)
+		err := errors.Errorf("unknow client request from %s: %s", ctx.RemoteIP(), ctx.Request.URL)
+		logger.Error(err.Error())
 		// errors.EORE(err)
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"code":  -1,
@@ -74,8 +74,8 @@ func HealthCheckHandle(ctx *gin.Context) {
 func ContainerListHandle(ctx *gin.Context) {
 	// 验证topo server请求来源
 	if ctx.RemoteIP() != strings.Split(conf.Config().Topo.Server_addr, ":")[0] {
-		err := errors.Errorf("unknow topo server: %s", ctx.RemoteIP())
-		logger.ErrorStack("", err)
+		err := errors.Errorf("unknow client request from %s: %s", ctx.RemoteIP(), ctx.Request.URL)
+		logger.Error(err.Error())
 		// errors.EORE(err)
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"code":  -1,
