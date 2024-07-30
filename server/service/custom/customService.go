@@ -24,17 +24,14 @@ func RunCustomTopoService(tcid uint) (*graph.Nodes, *graph.Edges, []map[string]s
 		err := errors.New("Global_Client is nil **errstackfatal**2")
 		return nil, nil, nil, err
 	}
-
 	if agentmanager.Global_AgentManager == nil {
 		err := errors.New("Global_AgentManager is nil **errstackfatal**0")
 		return nil, nil, nil, err
 	}
-
 	if redismanager.Global_Redis == nil {
 		err := errors.New("global_redis is nil **errstackfatal**1")
 		return nil, nil, nil, err
 	}
-
 	if mysqlmanager.Global_Mysql == nil {
 		err := errors.New("global_mysql is nil **errstackfatal**1")
 		return nil, nil, nil, err
@@ -52,7 +49,7 @@ func RunCustomTopoService(tcid uint) (*graph.Nodes, *graph.Edges, []map[string]s
 
 	machine_uuids, err := pluginclient.Global_Client.BatchUUIDList(strconv.Itoa(int(tc.BatchId)))
 	if err != nil {
-		return nil, nil, nil, errors.Wrap(err, "**2")
+		return nil, nil, nil, errors.Errorf("%s **errstack**0", err.Error())
 	}
 
 	// ctxv := context.WithValue(agentmanager.Topo.Tctx, "custom_name", "pilotgo-topo")

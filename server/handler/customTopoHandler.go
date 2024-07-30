@@ -157,15 +157,22 @@ func RunCustomTopoHandle(ctx *gin.Context) {
 
 		custom_topodata.Nodes, custom_topodata.Edges, custom_topodata.Combos, err = custom.RunCustomTopoService(uint(tcid_int))
 		if err != nil {
+			if len(strings.Split(errors.Cause(err).Error(), "**")) == 0 {
+				err = errors.Errorf("wrong err format: %s **warn**0", errors.Cause(err).Error())
+				errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
+				doneChan <- custom_topodata
+				response.Fail(ctx, nil, errors.Cause(err).Error())
+				return
+			}
 			switch strings.Split(errors.Cause(err).Error(), "**")[1] {
 			case "errstack":
-				err = errors.Wrap(err, " **errstack**2") // err top
+				err = errors.Wrap(err, " **errstack**2")
 				errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
 				doneChan <- custom_topodata
 				response.Fail(ctx, nil, errors.Cause(err).Error())
 				return
 			case "errstackfatal":
-				err = errors.Wrap(err, " **errstackfatal**2") // err top
+				err = errors.Wrap(err, " **errstackfatal**2")
 				doneChan <- custom_topodata
 				response.Fail(ctx, nil, errors.Cause(err).Error())
 				errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
@@ -173,7 +180,7 @@ func RunCustomTopoHandle(ctx *gin.Context) {
 			}
 		}
 		if len(custom_topodata.Nodes.Nodes) == 0 || len(custom_topodata.Edges.Edges) == 0 {
-			err := errors.New("nodes list is null or edges list is null **errstack**0") // err top
+			err := errors.New("nodes list is null or edges list is null **errstack**0")
 			errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
 			doneChan <- custom_topodata
 			response.Fail(ctx, nil, errors.Cause(err).Error())
