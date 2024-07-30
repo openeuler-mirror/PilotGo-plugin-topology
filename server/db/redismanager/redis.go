@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -219,11 +220,11 @@ func (r *RedisClient) UpdateTopoRunningAgentList(uuids []string, updateonce bool
 		})
 
 		if len(abort_reason) != 0 {
-			logger.Debug(">>>>>>>>>>>>获取agent状态信息")
+			logger.Debug("%sagent status%s", strings.Repeat("=", 9), strings.Repeat("=", 9))
 			for _, r := range abort_reason {
 				logger.Debug(r)
 			}
-			logger.Debug(">>>>>>>>>>>>")
+			logger.Debug(strings.Repeat("=", 30))
 		}
 
 		if updateonce {
@@ -234,7 +235,6 @@ func (r *RedisClient) UpdateTopoRunningAgentList(uuids []string, updateonce bool
 	}
 
 	logger.Info("running agent number: %d", running_agent_num)
-
 	return int(running_agent_num)
 }
 

@@ -138,7 +138,7 @@ func BatchListHandle(ctx *gin.Context) {
 
 	batchlist, err := pluginclient.Global_Client.BatchList()
 	if err != nil {
-		err = errors.Errorf("%s **errstack**0", err.Error())
+		err = errors.Errorf("%s **warn**0", err.Error())
 		errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
 		response.Fail(ctx, nil, err.Error())
 		return
