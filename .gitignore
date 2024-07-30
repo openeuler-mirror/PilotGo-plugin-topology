@@ -23,6 +23,7 @@ web/node_modules
 web/dist/
 web/src/assets/*.json
 docs/time-series.json
+log/
 *.jsonc
 *.gz
 *.rpm
