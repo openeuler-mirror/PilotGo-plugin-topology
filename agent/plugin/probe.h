@@ -19,11 +19,11 @@ typedef unsigned long long u64;
 #define MAX_SUM 1024
 #define TASK_COMM_LEN 16
 #define ETH_P_IP 0X0800
-#define IPPROTO_TCP 6
-#define IPPROTO_UDP 17
 #define TCP 1
 #define UDP 2
 #define TIMEOUT_NS 5000ULL
+#define TOP_N 5
+#define MAX_ENTRIES 1000
 
 #define TCP_TX_DATA(data, delta) __sync_fetch_and_add(&((data).tx), (__u64)(delta))
 #define TCP_RX_DATA(data, delta) __sync_fetch_and_add(&((data).rx), (__u64)(delta))
@@ -100,18 +100,19 @@ enum
 
 struct packet_count
 {
-    u64 rx_count; 
-    u64 tx_count; 
+    u64 rx_count;
+    u64 tx_count;
 };
 
 struct packet_info
 {
-    __u32 src_ip;              
-    __u32 dst_ip;              
-    __u16 src_port;            
-    __u16 dst_port;            
-    __u32 proto;              
-    struct packet_count count; 
+    u32 src_ip;
+    u32 dst_ip;
+    u16 src_port;
+    u16 dst_port;
+    u32 proto;
+    int packet_count;
+    struct packet_count count;
 };
 
 struct protocol_stats
@@ -142,4 +143,6 @@ static const char *protocol[] = {
     [2] = "ICMP",
     [3] = "UNKNOWN",
 };
+
+
 #endif

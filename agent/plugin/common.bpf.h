@@ -68,7 +68,12 @@ struct
     __type(value, struct packet_count);
 } proto_stats SEC(".maps");
 
-int udp_info = 0, tcp_status_info = 0, tcp_output_info = 0;
+struct {
+    __uint(type, BPF_MAP_TYPE_HASH);
+    __uint(max_entries, 65536);  
+    __type(key, u16);  
+    __type(value, struct packet_info);
+} port_count SEC(".maps");
 
 /*funcation hepler*/
 static __always_inline int get_current_tgid()
@@ -202,6 +207,7 @@ static __always_inline void get_tcp_tuple(struct sock *sk, struct tcp_metrics_s 
     tuple->server_port = __bpf_ntohs(_R(sk, __sk_common.skc_dport));
 }
 
+
 static __always_inline struct packet_count *count_packet(__u32 proto, bool is_tx)
 {
     struct packet_count *count;
@@ -233,5 +239,6 @@ static __always_inline struct packet_count *count_packet(__u32 proto, bool is_tx
     // bpf_printk("proto:%u count_tx:%llu count_rx:%llu\n", proto, count->tx_count, count->rx_count);
     return count;
 }
+
 
 #endif // __COMMON_BPF_H
