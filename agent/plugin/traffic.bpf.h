@@ -108,3 +108,51 @@ static __always_inline int __ip_send_skb(struct sk_buff *skb)
     submit_message(&pkt_tuple, tran_time, 0, __bpf_ntohs(_R(udp, len)));
     return 0;
 }
+
+// tcp status
+static __always_inline int __handle_tcp_state(struct trace_event_raw_inet_sock_set_state *ctx)
+{
+    u64 time, newtime;
+    if (ctx->protocol != IPPROTO_TCP)
+        return 0;
+
+    struct sock *sk = (struct sock *)ctx->skaddr;
+    u64 *before_time = bpf_map_lookup_elem(&tcp_status, &sk);
+    newtime = NS_TIME();
+    if (!before_time)
+        time = 0;
+    else
+        time = newtime - *before_time;
+    struct event tcpstate = {};
+    tcpstate.oldstate = ctx->oldstate;
+    tcpstate.newstate = ctx->newstate;
+    tcpstate.family = ctx->family;
+    tcpstate.client_port = ctx->sport;
+    tcpstate.server_port = ctx->dport;
+    bpf_probe_read_kernel(&tcpstate.client_ip, sizeof(tcpstate.client_ip),
+                          &sk->__sk_common.skc_rcv_saddr);
+    bpf_probe_read_kernel(&tcpstate.server_ip, sizeof(tcpstate.server_ip),
+                          &sk->__sk_common.skc_daddr);
+    tcpstate.tran_time = time;
+    if (ctx->newstate == TCP_CLOSE)
+        bpf_map_delete_elem(&tcp_status, &sk);
+    else
+        bpf_map_update_elem(&tcp_status, &sk, &newtime, BPF_ANY);
+
+    struct event *message;
+    message = bpf_ringbuf_reserve(&tcp_rb, sizeof(*message), 0);
+    if (!message)
+    {
+        return 0;
+    }
+    message->pid = get_current_tgid();
+    message->client_ip = tcpstate.client_ip;
+    message->server_ip = tcpstate.server_ip;
+    message->client_port = tcpstate.client_port;
+    message->server_port = tcpstate.server_port;
+    message->oldstate = tcpstate.oldstate;
+    message->newstate = tcpstate.newstate;
+    message->tran_time = tcpstate.tran_time;
+    bpf_ringbuf_submit(message, 0);
+    return 0;
+}

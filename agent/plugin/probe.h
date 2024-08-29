@@ -49,7 +49,11 @@ struct event
     int udp_direction;
     u16 protocol;
     int tran_time;
+    u16 family;
     char comm[TASK_COMM_LEN];
+    int oldstate;
+    int newstate;
+    u8 type;
 };
 
 #endif

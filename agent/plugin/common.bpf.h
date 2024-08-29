@@ -24,6 +24,7 @@ struct
 } tcp_rb SEC(".maps");
 
 /*map helper*/
+
 struct
 {
     __uint(type, BPF_MAP_TYPE_LRU_HASH);
@@ -39,7 +40,6 @@ struct
     __type(key, struct sock *);
     __type(value, u64);
 } tcp_status SEC(".maps");
-
 
 /*funcation hepler*/
 static __always_inline int get_current_tgid()

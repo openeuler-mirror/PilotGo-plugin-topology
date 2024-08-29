@@ -28,3 +28,8 @@ int BPF_KPROBE(ip_send_skb, struct net *net, struct sk_buff *skb)
     return __ip_send_skb(skb);
 }
 
+//tcp status
+SEC("tracepoint/sock/inet_sock_set_state")
+int handle_tcp_state(struct trace_event_raw_inet_sock_set_state *ctx) {
+    return __handle_tcp_state(ctx);
+}
