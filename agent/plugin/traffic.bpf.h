@@ -108,3 +108,115 @@ static __always_inline int __ip_send_skb(struct sk_buff *skb)
     submit_message(&pkt_tuple, tran_time, 0, __bpf_ntohs(_R(udp, len)));
     return 0;
 }
+
+// tcp status
+static __always_inline int __handle_tcp_state(struct trace_event_raw_inet_sock_set_state *ctx)
+{
+    u64 time, newtime;
+    if (ctx->protocol != IPPROTO_TCP)
+        return 0;
+
+    struct sock *sk = (struct sock *)ctx->skaddr;
+    u64 *before_time = bpf_map_lookup_elem(&tcp_status, &sk);
+    newtime = NS_TIME();
+    if (!before_time)
+        time = 0;
+    else
+        time = newtime - *before_time;
+    struct event tcpstate = {};
+    tcpstate.oldstate = ctx->oldstate;
+    tcpstate.newstate = ctx->newstate;
+    tcpstate.family = ctx->family;
+    tcpstate.client_port = ctx->sport;
+    tcpstate.server_port = ctx->dport;
+    bpf_probe_read_kernel(&tcpstate.client_ip, sizeof(tcpstate.client_ip),
+                          &sk->__sk_common.skc_rcv_saddr);
+    bpf_probe_read_kernel(&tcpstate.server_ip, sizeof(tcpstate.server_ip),
+                          &sk->__sk_common.skc_daddr);
+    tcpstate.tran_time = time;
+    if (ctx->newstate == TCP_CLOSE)
+        bpf_map_delete_elem(&tcp_status, &sk);
+    else
+        bpf_map_update_elem(&tcp_status, &sk, &newtime, BPF_ANY);
+
+    struct event *message;
+    message = bpf_ringbuf_reserve(&tcp_rb, sizeof(*message), 0);
+    if (!message)
+    {
+        return 0;
+    }
+    message->pid = get_current_tgid();
+    message->client_ip = tcpstate.client_ip;
+    message->server_ip = tcpstate.server_ip;
+    message->client_port = tcpstate.client_port;
+    message->server_port = tcpstate.server_port;
+    message->oldstate = tcpstate.oldstate;
+    message->newstate = tcpstate.newstate;
+    message->tran_time = tcpstate.tran_time;
+    bpf_ringbuf_submit(message, 0);
+    return 0;
+}
+
+static __always_inline void handle_tcp_metrics(struct pt_regs *ctx, struct sock *sk, size_t size, bool is_tx, int pid)
+{
+    struct tcp_metrics_s *metrics = get_tcp_metrics(sk);
+    if (!metrics)
+    {
+        return;
+    }
+    struct tcp_metrics_s tuple = {};
+    get_tcp_tuple(sk, &tuple);
+    metrics->pid = pid;
+
+    if (is_tx)
+    {
+        metrics->client_ip = tuple.client_ip;
+        metrics->server_ip = tuple.server_ip;
+        metrics->client_port = tuple.client_port;
+        metrics->server_port = tuple.server_port;
+        metrics->tran_flag = 1;
+        TCP_TX_DATA(metrics->tx_rx_stats, (int)size);
+    }
+    else
+    {
+        metrics->client_ip = tuple.server_ip;
+        metrics->server_ip = tuple.client_ip;
+        metrics->client_port = tuple.server_port;
+        metrics->server_port = tuple.client_port;
+        metrics->tran_flag = 0;
+        get_tcp_tx_rx_segs(sk, &metrics->tx_rx_stats);
+        TCP_RX_DATA(metrics->tx_rx_stats, size);
+    }
+
+    report_tx_rx(ctx, metrics, sk);
+}
+// send
+static __always_inline int __tcp_sendmsg(struct pt_regs *ctx)
+{
+    struct sock *sk = (struct sock *)PT_REGS_PARM1(ctx);
+    int pid = get_current_tgid();
+    struct tcp_metrics_s tuple = {};
+
+    get_tcp_tuple(sk, &tuple);
+    size_t send_size = (size_t)PT_REGS_PARM3(ctx);
+    // bpf_printk("Sending size: %zu\n", send_size);
+    handle_tcp_metrics(ctx, sk, send_size, true, pid);
+    return 0;
+}
+
+// recieve
+static __always_inline int __tcp_cleanup_rbuf(struct pt_regs *ctx)
+{
+    struct sock *sk = (struct sock *)PT_REGS_PARM1(ctx);
+    int pid = get_current_tgid();
+    struct tcp_metrics_s tuple = {};
+    get_tcp_tuple(sk, &tuple);
+    int recieve_size = (int)PT_REGS_PARM2(ctx);
+    if (recieve_size <= 0)
+    {
+        return 0;
+    }
+    // bpf_printk("recieve_size: %zu\n", recieve_size);
+    handle_tcp_metrics(ctx, sk, (size_t)recieve_size, false, pid);
+    return 0;
+}
