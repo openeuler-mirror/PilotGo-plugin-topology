@@ -23,6 +23,11 @@ typedef unsigned long long u64;
 #define IPPROTO_UDP 17
 #define TCP 1
 #define UDP 2
+#define TIMEOUT_NS 5000ULL 
+
+#define TCP_TX_DATA(data, delta) __sync_fetch_and_add(&((data).tx), (__u64)(delta))
+#define TCP_RX_DATA(data, delta) __sync_fetch_and_add(&((data).rx), (__u64)(delta))
+#define TCP_PROBE_TXRX (u32)(1 << 3)
 
 /* bpf.h struct helper */
 struct ktime_info
@@ -56,4 +61,31 @@ struct event
     u8 type;
 };
 
+struct tcp_tx_rx
+{
+    u64 rx; // FROM tcp_cleanup_rbuf
+    u64 tx; // FROM tcp_sendmsg
+    u32 last_time_segs_out;
+    u32 segs_out; // total number of segments sent
+    u32 last_time_segs_in;
+    u32 segs_in; // total number of segments in
+};
+
+struct tcp_metrics_s
+{
+    int pid;
+    u32 client_ip;
+    u32 server_ip;
+    u16 client_port;
+    u16 server_port;
+    u32 report_flags;
+    u32 tran_flag;
+    struct tcp_tx_rx tx_rx_stats;
+};
+
+struct sock_stats_s
+{
+    u64 txrx_ts;
+    struct tcp_metrics_s metrics;
+};
 #endif

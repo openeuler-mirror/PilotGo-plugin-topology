@@ -156,3 +156,67 @@ static __always_inline int __handle_tcp_state(struct trace_event_raw_inet_sock_s
     bpf_ringbuf_submit(message, 0);
     return 0;
 }
+
+static __always_inline void handle_tcp_metrics(struct pt_regs *ctx, struct sock *sk, size_t size, bool is_tx, int pid)
+{
+    struct tcp_metrics_s *metrics = get_tcp_metrics(sk);
+    if (!metrics)
+    {
+        return;
+    }
+    struct tcp_metrics_s tuple = {};
+    get_tcp_tuple(sk, &tuple);
+    metrics->pid = pid;
+
+    if (is_tx)
+    {
+        metrics->client_ip = tuple.client_ip;
+        metrics->server_ip = tuple.server_ip;
+        metrics->client_port = tuple.client_port;
+        metrics->server_port = tuple.server_port;
+        metrics->tran_flag = 1;
+        TCP_TX_DATA(metrics->tx_rx_stats, (int)size);
+    }
+    else
+    {
+        metrics->client_ip = tuple.server_ip;
+        metrics->server_ip = tuple.client_ip;
+        metrics->client_port = tuple.server_port;
+        metrics->server_port = tuple.client_port;
+        metrics->tran_flag = 0;
+        get_tcp_tx_rx_segs(sk, &metrics->tx_rx_stats);
+        TCP_RX_DATA(metrics->tx_rx_stats, size);
+    }
+
+    report_tx_rx(ctx, metrics, sk);
+}
+// send
+static __always_inline int __tcp_sendmsg(struct pt_regs *ctx)
+{
+    struct sock *sk = (struct sock *)PT_REGS_PARM1(ctx);
+    int pid = get_current_tgid();
+    struct tcp_metrics_s tuple = {};
+
+    get_tcp_tuple(sk, &tuple);
+    size_t send_size = (size_t)PT_REGS_PARM3(ctx);
+    // bpf_printk("Sending size: %zu\n", send_size);
+    handle_tcp_metrics(ctx, sk, send_size, true, pid);
+    return 0;
+}
+
+// recieve
+static __always_inline int __tcp_cleanup_rbuf(struct pt_regs *ctx)
+{
+    struct sock *sk = (struct sock *)PT_REGS_PARM1(ctx);
+    int pid = get_current_tgid();
+    struct tcp_metrics_s tuple = {};
+    get_tcp_tuple(sk, &tuple);
+    int recieve_size = (int)PT_REGS_PARM2(ctx);
+    if (recieve_size <= 0)
+    {
+        return 0;
+    }
+    // bpf_printk("recieve_size: %zu\n", recieve_size);
+    handle_tcp_metrics(ctx, sk, (size_t)recieve_size, false, pid);
+    return 0;
+}

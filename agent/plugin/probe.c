@@ -15,13 +15,14 @@
 #include "probe.h"
 
 static volatile bool exiting = false;
-int udp_info = 0, tcp_status_info = 0;
+int udp_info = 0, tcp_status_info = 0, tcp_output_info = 0;
 
 const char argp_program_doc[] = "Trace time delay in network subsystem \n";
 
 static const struct argp_option opts[] = {
     {"udp", 'u', 0, 0, "trace the udp message"},
     {"tcp_status_info", 't', 0, 0, "trace the tcp states"},
+    {"tcp_output_info", 'o', 0, 0, "trace the tcp flow"},
     {},
 };
 
@@ -34,6 +35,9 @@ static error_t parse_arg(int key, char *arg, struct argp_state *state)
         break;
     case 't':
         tcp_status_info = 1;
+        break;
+    case 'o':
+        tcp_output_info = 1;
         break;
     default:
         return ARGP_ERR_UNKNOWN;
@@ -110,7 +114,10 @@ static void print_tcp_state_info(const struct event *pack_info)
 
     format_ip_address(pack_info->client_ip, s_str, sizeof(s_str));
     format_ip_address(pack_info->server_ip, d_str, sizeof(d_str));
-
+    if (pack_info->client_ip == 0 || pack_info->server_ip == 0)
+    {
+        return;
+    }
     printf("%-20d %-20s %-20s %-20d %-20d %-20s %-20s %-20d\n",
            pack_info->pid,
            s_str,
@@ -121,11 +128,35 @@ static void print_tcp_state_info(const struct event *pack_info)
            tcp_states[pack_info->newstate],
            pack_info->tran_time);
 }
+static void print_tcp_flow_info(const struct tcp_metrics_s *pack_info)
+{
+    char s_str[INET_ADDRSTRLEN];
+    char d_str[INET_ADDRSTRLEN];
+    if (pack_info->client_ip > 0xFFFFFFFF || pack_info->server_ip > 0xFFFFFFFF || pack_info->pid <= 0)
+    {
+        return;
+    }
+
+    format_ip_address(pack_info->client_ip, s_str, sizeof(s_str));
+    format_ip_address(pack_info->server_ip, d_str, sizeof(d_str));
+    
+    printf("%-20d %-20s %-20s %-20d %-20d %-20llu %-20llu %-20u %-20u %-20d\n",
+           pack_info->pid,
+           s_str,
+           d_str,
+           pack_info->client_port,
+           pack_info->server_port,
+           pack_info->tx_rx_stats.rx,
+           pack_info->tx_rx_stats.tx,
+           pack_info->tx_rx_stats.segs_in,
+           pack_info->tx_rx_stats.segs_out,
+           pack_info->tran_flag);
+}
 
 static int handle_event(void *ctx, void *packet_info, size_t data_sz)
 {
     const struct event *pack_info = (const struct event *)packet_info;
-
+    const struct tcp_metrics_s *pack_tcp_info = (const struct tcp_metrics_s *)packet_info;
     if (udp_info)
     {
         print_udp_event_info(pack_info);
@@ -134,6 +165,10 @@ static int handle_event(void *ctx, void *packet_info, size_t data_sz)
     if (tcp_status_info)
     {
         print_tcp_state_info(pack_info);
+    }
+    if (tcp_output_info)
+    {
+        print_tcp_flow_info(pack_tcp_info);
     }
 
     return 0;
@@ -145,6 +180,7 @@ int main(int argc, char **argv)
     int err = 0;
     struct ring_buffer *udp_rb = NULL;
     struct ring_buffer *tcp_rb = NULL;
+    struct ring_buffer *tcp_output_rb = NULL;
 
     /* Parse command line arguments */
     err = argp_parse(&argp, argc, argv, 0, NULL, NULL);
@@ -198,6 +234,13 @@ int main(int argc, char **argv)
         fprintf(stderr, "Failed to create ring buffer\n");
         goto cleanup;
     }
+    tcp_output_rb = ring_buffer__new(bpf_map__fd(skel->maps.tcp_output_rb), handle_event, NULL, NULL);
+    if (!tcp_output_rb)
+    {
+        err = -1;
+        fprintf(stderr, "Failed to create ring buffer\n");
+        goto cleanup;
+    }
     /* Process events */
     if (udp_info)
     {
@@ -205,13 +248,17 @@ int main(int argc, char **argv)
     }
     if (tcp_status_info)
     {
-        printf("%-20s %-20s %-20s %-20s %-20s %-20s %-20s %-20s \n", "Pid","Client_ip", "Server_ip", "Client_port", "Server_port", "oldstate", "newstate", "time/μs");
+        printf("%-20s %-20s %-20s %-20s %-20s %-20s %-20s %-20s \n", "Pid", "Client_ip", "Server_ip", "Client_port", "Server_port", "oldstate", "newstate", "time/μs");
     }
-
+    if (tcp_output_info)
+    {
+        printf("%-20s %-20s %-20s %-20s %-20s %-20s %-20s %-20s %-20s %-20s\n", "Pid", "Client_ip", "Server_ip", "Client_port", "Server_port", "Send/bytes", "receive/bytes", "segs_in", "segs_out", "Direction");
+    }
     while (!exiting)
     {
         err = ring_buffer__poll(udp_rb, 100 /* timeout, ms */);
         err = ring_buffer__poll(tcp_rb, 100 /* timeout, ms */);
+        err = ring_buffer__poll(tcp_output_rb, 100 /* timeout, ms */);
         /* Ctrl-C will cause -EINTR */
         if (err == -EINTR)
         {
@@ -229,6 +276,7 @@ cleanup:
     /* Clean up */
     ring_buffer__free(udp_rb);
     ring_buffer__free(tcp_rb);
+    ring_buffer__free(tcp_output_rb);
     probe_bpf__destroy(skel);
 
     return err < 0 ? -err : 0;
