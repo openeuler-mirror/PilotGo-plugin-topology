@@ -23,6 +23,11 @@ typedef unsigned long long u64;
 #define IPPROTO_UDP 17
 #define TCP 1
 #define UDP 2
+#define TIMEOUT_NS 5000ULL
+
+#define TCP_TX_DATA(data, delta) __sync_fetch_and_add(&((data).tx), (__u64)(delta))
+#define TCP_RX_DATA(data, delta) __sync_fetch_and_add(&((data).rx), (__u64)(delta))
+#define TCP_PROBE_TXRX (u32)(1 << 3)
 
 /* bpf.h struct helper */
 struct ktime_info
@@ -56,4 +61,85 @@ struct event
     u8 type;
 };
 
+struct tcp_tx_rx
+{
+    u64 rx; // FROM tcp_cleanup_rbuf
+    u64 tx; // FROM tcp_sendmsg
+    u32 last_time_segs_out;
+    u32 segs_out; // total number of segments sent
+    u32 last_time_segs_in;
+    u32 segs_in; // total number of segments in
+};
+
+struct tcp_metrics_s
+{
+    int pid;
+    u32 client_ip;
+    u32 server_ip;
+    u16 client_port;
+    u16 server_port;
+    u32 report_flags;
+    u32 tran_flag;
+    struct tcp_tx_rx tx_rx_stats;
+};
+
+struct sock_stats_s
+{
+    u64 txrx_ts;
+    struct tcp_metrics_s metrics;
+};
+
+enum
+{
+    PROTO_TCP = 0,
+    PROTO_UDP,
+    PROTO_ICMP,
+    PROTO_UNKNOWN,
+    PROTO_MAX,
+};
+
+struct packet_count
+{
+    u64 rx_count; 
+    u64 tx_count; 
+};
+
+struct packet_info
+{
+    __u32 src_ip;              
+    __u32 dst_ip;              
+    __u16 src_port;            
+    __u16 dst_port;            
+    __u32 proto;              
+    struct packet_count count; 
+};
+
+struct protocol_stats
+{
+    uint64_t rx_count;
+    uint64_t tx_count;
+};
+
+static const char *tcp_states[] = {
+    [1] = "ESTABLISHED",
+    [2] = "SYN_SENT",
+    [3] = "SYN_RECV",
+    [4] = "FIN_WAIT1",
+    [5] = "FIN_WAIT2",
+    [6] = "TIME_WAIT",
+    [7] = "CLOSE",
+    [8] = "CLOSE_WAIT",
+    [9] = "LAST_ACK",
+    [10] = "LISTEN",
+    [11] = "CLOSING",
+    [12] = "NEW_SYN_RECV",
+    [13] = "UNKNOWN",
+};
+
+static const char *protocol[] = {
+    [0] = "TCP",
+    [1] = "UDP",
+    [2] = "ICMP",
+    [3] = "UNKNOWN",
+};
 #endif
