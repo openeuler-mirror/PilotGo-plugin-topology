@@ -156,7 +156,7 @@ static __always_inline int __handle_tcp_state(struct trace_event_raw_inet_sock_s
     bpf_ringbuf_submit(message, 0);
     return 0;
 }
-
+// tcp
 static __always_inline void handle_tcp_metrics(struct pt_regs *ctx, struct sock *sk, size_t size, bool is_tx, int pid)
 {
     struct tcp_metrics_s *metrics = get_tcp_metrics(sk);
@@ -219,4 +219,90 @@ static __always_inline int __tcp_cleanup_rbuf(struct pt_regs *ctx)
     // bpf_printk("recieve_size: %zu\n", recieve_size);
     handle_tcp_metrics(ctx, sk, (size_t)recieve_size, false, pid);
     return 0;
+}
+
+static __always_inline int process_packet(struct sk_buff *skb, bool is_tx)
+{
+    const struct ethhdr *eth = (struct ethhdr *)_R(skb, data);
+    u16 protocol = _R(eth, h_proto);
+
+    struct packet_info *pkt = bpf_ringbuf_reserve(&port_events, sizeof(*pkt), 0);
+    if (!pkt)
+    {
+        return 0;
+    }
+
+    if (_R(eth, h_proto) != __bpf_htons(ETH_P_IP))
+    {
+        bpf_ringbuf_discard(pkt, 0);
+        return 0;
+    }
+
+    struct iphdr *ip = (struct iphdr *)(_R(skb, data) + 14);
+    if (!ip)
+    {
+        bpf_ringbuf_discard(pkt, 0);
+        return 0;
+    }
+
+    pkt->src_ip = _R(ip, saddr);
+    pkt->dst_ip = _R(ip, daddr);
+    pkt->proto = _R(ip, protocol);
+
+    if (pkt->proto == IPPROTO_TCP)
+    {
+        struct tcphdr *tcp = (struct tcphdr *)(_R(skb, data) + sizeof(struct ethhdr) + sizeof(struct iphdr));
+        pkt->src_port = _R(tcp, source);
+        pkt->dst_port = _R(tcp, dest);
+        pkt->proto = PROTO_TCP;
+        // bpf_printk("TCP packet: src_port=%d, dst_port=%d\n", pkt->src_port, pkt->dst_port);
+    }
+    else if (pkt->proto == IPPROTO_UDP)
+    {
+        struct udphdr *udp = (struct udphdr *)(_R(skb, data) + sizeof(struct ethhdr) + sizeof(struct iphdr));
+        pkt->src_port = _R(udp, source);
+        pkt->dst_port = _R(udp, dest);
+        pkt->proto = PROTO_UDP;
+        // bpf_printk("UDP packet: src_port=%d, dst_port=%d\n", pkt->src_port, pkt->dst_port);
+    }
+    else if (pkt->proto == IPPROTO_ICMP)
+    {
+        pkt->proto = PROTO_ICMP;
+        // bpf_printk("ICMP packet detected\n");
+    }
+    else
+    {
+        pkt->proto = PROTO_UNKNOWN;
+        // bpf_printk("proto=%u\n", pkt->proto);
+    }
+    // bpf_printk("proto=%u\n", pkt->proto);
+    struct packet_count *count = count_packet(pkt->proto, is_tx);
+    if (count)
+    {
+        pkt->count.tx_count = count->tx_count;
+        pkt->count.rx_count = count->rx_count;
+    }
+    else
+    {
+        pkt->count.tx_count = 0;
+        pkt->count.rx_count = 0;
+    }
+
+    // bpf_printk("pkt: src_ip=%u, dst_ip=%u, proto=%u\n", pkt->src_ip, pkt->dst_ip, pkt->proto);
+    // bpf_printk("src_port=%d, dst_port=%d\n", pkt->src_port, pkt->dst_port);
+    // bpf_printk("count_tx=%llu, count_rx=%llu\n", pkt->count.tx_count, pkt->count.rx_count);
+
+    bpf_ringbuf_submit(pkt, 0);
+
+    return 0;
+}
+
+static __always_inline int __eth_type_trans(struct sk_buff *skb)
+{
+    return process_packet(skb, false); // receive
+}
+
+static __always_inline int __dev_hard_start_xmit(struct sk_buff *skb)
+{
+    return process_packet(skb, true); // send
 }

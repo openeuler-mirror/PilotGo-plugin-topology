@@ -23,7 +23,7 @@ typedef unsigned long long u64;
 #define IPPROTO_UDP 17
 #define TCP 1
 #define UDP 2
-#define TIMEOUT_NS 5000ULL 
+#define TIMEOUT_NS 5000ULL
 
 #define TCP_TX_DATA(data, delta) __sync_fetch_and_add(&((data).tx), (__u64)(delta))
 #define TCP_RX_DATA(data, delta) __sync_fetch_and_add(&((data).rx), (__u64)(delta))
@@ -87,5 +87,59 @@ struct sock_stats_s
 {
     u64 txrx_ts;
     struct tcp_metrics_s metrics;
+};
+
+enum
+{
+    PROTO_TCP = 0,
+    PROTO_UDP,
+    PROTO_ICMP,
+    PROTO_UNKNOWN,
+    PROTO_MAX,
+};
+
+struct packet_count
+{
+    u64 rx_count; 
+    u64 tx_count; 
+};
+
+struct packet_info
+{
+    __u32 src_ip;              
+    __u32 dst_ip;              
+    __u16 src_port;            
+    __u16 dst_port;            
+    __u32 proto;              
+    struct packet_count count; 
+};
+
+struct protocol_stats
+{
+    uint64_t rx_count;
+    uint64_t tx_count;
+};
+
+static const char *tcp_states[] = {
+    [1] = "ESTABLISHED",
+    [2] = "SYN_SENT",
+    [3] = "SYN_RECV",
+    [4] = "FIN_WAIT1",
+    [5] = "FIN_WAIT2",
+    [6] = "TIME_WAIT",
+    [7] = "CLOSE",
+    [8] = "CLOSE_WAIT",
+    [9] = "LAST_ACK",
+    [10] = "LISTEN",
+    [11] = "CLOSING",
+    [12] = "NEW_SYN_RECV",
+    [13] = "UNKNOWN",
+};
+
+static const char *protocol[] = {
+    [0] = "TCP",
+    [1] = "UDP",
+    [2] = "ICMP",
+    [3] = "UNKNOWN",
 };
 #endif

@@ -29,6 +29,12 @@ struct
     __uint(max_entries, 256 * 1024);
 } tcp_output_rb SEC(".maps");
 
+struct
+{
+    __uint(type, BPF_MAP_TYPE_RINGBUF);
+    __uint(max_entries, 256 * 1024);
+} port_events SEC(".maps");
+
 /*map helper*/
 struct
 {
@@ -53,6 +59,14 @@ struct
     __type(key, struct sock *);
     __type(value, struct sock_stats_s);
 } tcp_link_map SEC(".maps");
+// packets
+struct
+{
+    __uint(type, BPF_MAP_TYPE_ARRAY);
+    __uint(max_entries, MAX_COMM *MAX_PACKET);
+    __type(key, u32);
+    __type(value, struct packet_count);
+} proto_stats SEC(".maps");
 
 int udp_info = 0, tcp_status_info = 0, tcp_output_info = 0;
 
@@ -186,6 +200,38 @@ static __always_inline void get_tcp_tuple(struct sock *sk, struct tcp_metrics_s 
     tuple->server_ip = _R(sk, __sk_common.skc_daddr);
     tuple->client_port = _R(sk, __sk_common.skc_num);
     tuple->server_port = __bpf_ntohs(_R(sk, __sk_common.skc_dport));
+}
+
+static __always_inline struct packet_count *count_packet(__u32 proto, bool is_tx)
+{
+    struct packet_count *count;
+    struct packet_count initial_count = {0};
+
+    count = bpf_map_lookup_elem(&proto_stats, &proto);
+    if (!count)
+    {
+        initial_count.tx_count = 0;
+        initial_count.rx_count = 0;
+        if (bpf_map_update_elem(&proto_stats, &proto, &initial_count, BPF_ANY))
+        {
+            // bpf_printk("proto:%u failed to initialize count\n", proto);
+            return NULL;
+        }
+        count = bpf_map_lookup_elem(&proto_stats, &proto);
+        if (!count)
+        {
+            // bpf_printk("proto:%u count is NULL after initialization\n", proto);
+            return NULL;
+        }
+    }
+
+    if (is_tx)
+        __sync_fetch_and_add(&count->tx_count, 1);
+    else
+        __sync_fetch_and_add(&count->rx_count, 1);
+
+    // bpf_printk("proto:%u count_tx:%llu count_rx:%llu\n", proto, count->tx_count, count->rx_count);
+    return count;
 }
 
 #endif // __COMMON_BPF_H
