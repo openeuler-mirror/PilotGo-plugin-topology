@@ -16,26 +16,34 @@ struct
     __uint(type, BPF_MAP_TYPE_RINGBUF);
     __uint(max_entries, 256 * 1024);
 } udp_rb SEC(".maps");
-
 struct
 {
     __uint(type, BPF_MAP_TYPE_RINGBUF);
     __uint(max_entries, 256 * 1024);
 } tcp_rb SEC(".maps");
-
 struct
 {
     __uint(type, BPF_MAP_TYPE_RINGBUF);
     __uint(max_entries, 256 * 1024);
 } tcp_output_rb SEC(".maps");
-
 struct
 {
     __uint(type, BPF_MAP_TYPE_RINGBUF);
     __uint(max_entries, 256 * 1024);
-} port_events SEC(".maps");
+} port_events_rb SEC(".maps");
+struct
+{
+    __uint(type, BPF_MAP_TYPE_RINGBUF);
+    __uint(max_entries, 256 * 1024);
+} trace_all_drop SEC(".maps");
+struct
+{
+    __uint(type, BPF_MAP_TYPE_RINGBUF);
+    __uint(max_entries, 1024);
+} perf_map SEC(".maps");
 
 /*map helper*/
+
 struct
 {
     __uint(type, BPF_MAP_TYPE_LRU_HASH);
@@ -59,6 +67,7 @@ struct
     __type(key, struct sock *);
     __type(value, struct sock_stats_s);
 } tcp_link_map SEC(".maps");
+
 // packets
 struct
 {
@@ -68,7 +77,21 @@ struct
     __type(value, struct packet_count);
 } proto_stats SEC(".maps");
 
-int udp_info = 0, tcp_status_info = 0, tcp_output_info = 0;
+struct
+{
+    __uint(type, BPF_MAP_TYPE_HASH);
+    __uint(max_entries, 65536);
+    __type(key, u16);
+    __type(value, struct packet_info);
+} port_count SEC(".maps");
+
+struct
+{
+    __uint(type, BPF_MAP_TYPE_HASH);
+    __uint(max_entries, 65536);
+    __type(key, u32);
+    __type(value, struct tid_map_value);
+} inner_tid_map SEC(".maps");
 
 /*funcation hepler*/
 static __always_inline int get_current_tgid()
@@ -101,9 +124,17 @@ static __always_inline void get_udp_pkt_tuple(struct event *pkt_tuple,
     pkt_tuple->server_ip = _R(ip, daddr);
     pkt_tuple->client_port = __bpf_ntohs(_R(udp, source));
     pkt_tuple->server_port = __bpf_ntohs(_R(udp, dest));
-    pkt_tuple->seq = 0;
-    pkt_tuple->ack = 0;
     pkt_tuple->tran_flag = UDP;
+}
+
+static void get_tcp_pkt_tuple(struct event *pkt_tuple, struct iphdr *ip, struct tcphdr *tcp)
+{
+    pkt_tuple->client_ip = _R(ip, saddr);
+    pkt_tuple->server_ip = _R(ip, daddr);
+    pkt_tuple->client_port = __bpf_ntohs(_R(tcp, source));
+    pkt_tuple->server_port = __bpf_ntohs(_R(tcp, dest));
+    pkt_tuple->seq = __bpf_ntohl(_R(tcp, seq));
+    pkt_tuple->ack = __bpf_ntohl(_R(tcp, ack_seq));
 }
 
 static __always_inline void *bmloti(void *map, const void *key, const void *init)
@@ -214,24 +245,89 @@ static __always_inline struct packet_count *count_packet(__u32 proto, bool is_tx
         initial_count.rx_count = 0;
         if (bpf_map_update_elem(&proto_stats, &proto, &initial_count, BPF_ANY))
         {
-            // bpf_printk("proto:%u failed to initialize count\n", proto);
-            return NULL;
+            return 0;
         }
         count = bpf_map_lookup_elem(&proto_stats, &proto);
         if (!count)
         {
-            // bpf_printk("proto:%u count is NULL after initialization\n", proto);
-            return NULL;
+            return 0;
         }
     }
-
     if (is_tx)
         __sync_fetch_and_add(&count->tx_count, 1);
     else
         __sync_fetch_and_add(&count->rx_count, 1);
-
     // bpf_printk("proto:%u count_tx:%llu count_rx:%llu\n", proto, count->tx_count, count->rx_count);
     return count;
 }
 
+static __always_inline u64 bpf_core_xt_table_name(void *ptr)
+{
+    struct xt_table *table = ptr;
+    if (bpf_core_field_exists(table->name))
+        return (u64)(&table->name[0]);
+    return 0;
+}
+static __always_inline int fill_sk_skb(struct drop_event *event, struct sock *sk, struct sk_buff *skb)
+{
+    struct net *net = NULL;
+    struct iphdr ih = {};
+    struct tcphdr th = {};
+    struct udphdr uh = {};
+    u16 protocol = 0;
+    bool has_netheader = false;
+    u16 network_header, transport_header;
+    char *head;
+    event->has_sk = false;
+    if (sk)
+    {
+        event->has_sk = true;
+        bpf_probe_read(&event->skbap.daddr, sizeof(event->skbap.daddr), &sk->__sk_common.skc_daddr);
+        bpf_probe_read(&event->skbap.dport, sizeof(event->skbap.dport), &sk->__sk_common.skc_dport);
+        bpf_probe_read(&event->skbap.saddr, sizeof(event->skbap.saddr), &sk->__sk_common.skc_rcv_saddr);
+        bpf_probe_read(&event->skbap.sport, sizeof(event->skbap.sport), &sk->__sk_common.skc_num);
+        event->skbap.dport = bpf_ntohs(event->skbap.dport);
+        protocol = _R(sk, __sk_common.skc_family);
+        bpf_probe_read(&event->sk_state, sizeof(event->sk_state), (const void *)&sk->__sk_common.skc_state);
+        //    bpf_printk(" IP:%U Dip:%u", event->skbap.saddr, event->skbap.daddr);
+    }
+    // 从 sk_buff 中提取头部和网络层偏移信息
+    bpf_probe_read(&head, sizeof(head), &skb->head);
+    bpf_probe_read(&network_header, sizeof(network_header), &skb->network_header);
+    if (network_header != 0)
+    {
+        bpf_probe_read(&ih, sizeof(ih), head + network_header);
+        has_netheader = true;
+        event->skbap.saddr = ih.saddr;
+        event->skbap.daddr = ih.daddr;
+        event->skb_protocol = ih.protocol;
+        transport_header = network_header + (ih.ihl << 2);
+    }
+    else
+    {
+        bpf_probe_read(&transport_header, sizeof(transport_header), &skb->transport_header);
+    }
+    switch (event->skb_protocol)
+    {
+    case IPPROTO_TCP:
+        bpf_probe_read(&th, sizeof(th), head + transport_header);
+        event->skbap.sport = bpf_ntohs(th.source);
+        event->skbap.dport = bpf_ntohs(th.dest);
+        break;
+    case IPPROTO_UDP:
+        if (transport_header != 0 && transport_header != 0xffff)
+        {
+            bpf_probe_read(&uh, sizeof(uh), head + transport_header);
+            event->skbap.sport = bpf_ntohs(uh.source);
+            event->skbap.dport = bpf_ntohs(uh.dest);
+        }
+        break;
+    case IPPROTO_ICMP:
+        break;
+    default:
+        return -1;
+        break;
+    }
+    return 0;
+}
 #endif // __COMMON_BPF_H

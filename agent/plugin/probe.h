@@ -12,19 +12,22 @@ typedef unsigned long long u64;
 #define IPV6_LEN 16
 #define MAX_COMM 16
 #define MAX_PACKET 1000
-#define AF_INET 2
 #define BPF_MAP_TYPE_PERCPU_COUNTER 10
 #define PID 32
 #define MAX 256
 #define MAX_SUM 1024
 #define TASK_COMM_LEN 16
 #define ETH_P_IP 0X0800
-#define IPPROTO_TCP 6
-#define IPPROTO_UDP 17
 #define TCP 1
 #define UDP 2
 #define TIMEOUT_NS 5000ULL
-
+#define TOP_N 5
+#define MAX_ENTRIES 1000
+#define NF_DROP 0
+#define MAX_STACK_DEPTH 127
+#define XT_TABLE_MAXNAMELEN 100
+#define IPV4 2048
+#define IPV6 34525
 #define TCP_TX_DATA(data, delta) __sync_fetch_and_add(&((data).tx), (__u64)(delta))
 #define TCP_RX_DATA(data, delta) __sync_fetch_and_add(&((data).rx), (__u64)(delta))
 #define TCP_PROBE_TXRX (u32)(1 << 3)
@@ -59,6 +62,7 @@ struct event
     int oldstate;
     int newstate;
     u8 type;
+    long location;
 };
 
 struct tcp_tx_rx
@@ -100,18 +104,19 @@ enum
 
 struct packet_count
 {
-    u64 rx_count; 
-    u64 tx_count; 
+    u64 rx_count;
+    u64 tx_count;
 };
 
 struct packet_info
 {
-    __u32 src_ip;              
-    __u32 dst_ip;              
-    __u16 src_port;            
-    __u16 dst_port;            
-    __u32 proto;              
-    struct packet_count count; 
+    u32 src_ip;
+    u32 dst_ip;
+    u16 src_port;
+    u16 dst_port;
+    u32 proto;
+    int packet_count;
+    struct packet_count count;
 };
 
 struct protocol_stats
@@ -120,6 +125,13 @@ struct protocol_stats
     uint64_t tx_count;
 };
 
+struct addr_pair
+{
+    u32 saddr;
+    u32 daddr;
+    u16 sport;
+    u16 dport;
+};
 static const char *tcp_states[] = {
     [1] = "ESTABLISHED",
     [2] = "SYN_SENT",
@@ -135,11 +147,59 @@ static const char *tcp_states[] = {
     [12] = "NEW_SYN_RECV",
     [13] = "UNKNOWN",
 };
-
 static const char *protocol[] = {
     [0] = "TCP",
     [1] = "UDP",
     [2] = "ICMP",
     [3] = "UNKNOWN",
 };
+
+struct tid_map_value
+{
+    struct sk_buff *skb;
+    struct nf_hook_state *state;
+    struct xt_table *table;
+    u32 hook;
+    void *ctx;
+};
+
+typedef u64 stack_trace_t[MAX_STACK_DEPTH];
+struct drop_event
+{
+    u8 type;
+    u8 name[32];
+    u32 hook;
+    u32 pid;
+    u8 comm[16];
+    u8 has_sk;
+    u8 skb_protocol;
+    u8 sk_state;
+    u8 sk_protocol;
+    struct addr_pair skbap;
+    signed int kstack_sz;
+    stack_trace_t kstack;
+};
+
+enum
+{
+    DROP_KFREE_SKB = 0,
+    DROP_TCP_DROP,
+    DROP_IPTABLES_DROP,
+    DROP_NFCONNTRACK_DROP,
+    UNK,
+};
+
+static const char *drop_type_str[] = {
+    "DROP_KFREE_SKB",
+    "DROP_TCP_DROP",
+    "DROP_IPTABLES_DROP",
+    "DROP_NFCONNTRACK_DROP",
+    "UNKNOWN"};
+
+static const char *protocol_names[] = {
+    [IPPROTO_ICMP] = "ICMP", // 1
+    [IPPROTO_TCP] = "TCP",   // 6
+    [IPPROTO_UDP] = "UDP",   // 17
+};
+
 #endif

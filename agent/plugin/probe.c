@@ -9,16 +9,18 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <sys/time.h>
 #include <unistd.h>
 #include "probe.h"
 #include "probe.skel.h"
 #include "probe.h"
-
+int stack_map_fd; // 在全局范围内声明
 static volatile bool exiting = false;
-int udp_info = 0, tcp_status_info = 0, tcp_output_info = 0, protocol_info = 0;
+static int udp_info = 0, tcp_status_info = 0, tcp_output_info = 0, protocol_info = 0, port_distribution = 0, drop_info = 0, drop_skb = 0;
 struct protocol_stats proto_stats[256] = {0};
-time_t start_time;
-int interval = 5; // 每5 秒计算一次
+static int interval = 5, entry_count = 0; // 每5 秒计算一次
+struct packet_info entries[MAX_ENTRIES];
+time_t start_time = 0;
 
 const char argp_program_doc[] = "Trace time delay in network subsystem \n";
 
@@ -26,7 +28,10 @@ static const struct argp_option opts[] = {
     {"udp", 'u', 0, 0, "trace the udp message"},
     {"tcp_status_info", 't', 0, 0, "trace the tcp states"},
     {"tcp_output_info", 'o', 0, 0, "trace the tcp flow"},
-    {"protocol_info", 'p', 0, 0, "trace the tcp flow"},
+    {"protocol_info", 'p', 0, 0, "statistics on the use of different protocols"},
+    {"port_distribution_info", 'P', 0, 0, "statistical use of top10 destination ports"},
+    {"drop_info", 'i', 0, 0, "trace the iptables drop"},
+    {"drop_skb", 'd', 0, 0, "trace the all skb drop"},
     {},
 };
 
@@ -45,6 +50,15 @@ static error_t parse_arg(int key, char *arg, struct argp_state *state)
         break;
     case 'p':
         protocol_info = 1;
+        break;
+    case 'P':
+        port_distribution = 1;
+        break;
+    case 'i':
+        drop_info = 1;
+        break;
+    case 'd':
+        drop_skb = 1;
         break;
     default:
         return ARGP_ERR_UNKNOWN;
@@ -171,16 +185,22 @@ void calculate_protocol_usage(struct protocol_stats proto_stats[], int num_proto
 
     for (int i = 0; i < num_protocols; i++)
     {
-        if (proto_stats[i].rx_count >= last_rx[i]) {
+        if (proto_stats[i].rx_count >= last_rx[i])
+        {
             delta_rx[i] = proto_stats[i].rx_count - last_rx[i];
-        } else {
-            delta_rx[i] = proto_stats[i].rx_count;  
+        }
+        else
+        {
+            delta_rx[i] = proto_stats[i].rx_count;
         }
 
-        if (proto_stats[i].tx_count >= last_tx[i]) {
+        if (proto_stats[i].tx_count >= last_tx[i])
+        {
             delta_tx[i] = proto_stats[i].tx_count - last_tx[i];
-        } else {
-            delta_tx[i] = proto_stats[i].tx_count; 
+        }
+        else
+        {
+            delta_tx[i] = proto_stats[i].tx_count;
         }
 
         current_rx += delta_rx[i];
@@ -223,25 +243,149 @@ void calculate_protocol_usage(struct protocol_stats proto_stats[], int num_proto
     memset(proto_stats, 0, num_protocols * sizeof(struct protocol_stats));
 }
 
+int compare_by_pps(const void *a, const void *b)
+{
+    return ((struct packet_info *)b)->packet_count - ((struct packet_info *)a)->packet_count;
+}
+
+void init_start_time()
+{
+    start_time = time(NULL);
+}
+
+int find_port_entry(int dst_port, int proto)
+{
+    for (int i = 0; i < entry_count; i++)
+    {
+        if (entries[i].dst_port == dst_port && entries[i].proto == proto)
+        {
+            return i;
+        }
+    }
+    return -1;
+}
+
+static int print_drop(void *ctx, void *packet_info, size_t data_sz)
+{
+    if (!drop_info)
+    {
+        return 0;
+    }
+    const struct drop_event *event = (const struct drop_event *)packet_info;
+
+    char s_str[INET_ADDRSTRLEN];
+    char d_str[INET_ADDRSTRLEN];
+
+    if (!drop_info)
+    {
+        return 0;
+    }
+
+    format_ip_address(event->skbap.saddr, s_str, sizeof(s_str));
+    format_ip_address(event->skbap.daddr, d_str, sizeof(d_str));
+    const char *type_str = event->type >= 0 && event->type < 4 ? drop_type_str[event->type] : "UNKNOWN";
+    // protocol string
+    const char *proto_str = (event->skb_protocol >= 0 && event->skb_protocol < sizeof(protocol_names) / sizeof(char *) &&
+                             protocol_names[event->skb_protocol])
+                                ? protocol_names[event->skb_protocol]
+                                : "UNKNOWN";
+    printf("%-20d %-20s %-20s %-20d %-20d %-20s %-20s\n",
+           event->pid, s_str, d_str, event->skbap.sport, event->skbap.dport,
+           proto_str, type_str);
+    return 0;
+}
+static int print_drop_skb(void *ctx, void *packet_info, size_t data_sz)
+{
+    if (!drop_skb)
+    {
+        return 0;
+    }
+    const struct event *event = (const struct event *)packet_info;
+    char s_str[INET_ADDRSTRLEN];
+    char d_str[INET_ADDRSTRLEN];
+    char protol[6];
+    if (event->client_ip == 0 && event->server_ip == 0)
+    {
+        return 0;
+    }
+    format_ip_address(event->client_ip, s_str, sizeof(s_str));
+    format_ip_address(event->server_ip, d_str, sizeof(d_str));
+    if (event->protocol == IPV4)
+    {
+        strcpy(protol, "ipv4");
+    }
+    else if (event->protocol == IPV6)
+    {
+        strcpy(protol, "ipv6");
+    }
+    else
+    {
+        strcpy(protol, "other");
+    }
+    printf("%-20d %-20s %-20s %-20d %-20d %-20s %-34lx \n",
+           event->pid, s_str, d_str, event->client_port, event->server_port, protol, event->location);
+    return 0;
+}
 static int print_count_protocol_use(void *ctx, void *packet_info, size_t data_sz)
 {
     const struct packet_info *pack_protocol_info = (const struct packet_info *)packet_info;
+
     if (protocol_info)
     {
-        proto_stats[pack_protocol_info->proto].rx_count += pack_protocol_info->count.rx_count;
-        proto_stats[pack_protocol_info->proto].tx_count += pack_protocol_info->count.tx_count;
+        proto_stats[pack_protocol_info->proto].rx_count = pack_protocol_info->count.rx_count;
+        proto_stats[pack_protocol_info->proto].tx_count = pack_protocol_info->count.tx_count;
+    }
+    if (port_distribution)
+    {
+        // 查找当前端口号和协议号是否已经存在于 entries 数组中
+        int index = find_port_entry(pack_protocol_info->dst_port, pack_protocol_info->proto);
+        if (index != -1)
+        {
+            entries[index].packet_count++;
+        }
+        else
+        {
+            if (entry_count >= MAX_ENTRIES)
+            {
+                printf("entry_count big");
+                return 0;
+            }
+            entries[entry_count].dst_port = pack_protocol_info->dst_port;
+            entries[entry_count].proto = pack_protocol_info->proto;
+            entries[entry_count].packet_count = 1;
+            entry_count++;
+        }
     }
     return 0;
 }
+static int print_top_5_keys()
+{
+    printf("Entry count: %d\n", entry_count);
+    // 使用 qsort 对 PPS 进行排序
+    qsort(entries, entry_count, sizeof(struct packet_info), compare_by_pps);
 
+    // 输出前10个最频繁使用的端口号及其 PPS 值和协议号
+    printf("==========Top %d Ports by PPS:\n", TOP_N);
+    for (int i = 0; i < TOP_N && i < entry_count; i++)
+    {
+        const char *proto_str = (entries[i].proto >= 0 && entries[i].proto <= 3) ? protocol[entries[i].proto] : "UNKNOWN";
+        printf("Port: %d, PPS: %d, Protocol: %s\n", entries[i].dst_port, entries[i].packet_count, proto_str);
+    }
+    memset(entries, 0, entry_count * sizeof(struct packet_info));
+    entry_count = 0;
+    return 0;
+}
 int main(int argc, char **argv)
 {
+
     struct probe_bpf *skel;
     int err = 0;
     struct ring_buffer *udp_rb = NULL;
     struct ring_buffer *tcp_rb = NULL;
     struct ring_buffer *tcp_output_rb = NULL;
-    struct ring_buffer *port_events = NULL;
+    struct ring_buffer *port_events_rb = NULL;
+    struct ring_buffer *perf_map = NULL;
+    struct ring_buffer *trace_all_drop = NULL;
     /* Parse command line arguments */
     err = argp_parse(&argp, argc, argv, 0, NULL, NULL);
     if (err)
@@ -270,7 +414,6 @@ int main(int argc, char **argv)
         fprintf(stderr, "Failed to load and verify BPF skeleton\n");
         goto cleanup;
     }
-
     /* Attach tracepoints */
     err = probe_bpf__attach(skel);
     if (err)
@@ -301,13 +444,28 @@ int main(int argc, char **argv)
         fprintf(stderr, "Failed to create ring buffer\n");
         goto cleanup;
     }
-    port_events = ring_buffer__new(bpf_map__fd(skel->maps.port_events), print_count_protocol_use, NULL, NULL);
-    if (!port_events)
+    port_events_rb = ring_buffer__new(bpf_map__fd(skel->maps.port_events_rb), print_count_protocol_use, NULL, NULL);
+    if (!port_events_rb)
     {
         err = -1;
         fprintf(stderr, "Failed to create ring buffer\n");
         goto cleanup;
     }
+    perf_map = ring_buffer__new(bpf_map__fd(skel->maps.perf_map), print_drop, NULL, NULL);
+    if (!perf_map)
+    {
+        err = -1;
+        fprintf(stderr, "Failed to create ring buffer\n");
+        goto cleanup;
+    }
+    trace_all_drop = ring_buffer__new(bpf_map__fd(skel->maps.trace_all_drop), print_drop_skb, NULL, NULL);
+    if (!trace_all_drop)
+    {
+        err = -1;
+        fprintf(stderr, "Failed to create ring buffer\n");
+        goto cleanup;
+    }
+
     /* Process events */
     if (udp_info)
     {
@@ -321,18 +479,33 @@ int main(int argc, char **argv)
     {
         printf("%-20s %-20s %-20s %-20s %-20s %-20s %-20s %-20s %-20s %-20s\n", "Pid", "Client_ip", "Server_ip", "Client_port", "Server_port", "Send/bytes", "receive/bytes", "segs_in", "segs_out", "Direction");
     }
+    if (drop_info)
+    {
+        printf("%-20s %-20s %-20s %-20s %-20s %-20s %-20s \n", "Pid", "Client_ip", "Server_ip", "Client_port", "Server_port", "Protocol", "Drop_type");
+    }
+    if (drop_skb)
+    {
+        printf("%-20s %-20s %-20s %-20s %-20s %-20s %-20s \n", "Pid", "Client_ip", "Server_ip", "Client_port", "Server_port", "Protocol", "DROP_addr");
+    }
     if (protocol_info)
     {
         printf("==========Proportion of each agreement==========\n");
     }
+    if (port_distribution)
+    {
+        printf("==========port_distribution==========\n");
+    }
     start_time = time(NULL);
+    struct timeval start, end;
+    gettimeofday(&start, NULL);
     while (!exiting)
     {
         err = ring_buffer__poll(udp_rb, 100 /* timeout, ms */);
         err = ring_buffer__poll(tcp_rb, 100 /* timeout, ms */);
         err = ring_buffer__poll(tcp_output_rb, 100 /* timeout, ms */);
-        err = ring_buffer__poll(port_events, 100 /* timeout, ms */);
-
+        err = ring_buffer__poll(port_events_rb, 100 /* timeout, ms */);
+        err = ring_buffer__poll(perf_map, 100 /* timeout, ms */);
+        err = ring_buffer__poll(trace_all_drop, 100 /* timeout, ms */);
         /* Ctrl-C will cause -EINTR */
         // Regularly calculate and print the proportion of agreements
         if (protocol_info)
@@ -354,6 +527,13 @@ int main(int argc, char **argv)
             printf("Error polling perf buffer: %d\n", err);
             break;
         }
+        gettimeofday(&end, NULL);
+        if ((end.tv_sec - start.tv_sec) >= 5)
+        {
+            if (port_distribution)
+                print_top_5_keys();
+            gettimeofday(&start, NULL);
+        }
     }
 
 cleanup:
@@ -361,7 +541,9 @@ cleanup:
     ring_buffer__free(udp_rb);
     ring_buffer__free(tcp_rb);
     ring_buffer__free(tcp_output_rb);
-    ring_buffer__free(port_events);
+    ring_buffer__free(port_events_rb);
+    ring_buffer__free(perf_map);
+    ring_buffer__free(trace_all_drop);
     probe_bpf__destroy(skel);
 
     return err < 0 ? -err : 0;
