@@ -9,16 +9,17 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <sys/time.h>
 #include <unistd.h>
 #include "probe.h"
 #include "probe.skel.h"
 #include "probe.h"
-
 static volatile bool exiting = false;
-int udp_info = 0, tcp_status_info = 0, tcp_output_info = 0, protocol_info = 0;
+static int udp_info = 0, tcp_status_info = 0, tcp_output_info = 0, protocol_info = 0, port_distribution = 0;
 struct protocol_stats proto_stats[256] = {0};
-time_t start_time;
-int interval = 5; // 每5 秒计算一次
+static int interval = 5, entry_count = 0; // 每5 秒计算一次
+struct packet_info entries[MAX_ENTRIES];
+time_t start_time = 0;
 
 const char argp_program_doc[] = "Trace time delay in network subsystem \n";
 
@@ -26,7 +27,8 @@ static const struct argp_option opts[] = {
     {"udp", 'u', 0, 0, "trace the udp message"},
     {"tcp_status_info", 't', 0, 0, "trace the tcp states"},
     {"tcp_output_info", 'o', 0, 0, "trace the tcp flow"},
-    {"protocol_info", 'p', 0, 0, "trace the tcp flow"},
+    {"protocol_info", 'p', 0, 0, "statistics on the use of different protocols"},
+    {"port_distribution_info", 'P', 0, 0, "statistical use of top10 destination ports"},
     {},
 };
 
@@ -45,6 +47,9 @@ static error_t parse_arg(int key, char *arg, struct argp_state *state)
         break;
     case 'p':
         protocol_info = 1;
+        break;
+    case 'P':
+        port_distribution = 1;
         break;
     default:
         return ARGP_ERR_UNKNOWN;
@@ -171,16 +176,22 @@ void calculate_protocol_usage(struct protocol_stats proto_stats[], int num_proto
 
     for (int i = 0; i < num_protocols; i++)
     {
-        if (proto_stats[i].rx_count >= last_rx[i]) {
+        if (proto_stats[i].rx_count >= last_rx[i])
+        {
             delta_rx[i] = proto_stats[i].rx_count - last_rx[i];
-        } else {
-            delta_rx[i] = proto_stats[i].rx_count;  
+        }
+        else
+        {
+            delta_rx[i] = proto_stats[i].rx_count;
         }
 
-        if (proto_stats[i].tx_count >= last_tx[i]) {
+        if (proto_stats[i].tx_count >= last_tx[i])
+        {
             delta_tx[i] = proto_stats[i].tx_count - last_tx[i];
-        } else {
-            delta_tx[i] = proto_stats[i].tx_count; 
+        }
+        else
+        {
+            delta_tx[i] = proto_stats[i].tx_count;
         }
 
         current_rx += delta_rx[i];
@@ -223,17 +234,79 @@ void calculate_protocol_usage(struct protocol_stats proto_stats[], int num_proto
     memset(proto_stats, 0, num_protocols * sizeof(struct protocol_stats));
 }
 
+int compare_by_pps(const void *a, const void *b)
+{
+    return ((struct packet_info *)b)->packet_count - ((struct packet_info *)a)->packet_count;
+}
+
+void init_start_time()
+{
+    start_time = time(NULL);
+}
+
+// 查找数组中是否已经记录了指定端口号和协议号
+int find_port_entry(int dst_port, int proto)
+{
+    for (int i = 0; i < entry_count; i++)
+    {
+        if (entries[i].dst_port == dst_port && entries[i].proto == proto)
+        {
+            return i;
+        }
+    }
+    return -1;
+}
+
 static int print_count_protocol_use(void *ctx, void *packet_info, size_t data_sz)
 {
     const struct packet_info *pack_protocol_info = (const struct packet_info *)packet_info;
+
     if (protocol_info)
     {
         proto_stats[pack_protocol_info->proto].rx_count += pack_protocol_info->count.rx_count;
         proto_stats[pack_protocol_info->proto].tx_count += pack_protocol_info->count.tx_count;
     }
+    if (port_distribution)
+    {
+        // 查找当前端口号和协议号是否已经存在于 entries 数组中
+        int index = find_port_entry(pack_protocol_info->dst_port, pack_protocol_info->proto);
+        if (index != -1)
+        {
+            entries[index].packet_count++;
+        }
+        else
+        {
+            if (entry_count >= MAX_ENTRIES)
+            {
+                printf("entry_count big");
+                return 0;
+            }
+            entries[entry_count].dst_port = pack_protocol_info->dst_port;
+            entries[entry_count].proto = pack_protocol_info->proto;
+            entries[entry_count].packet_count = 1;
+            entry_count++;
+        }
+    }
     return 0;
 }
+static int print_top_5_keys()
+{
+    printf("Entry count: %d\n", entry_count);
 
+    // 使用 qsort 对 PPS 进行排序
+    qsort(entries, entry_count, sizeof(struct packet_info), compare_by_pps);
+
+    // 输出前10个最频繁使用的端口号及其 PPS 值和协议号
+    printf("==========Top %d Ports by PPS:\n", TOP_N);
+    for (int i = 0; i < TOP_N && i < entry_count; i++)
+    {
+        const char *proto_str = (entries[i].proto >= 0 && entries[i].proto <= 3) ? protocol[entries[i].proto] : "UNKNOWN";
+        printf("Port: %d, PPS: %d, Protocol: %s\n", entries[i].dst_port, entries[i].packet_count, proto_str);
+    }
+    memset(entries, 0, entry_count * sizeof(struct packet_info));
+    entry_count = 0;
+    return 0;
+}
 int main(int argc, char **argv)
 {
     struct probe_bpf *skel;
@@ -325,7 +398,13 @@ int main(int argc, char **argv)
     {
         printf("==========Proportion of each agreement==========\n");
     }
+    if (port_distribution)
+    {
+        printf("==========port_distribution==========\n");
+    }
     start_time = time(NULL);
+    struct timeval start, end;
+    gettimeofday(&start, NULL);
     while (!exiting)
     {
         err = ring_buffer__poll(udp_rb, 100 /* timeout, ms */);
@@ -353,6 +432,13 @@ int main(int argc, char **argv)
         {
             printf("Error polling perf buffer: %d\n", err);
             break;
+        }
+        gettimeofday(&end, NULL);
+        if ((end.tv_sec - start.tv_sec) >= 5)
+        {
+            if (port_distribution)
+                print_top_5_keys();
+            gettimeofday(&start, NULL);
         }
     }
 

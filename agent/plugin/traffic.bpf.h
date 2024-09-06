@@ -275,7 +275,7 @@ static __always_inline int process_packet(struct sk_buff *skb, bool is_tx)
         pkt->proto = PROTO_UNKNOWN;
         // bpf_printk("proto=%u\n", pkt->proto);
     }
-    // bpf_printk("proto=%u\n", pkt->proto);
+
     struct packet_count *count = count_packet(pkt->proto, is_tx);
     if (count)
     {
@@ -287,10 +287,6 @@ static __always_inline int process_packet(struct sk_buff *skb, bool is_tx)
         pkt->count.tx_count = 0;
         pkt->count.rx_count = 0;
     }
-
-    // bpf_printk("pkt: src_ip=%u, dst_ip=%u, proto=%u\n", pkt->src_ip, pkt->dst_ip, pkt->proto);
-    // bpf_printk("src_port=%d, dst_port=%d\n", pkt->src_port, pkt->dst_port);
-    // bpf_printk("count_tx=%llu, count_rx=%llu\n", pkt->count.tx_count, pkt->count.rx_count);
 
     bpf_ringbuf_submit(pkt, 0);
 

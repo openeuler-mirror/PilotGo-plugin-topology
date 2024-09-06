@@ -54,13 +54,11 @@ int __handle_tcp_cleanup_rbuf(struct pt_regs *ctx)
 SEC("kprobe/eth_type_trans")
 int BPF_KPROBE(eth_type_trans,struct sk_buff *skb)
 {
-    bpf_printk("eth_type_trans");
     return __eth_type_trans(skb);
 }
 //send 
 SEC("kprobe/dev_hard_start_xmit")
 int BPF_KPROBE(dev_hard_start_xmit,struct sk_buff *skb)
 {
-    bpf_printk("dev_hard_start_xmit");
     return __dev_hard_start_xmit(skb);
 }
