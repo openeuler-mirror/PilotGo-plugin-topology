@@ -226,7 +226,7 @@ static __always_inline int process_packet(struct sk_buff *skb, bool is_tx)
     const struct ethhdr *eth = (struct ethhdr *)_R(skb, data);
     u16 protocol = _R(eth, h_proto);
 
-    struct packet_info *pkt = bpf_ringbuf_reserve(&port_events, sizeof(*pkt), 0);
+    struct packet_info *pkt = bpf_ringbuf_reserve(&port_events_rb, sizeof(*pkt), 0);
     if (!pkt)
     {
         return 0;
@@ -301,4 +301,114 @@ static __always_inline int __eth_type_trans(struct sk_buff *skb)
 static __always_inline int __dev_hard_start_xmit(struct sk_buff *skb)
 {
     return process_packet(skb, true); // send
+}
+
+static __always_inline int __ipt_do_table_start(struct pt_regs *ctx)
+{
+
+    u32 tid = bpf_get_current_pid_tgid();
+    struct tid_map_value value = {};
+
+    struct sk_buff *skb = (struct sk_buff *)PT_REGS_PARM1(ctx);
+    struct nf_hook_state *state = (struct nf_hook_state *)PT_REGS_PARM3(ctx);
+    struct xt_table *table = (struct xt_table *)PT_REGS_PARM4(ctx);
+    u32 hook = (u32)PT_REGS_PARM2(ctx);
+
+    value.skb = skb;
+    value.state = state;
+    value.hook = hook;
+    value.table = table;
+
+    bpf_map_update_elem(&inner_tid_map, &tid, &value, BPF_ANY);
+    return 0;
+}
+
+static __always_inline int submit_event(struct pt_regs *ctx, struct tid_map_value *value, u32 drop_type)
+{
+    struct sock *sk;
+    struct sk_buff *skb;
+    struct drop_event *event;
+    u64 addr;
+
+    event = bpf_ringbuf_reserve(&perf_map, sizeof(struct drop_event), 0);
+    if (!event)
+    {
+        return 0;
+    }
+    event->type = drop_type;
+    skb = value->skb;
+
+    bpf_probe_read(&sk, sizeof(sk), &skb->sk);
+    // 栈
+    event->kstack_sz =
+        bpf_get_stack(ctx, event->kstack, sizeof(event->kstack), 0);
+    event->pid = bpf_get_current_pid_tgid() >> 32;
+    bpf_get_current_comm(&event->comm, sizeof(event->comm));
+    fill_sk_skb(event, sk, skb);
+    // 针对 iptables 的处理
+    if (drop_type == DROP_IPTABLES_DROP)
+    {
+        struct xt_table *table = value->table;
+        addr = bpf_core_xt_table_name(table);
+        if (addr)
+        {
+            bpf_probe_read(event->name, sizeof(event->name), (void *)addr);
+        }
+
+        event->hook = value->hook;
+    }
+    bpf_ringbuf_submit(event, 0);
+    return 1;
+}
+
+static __always_inline int handle_drop_event(struct pt_regs *ctx, int ret, struct tid_map_value *value, u32 drop_type)
+{
+    if (ret != NF_DROP || !value)
+    {
+        return 0;
+    }
+    return submit_event(ctx, value, drop_type);
+}
+
+static __always_inline int __ipt_do_table_ret(struct pt_regs *ctx, int ret)
+{
+    u32 tid = bpf_get_current_pid_tgid();
+    struct tid_map_value *value = bpf_map_lookup_elem(&inner_tid_map, &tid);
+
+    if (handle_drop_event(ctx, ret, value, DROP_IPTABLES_DROP))
+    {
+        bpf_map_delete_elem(&inner_tid_map, &tid);
+    }
+    return 0;
+}
+
+static __always_inline int __kfree_skb(struct trace_event_raw_kfree_skb *ctx)
+{
+    struct sk_buff *skb = ctx->skbaddr;
+    if (!skb)
+        return 0;
+    struct iphdr *ip = extract_iphdr(skb);
+    struct tcphdr *tcp = extract_tcphdr(skb);
+    struct event devent = {0};
+    get_tcp_pkt_tuple(&devent, ip, tcp);
+    struct event *event;
+    event = bpf_ringbuf_reserve(&trace_all_drop, sizeof(*event), 0);
+    if (!event)
+    {
+        return 0;
+    }
+    event->location = (long)ctx->location;
+    // event->type == DROP_KFREE_SKB;
+    event->client_ip = devent.client_ip;
+    event->server_ip = devent.server_ip;
+    event->client_port = devent.client_port;
+    event->server_port = devent.server_port;
+    event->pid = get_current_tgid();
+    event->protocol = ctx->protocol;
+    // bpf_printk("saddr:%u daddr:%u", event->client_ip, event->server_ip);
+    // 丢包调用栈
+    //  event->kstack_sz =
+    //      bpf_get_stack(ctx, event->kstack, sizeof(event->kstack), 0);
+    bpf_ringbuf_submit(event, 0);
+    return 0;
 }

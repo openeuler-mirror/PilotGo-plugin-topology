@@ -8,6 +8,7 @@ LIBBPF_OBJ := $(abspath $(OUTPUT)/libbpf.a)
 BPFTOOL_OUTPUT ?= $(abspath $(OUTPUT)/bpftool)
 BPFTOOL ?= $(BPFTOOL_OUTPUT)/bootstrap/bpftool
 
+# Determine architecture based on system's machine type
 ARCH ?= $(shell uname -m | sed 's/x86_64/x86/' \
 			 | sed 's/arm.*/arm/' \
 			 | sed 's/aarch64/arm64/' \
@@ -17,27 +18,27 @@ ARCH ?= $(shell uname -m | sed 's/x86_64/x86/' \
 			 | sed 's/loongarch64/loongarch/')
 VMLINUX := ./vmlinux.h
 
-
-# Use our own libbpf API headers and Linux UAPI headers distributed with
-# libbpf to avoid dependency on system-wide headers, which could be missing or
-# outdated
 INCLUDES := -I$(OUTPUT) -I../../libbpf/include/uapi -I$(dir $(VMLINUX))
 CFLAGS := -g -Wall -Wno-unknown-pragmas
 ALL_LDFLAGS := $(LDFLAGS) $(EXTRA_LDFLAGS)
 
+#kernel version
+VERSION_INFO := $(shell uname -r | cut -d'-' -f1)
+VERSION_MAJOR := $(shell echo $(VERSION_INFO) | cut -d'.' -f1)
+VERSION_MINOR := $(shell echo $(VERSION_INFO) | cut -d'.' -f2)
+VERSION_PATCH := $(shell echo $(VERSION_INFO) | cut -d'.' -f3)
+export VERSION_INFO
+export VERSION_MAJOR
+export VERSION_MINOR
+export VERSION_PATCH
+
+# User-space applications
 APPS = probe
 
-# Get Clang's default includes on this system. We'll explicitly add these dirs
-# to the includes list when compiling with `-target bpf` because otherwise some
-# architecture-specific dirs will be "missing" on some architectures/distros -
-# headers such as asm/types.h, asm/byteorder.h, asm/socket.h, asm/sockios.h,
-# sys/cdefs.h etc. might be missing.
-#
-# Use '-idirafter': Don't interfere with include mechanics except where the
-# build would have failed anyways.
+# Get system include paths for clang
 CLANG_BPF_SYS_INCLUDES = $(shell $(CLANG) -v -E - </dev/null 2>&1 \
 	| sed -n '/<...> search starts here:/,/End of search list./{ s| \(/.*\)|-idirafter \1|p }')
-
+# Output message settings for make
 ifeq ($(V),1)
 	Q =
 	msg =
@@ -59,13 +60,45 @@ endef
 $(call allow-override,CC,$(CROSS_COMPILE)cc)
 $(call allow-override,LD,$(CROSS_COMPILE)ld)
 
+# Check if bpftool is installed, otherwise install it
 .PHONY: all
-all: $(APPS)
+all: dependence $(APPS)
+.PHONY: dependence
+dependence:check_bpftool check_clang 
+	@echo "Kernel version is $(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_PATCH)"
+	bpftool btf dump file /sys/kernel/btf/vmlinux format c > $(VMLINUX)
+
+.PHONY: check_bpftool
+check_bpftool:
+	@if ! command -v bpftool &> /dev/null; then \
+		echo "bpftool Not installed, installing..."; \
+		sudo yum update; \
+		sudo yum install -y linux-tools-$(shell uname -r); \
+	else \
+		echo "bpftool Have been installed"; \
+	fi
+.PHONY: check_clang
+
+check_clang:
+	@if ! command -v clang &> /dev/null; then \
+		echo "clang Not installed, installing..."; \
+		sudo yum update; \
+		sudo yum install -y clang; \
+	else \
+		echo "clang Have been installed"; \
+	fi
 
 .PHONY: clean
 clean:
 	$(call msg,CLEAN)
 	$(Q)rm -rf $(OUTPUT) $(APPS)
+	
+.PHONY: clean2
+clean2:
+	$(call msg,CLEAN)
+	rm -f $(APPS)
+	rm -f $(OUTPUT)/*.skel.h
+	rm -f $(OUTPUT)/*.o
 
 $(OUTPUT) $(OUTPUT)/libbpf $(BPFTOOL_OUTPUT):
 	$(call msg,MKDIR,$@)
