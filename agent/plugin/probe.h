@@ -6,6 +6,9 @@ typedef unsigned short u16;
 typedef unsigned int u32;
 typedef unsigned long long u64;
 
+#define ETH_HLEN 14  // 以太网头部的长度
+#define MAXSYMBOLS 300000
+#define CACHEMAXSIZE 5
 #define SK(sk) ((const struct sock *)(sk))
 #define NS_TIME() (bpf_ktime_get_ns() / 1000)
 #define _R(dst, src) BPF_CORE_READ(dst, src)
@@ -31,6 +34,8 @@ typedef unsigned long long u64;
 #define TCP_TX_DATA(data, delta) __sync_fetch_and_add(&((data).tx), (__u64)(delta))
 #define TCP_RX_DATA(data, delta) __sync_fetch_and_add(&((data).rx), (__u64)(delta))
 #define TCP_PROBE_TXRX (u32)(1 << 3)
+#define RCV_SHUTDOWN 2
+#define HASH_MAP_SIZE 1024
 
 /* bpf.h struct helper */
 struct ktime_info
@@ -62,9 +67,18 @@ struct event
     int oldstate;
     int newstate;
     u8 type;
-    long location;
 };
 
+struct reasonissue
+{
+    u32 client_ip;
+    u32 server_ip;
+    u16 client_port;
+    u16 server_port;
+    long location;
+    u16 protocol;
+    int pid;
+};
 struct tcp_tx_rx
 {
     u64 rx; // FROM tcp_cleanup_rbuf
@@ -125,13 +139,13 @@ struct protocol_stats
     uint64_t tx_count;
 };
 
-struct addr_pair
-{
-    u32 saddr;
-    u32 daddr;
-    u16 sport;
-    u16 dport;
+struct addr_pair {
+    u32 saddr;  
+    u32 daddr;  
+    u16 sport;  
+    u16 dport;  
 };
+
 static const char *tcp_states[] = {
     [1] = "ESTABLISHED",
     [2] = "SYN_SENT",
@@ -147,6 +161,7 @@ static const char *tcp_states[] = {
     [12] = "NEW_SYN_RECV",
     [13] = "UNKNOWN",
 };
+
 static const char *protocol[] = {
     [0] = "TCP",
     [1] = "UDP",
@@ -201,5 +216,37 @@ static const char *protocol_names[] = {
     [IPPROTO_TCP] = "TCP",   // 6
     [IPPROTO_UDP] = "UDP",   // 17
 };
+
+struct SymbolEntry
+{
+    unsigned long addr;
+    char name[30];
+};
+// 4-tuple 结构体定义
+struct tuple_key {
+    uint32_t saddr; 
+    uint32_t daddr; 
+    uint16_t sport; 
+    uint16_t dport; 
+    u8 packet_type;
+};
+
+struct packet_stats {
+    u64 syn_count;
+    u64 synack_count;
+    u64 fin_count;
+    struct tuple_key key; 
+};
+
+struct tcp_event {
+    u32 saddr;
+    u32 daddr;
+    u16 sport;
+    u16 dport;
+    struct packet_stats sum;
+};
+
+
+
 
 #endif

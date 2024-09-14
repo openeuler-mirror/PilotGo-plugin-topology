@@ -15,7 +15,7 @@ int BPF_KPROBE(__udp_enqueue_schedule_skb, struct sock *sk,
     return udp_enqueue_schedule_skb(sk, skb);
 }
 
-//send
+// send
 SEC("kprobe/udp_send_skb")
 int BPF_KPROBE(udp_send_skb, struct sk_buff *skb)
 {
@@ -28,9 +28,10 @@ int BPF_KPROBE(ip_send_skb, struct net *net, struct sk_buff *skb)
     return __ip_send_skb(skb);
 }
 
-//tcp status
+// tcp status
 SEC("tracepoint/sock/inet_sock_set_state")
-int handle_tcp_state(struct trace_event_raw_inet_sock_set_state *ctx) {
+int handle_tcp_state(struct trace_event_raw_inet_sock_set_state *ctx)
+{
     return __handle_tcp_state(ctx);
 }
 
@@ -78,4 +79,37 @@ int handle_kfree_skb(struct trace_event_raw_kfree_skb *ctx)
 {
     return __kfree_skb(ctx);
 }
+// SYN-ACK total
+//  SEC("kprobe/tcp_rcv_state_process ")
+//  int BPF_KPROBE(tcp_rcv_state_process ,struct sock *sk,struct sk_buff *skb)
+//  {
+//      return __tcp_rcv_state_process(sk,skb);
+//  }
+
+SEC("kprobe/tcp_connect")
+int BPF_KPROBE(tcp_connect, struct sock *sk)
+{
+    bpf_printk("tcp_connect");
+    return __tcp_connect(sk);
+}
+
+SEC("kprobe/tcp_rcv_state_process")
+int BPF_KPROBE(tcp_rcv_state_process, struct sock *sk, struct sk_buff *skb)
+{
+    bpf_printk("tcp_rcv_state_process");
+    return __tcp_rcv_state_process(sk, skb);
+}
+
+SEC("kprobe/tcp_send_fin")
+int BPF_KPROBE(tcp_send_fin, struct sock *sk)
+{
+    bpf_printk("tcp_send_fin");
+    return __tcp_send_fin(sk);
+}
+
+// SEC("kprobe/tcp_send_reset")
+// int handle_send_reset(struct pt_regs *ctx)
+// {
+//     return __tcp_send_reset(ctx);
+// }
 

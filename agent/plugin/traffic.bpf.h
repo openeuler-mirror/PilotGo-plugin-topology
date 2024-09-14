@@ -390,25 +390,109 @@ static __always_inline int __kfree_skb(struct trace_event_raw_kfree_skb *ctx)
     struct iphdr *ip = extract_iphdr(skb);
     struct tcphdr *tcp = extract_tcphdr(skb);
     struct event devent = {0};
-    get_tcp_pkt_tuple(&devent, ip, tcp);
-    struct event *event;
+    get_tcp_pkt_tuple(&devent, ip, tcp,2);
+    struct reasonissue *event;
     event = bpf_ringbuf_reserve(&trace_all_drop, sizeof(*event), 0);
     if (!event)
     {
         return 0;
     }
-    event->location = (long)ctx->location;
-    // event->type == DROP_KFREE_SKB;
     event->client_ip = devent.client_ip;
     event->server_ip = devent.server_ip;
     event->client_port = devent.client_port;
     event->server_port = devent.server_port;
     event->pid = get_current_tgid();
+    event->location = (long)ctx->location;
     event->protocol = ctx->protocol;
-    // bpf_printk("saddr:%u daddr:%u", event->client_ip, event->server_ip);
     // 丢包调用栈
     //  event->kstack_sz =
     //      bpf_get_stack(ctx, event->kstack, sizeof(event->kstack), 0);
     bpf_ringbuf_submit(event, 0);
     return 0;
 }
+
+static __always_inline void update_packet_count(void *map, struct tuple_key *devent, u8 packet_type)
+{
+    u64 *count = bpf_map_lookup_elem(map, devent);
+    u64 new_count = 1;
+
+    if (!count)
+    {
+        bpf_map_update_elem(map, devent, &new_count, BPF_ANY);
+        count = &new_count;
+    }
+    else
+    {
+        __atomic_add_fetch(count, 1, __ATOMIC_RELAXED);
+    }
+
+    struct tcp_event *event = bpf_ringbuf_reserve(&flags_rb, sizeof(*event), 0);
+    if (!event)
+    {
+        return;
+    }
+    __builtin_memset(event, 0, sizeof(*event));
+    event->saddr = devent->saddr;
+    event->daddr = devent->daddr;
+    event->sport = devent->sport;
+    event->dport = devent->dport;
+    event->sum.key.packet_type = packet_type;
+    switch (event->sum.key.packet_type)
+    {
+    case 1: // syn
+        event->sum.syn_count = *count;
+        break;
+    case 2: // syn-ack
+        event->sum.synack_count = *count;
+        break;
+    case 3: // fin
+        event->sum.fin_count = *count;
+        break;
+    default:
+        break;
+    }
+    bpf_ringbuf_submit(event, 0);
+}
+
+static __always_inline int __tcp_connect(struct sock *sk)
+{
+    if (!sk )
+        return 0;
+    struct tuple_key devent = {0};
+    fill_tcp_packet_type(&devent, sk); // SYN packet type
+    // update SYN
+    update_packet_count(&syn_count_map, &devent, 1);
+    return 0;
+}
+
+static __always_inline int __tcp_rcv_state_process(struct sock *sk, struct sk_buff *skb)
+{
+    if (!sk || !skb)
+        return 0;
+    struct iphdr *ip = extract_iphdr(skb);
+    struct tcphdr *tcp = extract_tcphdr(skb);
+    struct tuple_key devent = {0};
+    get_tcp_pkt_tuple(&devent, ip, tcp,1);
+
+    // update SYN-ACK
+    update_packet_count(&synack_count_map, &devent, 2);
+    return 0;
+}
+
+static __always_inline int __tcp_send_fin(struct sock *sk)
+{
+    if (!sk)
+        return 0;
+    struct tuple_key devent = {0};
+    fill_tcp_packet_type(&devent, sk); // FIN packet type
+    // update FIN
+    update_packet_count(&fin_count_map, &devent, 3);
+    return 0;
+}
+
+// 捕获 RST 包
+// static __always_inline int __tcp_send_reset(struct pt_regs *ctx) {
+//     // 增加 RST 包计数
+//     increment_packet_count(RST);
+//     return 0;
+// }
