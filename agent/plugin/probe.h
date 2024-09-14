@@ -6,6 +6,8 @@ typedef unsigned short u16;
 typedef unsigned int u32;
 typedef unsigned long long u64;
 
+#define MAXSYMBOLS 300000
+#define CACHEMAXSIZE 5
 #define SK(sk) ((const struct sock *)(sk))
 #define NS_TIME() (bpf_ktime_get_ns() / 1000)
 #define _R(dst, src) BPF_CORE_READ(dst, src)
@@ -62,9 +64,18 @@ struct event
     int oldstate;
     int newstate;
     u8 type;
-    long location;
 };
 
+struct reasonissue
+{
+    u32 client_ip;
+    u32 server_ip;
+    u16 client_port;
+    u16 server_port;
+    long location;
+    u16 protocol;
+    int pid;
+};
 struct tcp_tx_rx
 {
     u64 rx; // FROM tcp_cleanup_rbuf
@@ -200,6 +211,12 @@ static const char *protocol_names[] = {
     [IPPROTO_ICMP] = "ICMP", // 1
     [IPPROTO_TCP] = "TCP",   // 6
     [IPPROTO_UDP] = "UDP",   // 17
+};
+
+struct SymbolEntry
+{
+    unsigned long addr;
+    char name[30];
 };
 
 #endif

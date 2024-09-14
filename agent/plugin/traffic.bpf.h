@@ -391,21 +391,19 @@ static __always_inline int __kfree_skb(struct trace_event_raw_kfree_skb *ctx)
     struct tcphdr *tcp = extract_tcphdr(skb);
     struct event devent = {0};
     get_tcp_pkt_tuple(&devent, ip, tcp);
-    struct event *event;
+    struct reasonissue *event;
     event = bpf_ringbuf_reserve(&trace_all_drop, sizeof(*event), 0);
     if (!event)
     {
         return 0;
     }
-    event->location = (long)ctx->location;
-    // event->type == DROP_KFREE_SKB;
     event->client_ip = devent.client_ip;
     event->server_ip = devent.server_ip;
     event->client_port = devent.client_port;
     event->server_port = devent.server_port;
     event->pid = get_current_tgid();
+    event->location = (long)ctx->location;
     event->protocol = ctx->protocol;
-    // bpf_printk("saddr:%u daddr:%u", event->client_ip, event->server_ip);
     // 丢包调用栈
     //  event->kstack_sz =
     //      bpf_get_stack(ctx, event->kstack, sizeof(event->kstack), 0);

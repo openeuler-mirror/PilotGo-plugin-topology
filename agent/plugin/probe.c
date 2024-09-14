@@ -14,13 +14,14 @@
 #include "probe.h"
 #include "probe.skel.h"
 #include "probe.h"
-int stack_map_fd; // 在全局范围内声明
+
 static volatile bool exiting = false;
-static int udp_info = 0, tcp_status_info = 0, tcp_output_info = 0, protocol_info = 0, port_distribution = 0, drop_info = 0, drop_skb = 0;
-struct protocol_stats proto_stats[256] = {0};
-static int interval = 5, entry_count = 0; // 每5 秒计算一次
+static int udp_info = 0, tcp_status_info = 0, tcp_output_info = 0, protocol_info = 0, port_distribution = 0, drop_info = 0, drop_skb = 0, num_symbols = 0, cache_size = 0;
+struct protocol_stats proto_stats[MAX] = {0};
+static int interval = 5, entry_count = 0; 
 struct packet_info entries[MAX_ENTRIES];
-time_t start_time = 0;
+struct SymbolEntry symbols[MAXSYMBOLS];
+struct SymbolEntry cache[CACHEMAXSIZE];
 
 const char argp_program_doc[] = "Trace time delay in network subsystem \n";
 
@@ -177,7 +178,7 @@ static int print_tcp_flow_info(void *ctx, void *packet_info, size_t data_sz)
 }
 
 // function for calculating and printing the proportion of protocols
-void calculate_protocol_usage(struct protocol_stats proto_stats[], int num_protocols, int interval)
+static void calculate_protocol_usage(struct protocol_stats proto_stats[], int num_protocols, int interval)
 {
     static uint64_t last_rx[256] = {0}, last_tx[256] = {0};
     uint64_t current_rx = 0, current_tx = 0;
@@ -243,17 +244,12 @@ void calculate_protocol_usage(struct protocol_stats proto_stats[], int num_proto
     memset(proto_stats, 0, num_protocols * sizeof(struct protocol_stats));
 }
 
-int compare_by_pps(const void *a, const void *b)
+static int compare_by_pps(const void *a, const void *b)
 {
     return ((struct packet_info *)b)->packet_count - ((struct packet_info *)a)->packet_count;
 }
 
-void init_start_time()
-{
-    start_time = time(NULL);
-}
-
-int find_port_entry(int dst_port, int proto)
+static int find_port_entry(int dst_port, int proto)
 {
     for (int i = 0; i < entry_count; i++)
     {
@@ -294,16 +290,113 @@ static int print_drop(void *ctx, void *packet_info, size_t data_sz)
            proto_str, type_str);
     return 0;
 }
+/* Address search kallsyms converts to function name + offset*/
+// LRU
+struct SymbolEntry find_in_cache(unsigned long int addr)
+{
+    for (int i = 0; i < cache_size; i++)
+    {
+        if (cache[i].addr == addr)
+        {
+            struct SymbolEntry temp = cache[i];
+            for (int j = i; j > 0; j--)
+            {
+                cache[j] = cache[j - 1];
+            }
+            cache[0] = temp;
+            return temp;
+        }
+    }
+    struct SymbolEntry empty_entry;
+    empty_entry.addr = 0;
+    return empty_entry;
+}
+
+static void readallsym()
+{
+    FILE *file = fopen("/proc/kallsyms", "r");
+    if (!file)
+    {
+        perror("Error opening file");
+        exit(EXIT_FAILURE);
+    }
+    char line[256];
+    while (fgets(line, sizeof(line), file))
+    {
+        unsigned long addr;
+        char type, name[30];
+        int ret = sscanf(line, "%lx %c %s", &addr, &type, name);
+        if (ret == 3)
+        {
+            symbols[num_symbols].addr = addr;
+            strncpy(symbols[num_symbols].name, name, 30);
+            num_symbols++;
+        }
+    }
+
+    fclose(file);
+}
+
+static void add_to_cache(struct SymbolEntry entry)
+{
+    if (cache_size == CACHEMAXSIZE)
+    {
+        for (int i = cache_size - 1; i > 0; i--)
+        {
+            cache[i] = cache[i - 1];
+        }
+        cache[0] = entry;
+    }
+    else
+    {
+        for (int i = cache_size; i > 0; i--)
+        {
+            cache[i] = cache[i - 1];
+        }
+        cache[0] = entry;
+        cache_size++;
+    }
+}
+
+struct SymbolEntry findfunc(unsigned long int addr)
+{
+    struct SymbolEntry entry = find_in_cache(addr);
+    if (entry.addr != 0)
+    {
+        return entry;
+    }
+    unsigned long long low = 0, high = num_symbols - 1;
+    unsigned long long result = -1;
+
+    while (low <= high)
+    {
+        int mid = low + (high - low) / 2;
+        if (symbols[mid].addr < addr)
+        {
+            result = mid;
+            low = mid + 1;
+        }
+        else
+        {
+            high = mid - 1;
+        }
+    }
+    add_to_cache(symbols[result]);
+    return symbols[result];
+};
+
 static int print_drop_skb(void *ctx, void *packet_info, size_t data_sz)
 {
     if (!drop_skb)
     {
         return 0;
     }
-    const struct event *event = (const struct event *)packet_info;
+    const struct reasonissue *event = (struct reasonissue *)packet_info;
     char s_str[INET_ADDRSTRLEN];
     char d_str[INET_ADDRSTRLEN];
-    char protol[6];
+    char protol[6], result[40];
+    struct SymbolEntry data = findfunc(event->location);
+    sprintf(result, "%s+0x%lx", data.name, event->location - data.addr);
     if (event->client_ip == 0 && event->server_ip == 0)
     {
         return 0;
@@ -322,8 +415,7 @@ static int print_drop_skb(void *ctx, void *packet_info, size_t data_sz)
     {
         strcpy(protol, "other");
     }
-    printf("%-20d %-20s %-20s %-20d %-20d %-20s %-34lx \n",
-           event->pid, s_str, d_str, event->client_port, event->server_port, protol, event->location);
+    printf("%-20d %-20s %-20s %-20d %-20d %-20s %-34lx %-34s \n", event->pid, s_str, d_str, event->client_port, event->server_port, protol, event->location, result);
     return 0;
 }
 static int print_count_protocol_use(void *ctx, void *packet_info, size_t data_sz)
@@ -406,7 +498,10 @@ int main(int argc, char **argv)
         fprintf(stderr, "Failed to open and load BPF skeleton\n");
         return 1;
     }
-
+    if (drop_skb)
+    {
+        readallsym();
+    }
     /* Load & verify BPF programs */
     err = probe_bpf__load(skel);
     if (err)
@@ -495,7 +590,6 @@ int main(int argc, char **argv)
     {
         printf("==========port_distribution==========\n");
     }
-    start_time = time(NULL);
     struct timeval start, end;
     gettimeofday(&start, NULL);
     while (!exiting)
@@ -508,15 +602,6 @@ int main(int argc, char **argv)
         err = ring_buffer__poll(trace_all_drop, 100 /* timeout, ms */);
         /* Ctrl-C will cause -EINTR */
         // Regularly calculate and print the proportion of agreements
-        if (protocol_info)
-        {
-            if (time(NULL) - start_time >= interval)
-            {
-                calculate_protocol_usage(proto_stats, 256, interval);
-                start_time = time(NULL); // reset time
-            }
-        }
-
         if (err == -EINTR)
         {
             err = 0;
@@ -528,10 +613,12 @@ int main(int argc, char **argv)
             break;
         }
         gettimeofday(&end, NULL);
-        if ((end.tv_sec - start.tv_sec) >= 5)
+        if ((end.tv_sec - start.tv_sec) >= interval)
         {
             if (port_distribution)
                 print_top_5_keys();
+            if (protocol_info)
+                calculate_protocol_usage(proto_stats, 256, interval);
             gettimeofday(&start, NULL);
         }
     }
