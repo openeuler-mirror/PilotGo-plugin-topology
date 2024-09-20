@@ -42,6 +42,11 @@ struct
     __uint(max_entries, 1024);
 } perf_map SEC(".maps");
 
+struct
+{
+    __uint(type, BPF_MAP_TYPE_RINGBUF);
+    __uint(max_entries, 256 * 1024);
+} flags_rb SEC(".maps");
 /*map helper*/
 
 struct
@@ -93,6 +98,33 @@ struct
     __type(value, struct tid_map_value);
 } inner_tid_map SEC(".maps");
 
+// 用于存储 SYN 包计数
+struct
+{
+    __uint(type, BPF_MAP_TYPE_HASH);
+    __uint(max_entries, 65536);
+    __type(key, struct addr_pair);
+    __type(value, u64);
+} syn_count_map SEC(".maps");
+
+// 用于存储 SYN-ACK 包计数
+struct
+{
+    __uint(type, BPF_MAP_TYPE_HASH);
+    __uint(max_entries, 65536);
+    __type(key, struct addr_pair);
+    __type(value, u64);
+} synack_count_map SEC(".maps");
+
+// 用于存储 FIN 包计数
+struct
+{
+    __uint(type, BPF_MAP_TYPE_HASH);
+    __uint(max_entries, 65536);
+    __type(key, struct addr_pair);
+    __type(value, u64);
+} fin_count_map SEC(".maps");
+
 /*funcation hepler*/
 static __always_inline int get_current_tgid()
 {
@@ -127,14 +159,26 @@ static __always_inline void get_udp_pkt_tuple(struct event *pkt_tuple,
     pkt_tuple->tran_flag = UDP;
 }
 
-static void get_tcp_pkt_tuple(struct event *pkt_tuple, struct iphdr *ip, struct tcphdr *tcp)
+static void get_tcp_pkt_tuple(void *pkt_tuple, struct iphdr *ip, struct tcphdr *tcp, int type)
 {
-    pkt_tuple->client_ip = _R(ip, saddr);
-    pkt_tuple->server_ip = _R(ip, daddr);
-    pkt_tuple->client_port = __bpf_ntohs(_R(tcp, source));
-    pkt_tuple->server_port = __bpf_ntohs(_R(tcp, dest));
-    pkt_tuple->seq = __bpf_ntohl(_R(tcp, seq));
-    pkt_tuple->ack = __bpf_ntohl(_R(tcp, ack_seq));
+    if (type == 1)
+    { // struct tuple_key
+        struct tuple_key *key = (struct tuple_key *)pkt_tuple;
+        key->saddr = _R(ip, saddr);
+        key->daddr = _R(ip, daddr);
+        key->sport = __bpf_ntohs(_R(tcp, source));
+        key->dport = __bpf_ntohs(_R(tcp, dest));
+    }
+    else if (type == 2)
+    { // struct event
+        struct event *event = (struct event *)pkt_tuple;
+        event->client_ip = _R(ip, saddr);
+        event->server_ip = _R(ip, daddr);
+        event->client_port = __bpf_ntohs(_R(tcp, source));
+        event->server_port = __bpf_ntohs(_R(tcp, dest));
+        event->seq = __bpf_ntohl(_R(tcp, seq));
+        event->ack = __bpf_ntohl(_R(tcp, ack_seq));
+    }
 }
 
 static __always_inline void *bmloti(void *map, const void *key, const void *init)
@@ -329,5 +373,12 @@ static __always_inline int fill_sk_skb(struct drop_event *event, struct sock *sk
         break;
     }
     return 0;
+}
+static __always_inline void fill_tcp_packet_type(struct tuple_key *devent, struct sock *sk)
+{
+    devent->saddr = _R(sk, __sk_common.skc_rcv_saddr);
+    devent->daddr = _R(sk, __sk_common.skc_daddr);
+    devent->sport = _R(sk, __sk_common.skc_num);
+    devent->dport = __bpf_ntohs(_R(sk, __sk_common.skc_dport));
 }
 #endif // __COMMON_BPF_H
