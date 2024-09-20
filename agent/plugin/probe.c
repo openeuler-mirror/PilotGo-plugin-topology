@@ -16,16 +16,20 @@
 #include "probe.h"
 
 static volatile bool exiting = false;
-static int udp_info = 0, tcp_status_info = 0, tcp_output_info = 0, protocol_info = 0, port_distribution = 0, drop_info = 0, drop_skb = 0, num_symbols = 0, cache_size = 0;
+static int udp_info = 0, tcp_status_info = 0, tcp_output_info = 0, protocol_info = 0, port_distribution = 0, drop_info = 0, drop_skb = 0, num_symbols = 0, cache_size = 0, kprobe_select = 0, fentry_select = 0;
+static int packet_count = 0;
 struct protocol_stats proto_stats[MAX] = {0};
-static int interval = 5, entry_count = 0; 
+static int interval = 20, entry_count = 0;
 struct packet_info entries[MAX_ENTRIES];
 struct SymbolEntry symbols[MAXSYMBOLS];
 struct SymbolEntry cache[CACHEMAXSIZE];
+static struct packet_stats hash_map[HASH_MAP_SIZE] = {0};
 
 const char argp_program_doc[] = "Trace time delay in network subsystem \n";
 
 static const struct argp_option opts[] = {
+    {"kprobe", 'K', 0, 0, "Specify the mount type"},
+    {"fentry", 'F', 0, 0, "Specify the mount type"},
     {"udp", 'u', 0, 0, "trace the udp message"},
     {"tcp_status_info", 't', 0, 0, "trace the tcp states"},
     {"tcp_output_info", 'o', 0, 0, "trace the tcp flow"},
@@ -33,6 +37,7 @@ static const struct argp_option opts[] = {
     {"port_distribution_info", 'P', 0, 0, "statistical use of top10 destination ports"},
     {"drop_info", 'i', 0, 0, "trace the iptables drop"},
     {"drop_skb", 'd', 0, 0, "trace the all skb drop"},
+    {"packet_count", 'c', 0, 0, "trace the packet include SYN、SYN-ACK、FIN"},
     {},
 };
 
@@ -40,6 +45,13 @@ static error_t parse_arg(int key, char *arg, struct argp_state *state)
 {
     switch (key)
     {
+    case 'K':
+        kprobe_select = 1; // 设置 kprobe 标志
+        break;
+    case 'F':
+        fentry_select = 1; // 设置 fentry 标志
+        break;
+
     case 'u':
         udp_info = 1;
         break;
@@ -61,8 +73,13 @@ static error_t parse_arg(int key, char *arg, struct argp_state *state)
     case 'd':
         drop_skb = 1;
         break;
+    case 'c':
+        packet_count = 1;
+        break;
     default:
+        fprintf(stderr, "错误: 未知选项 '%c'\n", key);
         return ARGP_ERR_UNKNOWN;
+        break;
     }
     return 0;
 }
@@ -90,7 +107,7 @@ static void format_ip_address(__be32 ip, char *buffer, size_t buffer_size)
 
 static int print_udp_event_info(void *ctx, void *packet_info, size_t data_sz)
 {
-    if (!udp_info)
+    if (!udp_info || (!fentry_select && !kprobe_select))
     {
         return 0;
     }
@@ -120,7 +137,7 @@ static int print_udp_event_info(void *ctx, void *packet_info, size_t data_sz)
 
 static int print_tcp_state_info(void *ctx, void *packet_info, size_t data_sz)
 {
-    if (!tcp_status_info)
+    if (!tcp_status_info || (!fentry_select && !kprobe_select))
     {
         return 0;
     }
@@ -148,7 +165,7 @@ static int print_tcp_state_info(void *ctx, void *packet_info, size_t data_sz)
 
 static int print_tcp_flow_info(void *ctx, void *packet_info, size_t data_sz)
 {
-    if (!tcp_output_info)
+    if (!tcp_output_info || (!fentry_select && !kprobe_select))
     {
         return 0;
     }
@@ -263,7 +280,7 @@ static int find_port_entry(int dst_port, int proto)
 
 static int print_drop(void *ctx, void *packet_info, size_t data_sz)
 {
-    if (!drop_info)
+    if (!drop_info || (!fentry_select && !kprobe_select))
     {
         return 0;
     }
@@ -271,11 +288,6 @@ static int print_drop(void *ctx, void *packet_info, size_t data_sz)
 
     char s_str[INET_ADDRSTRLEN];
     char d_str[INET_ADDRSTRLEN];
-
-    if (!drop_info)
-    {
-        return 0;
-    }
 
     format_ip_address(event->skbap.saddr, s_str, sizeof(s_str));
     format_ip_address(event->skbap.daddr, d_str, sizeof(d_str));
@@ -387,7 +399,7 @@ struct SymbolEntry findfunc(unsigned long int addr)
 
 static int print_drop_skb(void *ctx, void *packet_info, size_t data_sz)
 {
-    if (!drop_skb)
+    if (!drop_skb || (!fentry_select && !kprobe_select))
     {
         return 0;
     }
@@ -467,6 +479,70 @@ static int print_top_5_keys()
     entry_count = 0;
     return 0;
 }
+
+static int tuple_key_hash(const struct tuple_key *key, u8 packet_type)
+{
+    return (key->saddr ^ key->daddr ^ key->sport ^ key->dport ^ packet_type) % HASH_MAP_SIZE;
+}
+
+static void output_statistics()
+{
+    for (int i = 0; i < HASH_MAP_SIZE; i++)
+    {
+        struct packet_stats *stats = &hash_map[i];
+        if (stats->syn_count != 0 || stats->synack_count != 0 || stats->fin_count != 0)
+        {
+            char s_str[INET_ADDRSTRLEN];
+            char d_str[INET_ADDRSTRLEN];
+            format_ip_address(stats->key.saddr, s_str, sizeof(s_str));
+            format_ip_address(stats->key.daddr, d_str, sizeof(d_str));
+            printf("Tuple (Source: %s:%d, Destination: %s:%d): SYN Count: %lld, SYN-ACK Count: %lld, FIN Count: %lld\n",
+                   s_str, stats->key.sport, d_str, stats->key.dport,
+                   stats->syn_count, stats->synack_count, stats->fin_count);
+            stats->syn_count = 0;
+            stats->synack_count = 0;
+            stats->fin_count = 0;
+        }
+    }
+}
+static int print_packet_count(void *ctx, void *packet_info, size_t data_sz)
+{
+    if (!packet_info || (!fentry_select && !kprobe_select))
+    {
+        return 0;
+    }
+    const struct tcp_event *event = (struct tcp_event *)packet_info;
+
+    // 创建 4-tuple 作为 key
+    struct tuple_key key = {
+        .saddr = event->saddr,
+        .daddr = event->daddr,
+        .sport = event->sport,
+        .dport = event->dport};
+
+    // 包含 packet_type 以生成唯一的哈希索引
+    int hash_index = tuple_key_hash(&key, event->sum.key.packet_type);
+    struct packet_stats *stats = &hash_map[hash_index];
+
+    // 存储 4-tuple 信息
+    stats->key = key;
+
+    // 根据包类型更新对应计数
+    if (event->sum.key.packet_type == 1)
+    { // SYN
+        stats->syn_count = event->sum.syn_count;
+    }
+    else if (event->sum.key.packet_type == 2)
+    { // SYN-ACK
+        stats->synack_count = event->sum.synack_count;
+    }
+    else if (event->sum.key.packet_type == 3)
+    { // FIN
+        stats->fin_count = event->sum.fin_count;
+    }
+    return 0;
+}
+
 int main(int argc, char **argv)
 {
 
@@ -478,6 +554,8 @@ int main(int argc, char **argv)
     struct ring_buffer *port_events_rb = NULL;
     struct ring_buffer *perf_map = NULL;
     struct ring_buffer *trace_all_drop = NULL;
+    struct ring_buffer *flags_rb = NULL;
+
     /* Parse command line arguments */
     err = argp_parse(&argp, argc, argv, 0, NULL, NULL);
     if (err)
@@ -485,7 +563,7 @@ int main(int argc, char **argv)
 
     libbpf_set_strict_mode(LIBBPF_STRICT_ALL);
     /* Set up libbpf errors and debug info callback */
-    libbpf_set_print(libbpf_print_fn);
+    // libbpf_set_print(libbpf_print_fn);
 
     /* Cleaner handling of Ctrl-C */
     signal(SIGINT, sig_handler);
@@ -560,33 +638,40 @@ int main(int argc, char **argv)
         fprintf(stderr, "Failed to create ring buffer\n");
         goto cleanup;
     }
+    flags_rb = ring_buffer__new(bpf_map__fd(skel->maps.flags_rb), print_packet_count, NULL, NULL);
+    if (!flags_rb)
+    {
+        err = -1;
+        fprintf(stderr, "Failed to create ring buffer\n");
+        goto cleanup;
+    }
 
     /* Process events */
-    if (udp_info)
+    if (udp_info && (fentry_select || kprobe_select))
     {
         printf("%-20s %-20s %-20s %-20s %-20s %-20s %-20s %-20s %-20s\n", "Pid", "Client_ip", "Server_ip", "Client_port", "Server_port", "Comm", "Tran_time/μs", "Direction", "len/byte");
     }
-    if (tcp_status_info)
+    if (tcp_status_info && (fentry_select || kprobe_select))
     {
         printf("%-20s %-20s %-20s %-20s %-20s %-20s %-20s %-20s \n", "Pid", "Client_ip", "Server_ip", "Client_port", "Server_port", "oldstate", "newstate", "time/μs");
     }
-    if (tcp_output_info)
+    if (tcp_output_info && (fentry_select || kprobe_select))
     {
         printf("%-20s %-20s %-20s %-20s %-20s %-20s %-20s %-20s %-20s %-20s\n", "Pid", "Client_ip", "Server_ip", "Client_port", "Server_port", "Send/bytes", "receive/bytes", "segs_in", "segs_out", "Direction");
     }
-    if (drop_info)
+    if (drop_info && (fentry_select || kprobe_select))
     {
         printf("%-20s %-20s %-20s %-20s %-20s %-20s %-20s \n", "Pid", "Client_ip", "Server_ip", "Client_port", "Server_port", "Protocol", "Drop_type");
     }
-    if (drop_skb)
+    if (drop_skb && (fentry_select || kprobe_select))
     {
         printf("%-20s %-20s %-20s %-20s %-20s %-20s %-20s \n", "Pid", "Client_ip", "Server_ip", "Client_port", "Server_port", "Protocol", "DROP_addr");
     }
-    if (protocol_info)
+    if (protocol_info && (fentry_select || kprobe_select))
     {
         printf("==========Proportion of each agreement==========\n");
     }
-    if (port_distribution)
+    if (port_distribution && (fentry_select || kprobe_select))
     {
         printf("==========port_distribution==========\n");
     }
@@ -600,6 +685,7 @@ int main(int argc, char **argv)
         err = ring_buffer__poll(port_events_rb, 100 /* timeout, ms */);
         err = ring_buffer__poll(perf_map, 100 /* timeout, ms */);
         err = ring_buffer__poll(trace_all_drop, 100 /* timeout, ms */);
+        err = ring_buffer__poll(flags_rb, 100 /* timeout, ms */);
         /* Ctrl-C will cause -EINTR */
         // Regularly calculate and print the proportion of agreements
         if (err == -EINTR)
@@ -612,13 +698,16 @@ int main(int argc, char **argv)
             printf("Error polling perf buffer: %d\n", err);
             break;
         }
+
         gettimeofday(&end, NULL);
         if ((end.tv_sec - start.tv_sec) >= interval)
         {
             if (port_distribution)
                 print_top_5_keys();
-            if (protocol_info)
+            else if (protocol_info)
                 calculate_protocol_usage(proto_stats, 256, interval);
+            else if (packet_count)
+                output_statistics();
             gettimeofday(&start, NULL);
         }
     }
@@ -631,6 +720,7 @@ cleanup:
     ring_buffer__free(port_events_rb);
     ring_buffer__free(perf_map);
     ring_buffer__free(trace_all_drop);
+    ring_buffer__free(flags_rb);
     probe_bpf__destroy(skel);
 
     return err < 0 ? -err : 0;
