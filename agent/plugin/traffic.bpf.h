@@ -157,7 +157,7 @@ static __always_inline int __handle_tcp_state(struct trace_event_raw_inet_sock_s
     return 0;
 }
 // tcp
-static __always_inline void handle_tcp_metrics(struct pt_regs *ctx, struct sock *sk, size_t size, bool is_tx, int pid)
+static __always_inline void handle_tcp_metrics( struct sock *sk, size_t size, bool is_tx, int pid)
 {
     struct tcp_metrics_s *metrics = get_tcp_metrics(sk);
     if (!metrics)
@@ -188,36 +188,31 @@ static __always_inline void handle_tcp_metrics(struct pt_regs *ctx, struct sock 
         TCP_RX_DATA(metrics->tx_rx_stats, size);
     }
 
-    report_tx_rx(ctx, metrics, sk);
+    report_tx_rx(metrics, sk);
 }
 // send
-static __always_inline int __tcp_sendmsg(struct pt_regs *ctx)
+static __always_inline int __tcp_sendmsg(struct sock *sk,struct msghdr *msg, size_t size)
 {
-    struct sock *sk = (struct sock *)PT_REGS_PARM1(ctx);
     int pid = get_current_tgid();
     struct tcp_metrics_s tuple = {};
-
     get_tcp_tuple(sk, &tuple);
-    size_t send_size = (size_t)PT_REGS_PARM3(ctx);
-    // bpf_printk("Sending size: %zu\n", send_size);
-    handle_tcp_metrics(ctx, sk, send_size, true, pid);
+    handle_tcp_metrics(sk, size, true, pid);
     return 0;
 }
 
 // recieve
-static __always_inline int __tcp_cleanup_rbuf(struct pt_regs *ctx)
+static __always_inline int __tcp_cleanup_rbuf(struct sock *sk, int copied)
 {
-    struct sock *sk = (struct sock *)PT_REGS_PARM1(ctx);
     int pid = get_current_tgid();
     struct tcp_metrics_s tuple = {};
     get_tcp_tuple(sk, &tuple);
-    int recieve_size = (int)PT_REGS_PARM2(ctx);
+    int recieve_size = copied;
     if (recieve_size <= 0)
     {
         return 0;
     }
     // bpf_printk("recieve_size: %zu\n", recieve_size);
-    handle_tcp_metrics(ctx, sk, (size_t)recieve_size, false, pid);
+    handle_tcp_metrics( sk, (size_t)recieve_size, false, pid);
     return 0;
 }
 
@@ -310,13 +305,13 @@ static __always_inline int __ipt_do_table_start(struct pt_regs *ctx)
     struct tid_map_value value = {};
 
     struct sk_buff *skb = (struct sk_buff *)PT_REGS_PARM1(ctx);
-    struct nf_hook_state *state = (struct nf_hook_state *)PT_REGS_PARM3(ctx);
-    struct xt_table *table = (struct xt_table *)PT_REGS_PARM4(ctx);
-    u32 hook = (u32)PT_REGS_PARM2(ctx);
+    struct nf_hook_state *state = (struct nf_hook_state *)PT_REGS_PARM2(ctx);
+    struct xt_table *table = (struct xt_table *)PT_REGS_PARM3(ctx);
+   // u32 hook = (u32)PT_REGS_PARM2(ctx);
 
     value.skb = skb;
     value.state = state;
-    value.hook = hook;
+   // value.hook = hook;
     value.table = table;
 
     bpf_map_update_elem(&inner_tid_map, &tid, &value, BPF_ANY);
@@ -355,7 +350,7 @@ static __always_inline int submit_event(struct pt_regs *ctx, struct tid_map_valu
             bpf_probe_read(event->name, sizeof(event->name), (void *)addr);
         }
 
-        event->hook = value->hook;
+    //    event->hook = value->hook;
     }
     bpf_ringbuf_submit(event, 0);
     return 1;
@@ -370,18 +365,15 @@ static __always_inline int handle_drop_event(struct pt_regs *ctx, int ret, struc
     return submit_event(ctx, value, drop_type);
 }
 
-static __always_inline int __ipt_do_table_ret(struct pt_regs *ctx, int ret)
-{
+static __always_inline int __ipt_do_table_ret(struct pt_regs *ctx, int ret) {
     u32 tid = bpf_get_current_pid_tgid();
     struct tid_map_value *value = bpf_map_lookup_elem(&inner_tid_map, &tid);
 
-    if (handle_drop_event(ctx, ret, value, DROP_IPTABLES_DROP))
-    {
+    if (handle_drop_event(ctx, ret, value, DROP_IPTABLES_DROP)) {
         bpf_map_delete_elem(&inner_tid_map, &tid);
     }
     return 0;
 }
-
 static __always_inline int __kfree_skb(struct trace_event_raw_kfree_skb *ctx)
 {
     struct sk_buff *skb = ctx->skbaddr;

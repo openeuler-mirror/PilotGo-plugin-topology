@@ -125,6 +125,7 @@ struct
     __type(value, u64);
 } fin_count_map SEC(".maps");
 
+static int kprobe_select = 1, fentry_select = 1, udp_info = 1,packet_count = 1,protocol_info = 1,tcp_output_info=1;
 /*funcation hepler*/
 static __always_inline int get_current_tgid()
 {
@@ -218,7 +219,7 @@ static __always_inline char is_period_txrx(struct sock *sk)
     return 0;
 }
 
-static __always_inline void report_tx_rx(void *ctx, struct tcp_metrics_s *metrics, struct sock *sk)
+static __always_inline void report_tx_rx(struct tcp_metrics_s *metrics, struct sock *sk)
 {
 
     if (!is_period_txrx(sk))
