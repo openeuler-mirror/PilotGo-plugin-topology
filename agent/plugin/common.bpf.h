@@ -47,6 +47,12 @@ struct
     __uint(type, BPF_MAP_TYPE_RINGBUF);
     __uint(max_entries, 256 * 1024);
 } flags_rb SEC(".maps");
+
+struct
+{
+    __uint(type, BPF_MAP_TYPE_RINGBUF);
+    __uint(max_entries, 256 * 1024);
+} rate_rb SEC(".maps");
 /*map helper*/
 
 struct
@@ -125,7 +131,15 @@ struct
     __type(value, u64);
 } fin_count_map SEC(".maps");
 
-static int kprobe_select = 1, fentry_select = 1, udp_info = 1,packet_count = 1,protocol_info = 1,tcp_output_info=1;
+struct
+{
+    __uint(type, BPF_MAP_TYPE_HASH);
+    __uint(max_entries, 65536);
+    __type(key, struct sock *);
+    __type(value, u64);
+} tcp_rate_map SEC(".maps");
+
+static int kprobe_select = 1, tcp_status_info = 1, fentry_select = 1, udp_info = 1, packet_count = 1, protocol_info = 1, tcp_output_info = 1;
 /*funcation hepler*/
 static __always_inline int get_current_tgid()
 {
@@ -165,10 +179,10 @@ static void get_tcp_pkt_tuple(void *pkt_tuple, struct iphdr *ip, struct tcphdr *
     if (type == 1)
     { // struct tuple_key
         struct tuple_key *key = (struct tuple_key *)pkt_tuple;
-        key->saddr = _R(ip, saddr);
-        key->daddr = _R(ip, daddr);
-        key->sport = __bpf_ntohs(_R(tcp, source));
-        key->dport = __bpf_ntohs(_R(tcp, dest));
+        key->skbap.saddr = _R(ip, saddr);
+        key->skbap.daddr = _R(ip, daddr);
+        key->skbap.sport = __bpf_ntohs(_R(tcp, source));
+        key->skbap.dport = __bpf_ntohs(_R(tcp, dest));
     }
     else if (type == 2)
     { // struct event
@@ -181,21 +195,24 @@ static void get_tcp_pkt_tuple(void *pkt_tuple, struct iphdr *ip, struct tcphdr *
         event->ack = __bpf_ntohl(_R(tcp, ack_seq));
     }
 }
-
 static __always_inline void *bmloti(void *map, const void *key, const void *init)
 {
     void *val;
     long err;
+
     val = bpf_map_lookup_elem(map, key);
     if (val)
         return val;
-    err = bpf_map_update_elem(map, key, init,
-                              BPF_NOEXIST);
-    if (!err)
-        return 0;
+
+    err = bpf_map_update_elem(map, key, init, BPF_NOEXIST);
+    if (err == 0)
+    {
+        return bpf_map_lookup_elem(map, key);
+    }
 
     return bpf_map_lookup_elem(map, key);
 }
+
 static __always_inline char is_period_txrx(struct sock *sk)
 {
     struct sock_stats_s *sock_stats = bpf_map_lookup_elem(&tcp_link_map, &sk);
@@ -208,9 +225,7 @@ static __always_inline char is_period_txrx(struct sock *sk)
     u64 current_time = NS_TIME();
     u64 last_time = sock_stats->txrx_ts;
     u64 elapsed_time = current_time - last_time;
-
     //  bpf_printk("Current time: %llu, Last time: %llu, Elapsed time: %llu", current_time, last_time, elapsed_time);
-
     if ((current_time > last_time) && (elapsed_time >= TIMEOUT_NS))
     {
         sock_stats->txrx_ts = current_time;
@@ -219,45 +234,28 @@ static __always_inline char is_period_txrx(struct sock *sk)
     return 0;
 }
 
-static __always_inline void report_tx_rx(struct tcp_metrics_s *metrics, struct sock *sk)
-{
-
-    if (!is_period_txrx(sk))
-    {
-        return;
-    }
-
-    u32 last_time_segs_out = metrics->tx_rx_stats.segs_out; // save the number of last sent segments
-    u32 last_time_segs_in = metrics->tx_rx_stats.segs_in;   // recieve segments
-    metrics->report_flags |= TCP_PROBE_TXRX;
-    void *buf = bpf_ringbuf_reserve(&tcp_output_rb, sizeof(struct tcp_metrics_s), 0);
-    if (!buf)
-    {
-        return;
-    }
-
-    __builtin_memcpy(buf, metrics, sizeof(struct tcp_metrics_s));
-    metrics->report_flags &= ~TCP_PROBE_TXRX;
-    __builtin_memset(&(metrics->tx_rx_stats), 0x0, sizeof(metrics->tx_rx_stats));
-
-    metrics->tx_rx_stats.last_time_segs_in = last_time_segs_in;
-    metrics->tx_rx_stats.last_time_segs_out = last_time_segs_out;
-    // bpf_printk("=========Reporting TX/RX. Last segs_out: %u, Last segs_in: %u", metrics->tx_rx_stats.last_time_segs_out, metrics->tx_rx_stats.last_time_segs_in);
-
-    bpf_ringbuf_submit(buf, 0);
-}
-
 static void get_tcp_tx_rx_segs(struct sock *sk, struct tcp_tx_rx *segs)
 {
     struct tcp_sock *tcp_sk = (struct tcp_sock *)sk;
     segs->segs_in = _R(tcp_sk, segs_in);
     segs->segs_out = _R(tcp_sk, segs_out);
-    // bpf_printk("Got TCP TX/RX segs. segs_in: %u, segs_out: %u", segs->segs_in, segs->segs_out);
+}
+
+static __always_inline void report_tx_rx(struct sock_stats_s *sock_stats, struct sock *sk)
+{
+    sock_stats->metrics.report_flags |= TCP_PROBE_TXRX;
+    void *buf = bpf_ringbuf_reserve(&tcp_output_rb, sizeof(struct tcp_metrics_s), 0);
+    if (!buf)
+    {
+        return;
+    }
+    __builtin_memcpy(buf, &sock_stats->metrics, sizeof(struct tcp_metrics_s));
+    bpf_ringbuf_submit(buf, 0);
 }
 
 static __always_inline struct tcp_metrics_s *get_tcp_metrics(struct sock *sk)
 {
-    struct sock_stats_s init_sock_stats = {};
+    struct sock_stats_s init_sock_stats = {0};
     struct sock_stats_s *sock_stats;
 
     sock_stats = (struct sock_stats_s *)bmloti(&tcp_link_map, &sk, &init_sock_stats);
@@ -266,7 +264,6 @@ static __always_inline struct tcp_metrics_s *get_tcp_metrics(struct sock *sk)
     {
         return NULL;
     }
-
     return &(sock_stats->metrics);
 }
 
@@ -282,7 +279,6 @@ static __always_inline struct packet_count *count_packet(__u32 proto, bool is_tx
 {
     struct packet_count *count;
     struct packet_count initial_count = {0};
-
     count = bpf_map_lookup_elem(&proto_stats, &proto);
     if (!count)
     {
@@ -336,7 +332,7 @@ static __always_inline int fill_sk_skb(struct drop_event *event, struct sock *sk
         bpf_probe_read(&event->sk_state, sizeof(event->sk_state), (const void *)&sk->__sk_common.skc_state);
         //    bpf_printk(" IP:%U Dip:%u", event->skbap.saddr, event->skbap.daddr);
     }
-    // 从 sk_buff 中提取头部和网络层偏移信息
+   
     bpf_probe_read(&head, sizeof(head), &skb->head);
     bpf_probe_read(&network_header, sizeof(network_header), &skb->network_header);
     if (network_header != 0)
@@ -377,9 +373,9 @@ static __always_inline int fill_sk_skb(struct drop_event *event, struct sock *sk
 }
 static __always_inline void fill_tcp_packet_type(struct tuple_key *devent, struct sock *sk)
 {
-    devent->saddr = _R(sk, __sk_common.skc_rcv_saddr);
-    devent->daddr = _R(sk, __sk_common.skc_daddr);
-    devent->sport = _R(sk, __sk_common.skc_num);
-    devent->dport = __bpf_ntohs(_R(sk, __sk_common.skc_dport));
+    devent->skbap.saddr = _R(sk, __sk_common.skc_rcv_saddr);
+    devent->skbap.daddr = _R(sk, __sk_common.skc_daddr);
+    devent->skbap.sport = _R(sk, __sk_common.skc_num);
+    devent->skbap.dport = __bpf_ntohs(_R(sk, __sk_common.skc_dport));
 }
 #endif // __COMMON_BPF_H

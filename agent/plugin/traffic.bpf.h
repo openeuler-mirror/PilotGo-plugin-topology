@@ -157,16 +157,20 @@ static __always_inline int __handle_tcp_state(struct trace_event_raw_inet_sock_s
     return 0;
 }
 // tcp
-static __always_inline void handle_tcp_metrics( struct sock *sk, size_t size, bool is_tx, int pid)
+static __always_inline void handle_tcp_metrics(struct sock *sk, size_t size, bool is_tx, int pid)
 {
     struct tcp_metrics_s *metrics = get_tcp_metrics(sk);
     if (!metrics)
     {
         return;
     }
+
     struct tcp_metrics_s tuple = {};
     get_tcp_tuple(sk, &tuple);
     metrics->pid = pid;
+
+    struct tcp_tx_rx current_stats = {};
+    get_tcp_tx_rx_segs(sk, &current_stats);
 
     if (is_tx)
     {
@@ -175,7 +179,15 @@ static __always_inline void handle_tcp_metrics( struct sock *sk, size_t size, bo
         metrics->client_port = tuple.client_port;
         metrics->server_port = tuple.server_port;
         metrics->tran_flag = 1;
-        TCP_TX_DATA(metrics->tx_rx_stats, (int)size);
+
+        TCP_TX_DATA(metrics->tx_rx_stats, size);
+
+        if (current_stats.segs_out > metrics->tx_rx_stats.last_segs_out)
+        {
+            u32 segs_out_delta = current_stats.segs_out - metrics->tx_rx_stats.last_segs_out;
+            metrics->tx_rx_stats.segs_out += segs_out_delta;
+            metrics->tx_rx_stats.last_segs_out = current_stats.segs_out;
+        }
     }
     else
     {
@@ -184,18 +196,21 @@ static __always_inline void handle_tcp_metrics( struct sock *sk, size_t size, bo
         metrics->client_port = tuple.server_port;
         metrics->server_port = tuple.client_port;
         metrics->tran_flag = 0;
-        get_tcp_tx_rx_segs(sk, &metrics->tx_rx_stats);
-        TCP_RX_DATA(metrics->tx_rx_stats, size);
-    }
 
-    report_tx_rx(metrics, sk);
+        TCP_RX_DATA(metrics->tx_rx_stats, size);
+
+        if (current_stats.segs_in > metrics->tx_rx_stats.last_segs_in)
+        {
+            u32 segs_in_delta = current_stats.segs_in - metrics->tx_rx_stats.last_segs_in;
+            metrics->tx_rx_stats.segs_in += segs_in_delta;
+            metrics->tx_rx_stats.last_segs_in = current_stats.segs_in;
+        }
+    }
 }
-// send
-static __always_inline int __tcp_sendmsg(struct sock *sk,struct msghdr *msg, size_t size)
+
+static __always_inline int __tcp_sendmsg(struct sock *sk, struct msghdr *msg, size_t size)
 {
     int pid = get_current_tgid();
-    struct tcp_metrics_s tuple = {};
-    get_tcp_tuple(sk, &tuple);
     handle_tcp_metrics(sk, size, true, pid);
     return 0;
 }
@@ -204,15 +219,27 @@ static __always_inline int __tcp_sendmsg(struct sock *sk,struct msghdr *msg, siz
 static __always_inline int __tcp_cleanup_rbuf(struct sock *sk, int copied)
 {
     int pid = get_current_tgid();
-    struct tcp_metrics_s tuple = {};
-    get_tcp_tuple(sk, &tuple);
-    int recieve_size = copied;
-    if (recieve_size <= 0)
+    if (copied <= 0)
     {
         return 0;
     }
-    // bpf_printk("recieve_size: %zu\n", recieve_size);
-    handle_tcp_metrics( sk, (size_t)recieve_size, false, pid);
+    handle_tcp_metrics(sk, copied, false, pid);
+    return 0;
+}
+
+static __always_inline int trace_tcp_close(struct sock *sk)
+{
+    struct sock_stats_s *sock_stats = bpf_map_lookup_elem(&tcp_link_map, &sk);
+    if (!sock_stats || sock_stats->is_reported)
+    {
+        return 0;
+    }
+
+    report_tx_rx(sock_stats, sk);
+
+    sock_stats->is_reported = true;
+    bpf_map_delete_elem(&tcp_link_map, &sk);
+    __builtin_memset(sock_stats, 0, sizeof(struct sock_stats_s));
     return 0;
 }
 
@@ -240,23 +267,23 @@ static __always_inline int process_packet(struct sk_buff *skb, bool is_tx)
         return 0;
     }
 
-    pkt->src_ip = _R(ip, saddr);
-    pkt->dst_ip = _R(ip, daddr);
+    pkt->skbap.saddr = _R(ip, saddr);
+    pkt->skbap.daddr = _R(ip, daddr);
     pkt->proto = _R(ip, protocol);
 
     if (pkt->proto == IPPROTO_TCP)
     {
         struct tcphdr *tcp = (struct tcphdr *)(_R(skb, data) + sizeof(struct ethhdr) + sizeof(struct iphdr));
-        pkt->src_port = _R(tcp, source);
-        pkt->dst_port = _R(tcp, dest);
+        pkt->skbap.sport = _R(tcp, source);
+        pkt->skbap.dport = _R(tcp, dest);
         pkt->proto = PROTO_TCP;
         // bpf_printk("TCP packet: src_port=%d, dst_port=%d\n", pkt->src_port, pkt->dst_port);
     }
     else if (pkt->proto == IPPROTO_UDP)
     {
         struct udphdr *udp = (struct udphdr *)(_R(skb, data) + sizeof(struct ethhdr) + sizeof(struct iphdr));
-        pkt->src_port = _R(udp, source);
-        pkt->dst_port = _R(udp, dest);
+        pkt->skbap.sport = _R(udp, source);
+        pkt->skbap.dport = _R(udp, dest);
         pkt->proto = PROTO_UDP;
         // bpf_printk("UDP packet: src_port=%d, dst_port=%d\n", pkt->src_port, pkt->dst_port);
     }
@@ -307,11 +334,11 @@ static __always_inline int __ipt_do_table_start(struct pt_regs *ctx)
     struct sk_buff *skb = (struct sk_buff *)PT_REGS_PARM1(ctx);
     struct nf_hook_state *state = (struct nf_hook_state *)PT_REGS_PARM2(ctx);
     struct xt_table *table = (struct xt_table *)PT_REGS_PARM3(ctx);
-   // u32 hook = (u32)PT_REGS_PARM2(ctx);
+    // u32 hook = (u32)PT_REGS_PARM2(ctx);
 
     value.skb = skb;
     value.state = state;
-   // value.hook = hook;
+    // value.hook = hook;
     value.table = table;
 
     bpf_map_update_elem(&inner_tid_map, &tid, &value, BPF_ANY);
@@ -350,7 +377,7 @@ static __always_inline int submit_event(struct pt_regs *ctx, struct tid_map_valu
             bpf_probe_read(event->name, sizeof(event->name), (void *)addr);
         }
 
-    //    event->hook = value->hook;
+        //    event->hook = value->hook;
     }
     bpf_ringbuf_submit(event, 0);
     return 1;
@@ -365,11 +392,13 @@ static __always_inline int handle_drop_event(struct pt_regs *ctx, int ret, struc
     return submit_event(ctx, value, drop_type);
 }
 
-static __always_inline int __ipt_do_table_ret(struct pt_regs *ctx, int ret) {
+static __always_inline int __ipt_do_table_ret(struct pt_regs *ctx, int ret)
+{
     u32 tid = bpf_get_current_pid_tgid();
     struct tid_map_value *value = bpf_map_lookup_elem(&inner_tid_map, &tid);
 
-    if (handle_drop_event(ctx, ret, value, DROP_IPTABLES_DROP)) {
+    if (handle_drop_event(ctx, ret, value, DROP_IPTABLES_DROP))
+    {
         bpf_map_delete_elem(&inner_tid_map, &tid);
     }
     return 0;
@@ -382,17 +411,17 @@ static __always_inline int __kfree_skb(struct trace_event_raw_kfree_skb *ctx)
     struct iphdr *ip = extract_iphdr(skb);
     struct tcphdr *tcp = extract_tcphdr(skb);
     struct event devent = {0};
-    get_tcp_pkt_tuple(&devent, ip, tcp,2);
+    get_tcp_pkt_tuple(&devent, ip, tcp, 2);
     struct reasonissue *event;
     event = bpf_ringbuf_reserve(&trace_all_drop, sizeof(*event), 0);
     if (!event)
     {
         return 0;
     }
-    event->client_ip = devent.client_ip;
-    event->server_ip = devent.server_ip;
-    event->client_port = devent.client_port;
-    event->server_port = devent.server_port;
+    event->skbap.saddr = devent.client_ip;
+    event->skbap.daddr = devent.server_ip;
+    event->skbap.sport = devent.client_port;
+    event->skbap.dport = devent.server_port;
     event->pid = get_current_tgid();
     event->location = (long)ctx->location;
     event->protocol = ctx->protocol;
@@ -424,10 +453,10 @@ static __always_inline void update_packet_count(void *map, struct tuple_key *dev
         return;
     }
     __builtin_memset(event, 0, sizeof(*event));
-    event->saddr = devent->saddr;
-    event->daddr = devent->daddr;
-    event->sport = devent->sport;
-    event->dport = devent->dport;
+    event->skbap.saddr = devent->skbap.saddr;
+    event->skbap.daddr = devent->skbap.daddr;
+    event->skbap.sport = devent->skbap.sport;
+    event->skbap.dport = devent->skbap.dport;
     event->sum.key.packet_type = packet_type;
     switch (event->sum.key.packet_type)
     {
@@ -448,7 +477,7 @@ static __always_inline void update_packet_count(void *map, struct tuple_key *dev
 
 static __always_inline int __tcp_connect(struct sock *sk)
 {
-    if (!sk )
+    if (!sk)
         return 0;
     struct tuple_key devent = {0};
     fill_tcp_packet_type(&devent, sk); // SYN packet type
@@ -464,7 +493,7 @@ static __always_inline int __tcp_rcv_state_process(struct sock *sk, struct sk_bu
     struct iphdr *ip = extract_iphdr(skb);
     struct tcphdr *tcp = extract_tcphdr(skb);
     struct tuple_key devent = {0};
-    get_tcp_pkt_tuple(&devent, ip, tcp,1);
+    get_tcp_pkt_tuple(&devent, ip, tcp, 1);
 
     // update SYN-ACK
     update_packet_count(&synack_count_map, &devent, 2);
@@ -482,6 +511,43 @@ static __always_inline int __tcp_send_fin(struct sock *sk)
     return 0;
 }
 
+static __always_inline int __tcp_rcv_space_adjust(struct trace_event_raw_tcp_event_sk *ctx)
+{
+    struct sock *sk = (struct sock *)ctx->skaddr;
+    if (!sk)
+        return 0;
+
+    u64 current_time = bpf_ktime_get_ns() / 1000;
+    u64 *last_time = bpf_map_lookup_elem(&tcp_rate_map, &sk);
+
+    if (last_time)
+    {
+        if ((current_time - *last_time) < TIME_THRESHOLD_NS)
+        {
+            return 0;
+        }
+    }
+
+    bpf_map_update_elem(&tcp_rate_map, &sk, &current_time, BPF_ANY);
+    struct inet_connection_sock *icsk = (struct inet_connection_sock *)sk;
+    if (!icsk)
+        return 0;
+    struct tcp_rate *message = bpf_ringbuf_reserve(&rate_rb, sizeof(*message), 0);
+    if (!message)
+    {
+        return 0;
+    }
+    message->tcp_ato = BPF_CORE_READ(icsk, icsk_ack.ato);
+    message->skbap.saddr = BPF_CORE_READ(sk, __sk_common.skc_rcv_saddr);
+    message->skbap.daddr = BPF_CORE_READ(sk, __sk_common.skc_daddr);
+    message->skbap.sport = __bpf_ntohs(BPF_CORE_READ(sk, __sk_common.skc_num));
+    message->skbap.dport = __bpf_ntohs(BPF_CORE_READ(sk, __sk_common.skc_dport));
+    message->tcp_rto = BPF_CORE_READ(icsk, icsk_rto);
+    message->tcp_delack_max = BPF_CORE_READ(icsk, icsk_delack_max);
+    message->pid = get_current_tgid();
+    bpf_ringbuf_submit(message, 0);
+    return 0;
+}
 // 捕获 RST 包
 // static __always_inline int __tcp_send_reset(struct pt_regs *ctx) {
 //     // 增加 RST 包计数

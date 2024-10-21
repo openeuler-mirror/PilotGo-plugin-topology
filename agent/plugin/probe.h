@@ -5,8 +5,8 @@ typedef unsigned char u8;
 typedef unsigned short u16;
 typedef unsigned int u32;
 typedef unsigned long long u64;
-
-#define ETH_HLEN 14  // 以太网头部的长度
+#define MTU_SIZE 1500
+#define ETH_HLEN 14 // 以太网头部的长度
 #define MAXSYMBOLS 300000
 #define CACHEMAXSIZE 5
 #define SK(sk) ((const struct sock *)(sk))
@@ -36,8 +36,18 @@ typedef unsigned long long u64;
 #define TCP_PROBE_TXRX (u32)(1 << 3)
 #define RCV_SHUTDOWN 2
 #define HASH_MAP_SIZE 1024
+#define TIME_THRESHOLD_NS 200000000 // 200ms
+typedef u64 stack_trace_t[MAX_STACK_DEPTH];
 
 /* bpf.h struct helper */
+struct addr_pair
+{
+    u32 saddr;
+    u32 daddr;
+    u16 sport;
+    u16 dport;
+};
+
 struct ktime_info
 {
     u64 qdisc_time;
@@ -71,21 +81,18 @@ struct event
 
 struct reasonissue
 {
-    u32 client_ip;
-    u32 server_ip;
-    u16 client_port;
-    u16 server_port;
+    struct addr_pair skbap;
     long location;
     u16 protocol;
     int pid;
 };
 struct tcp_tx_rx
 {
-    u64 rx; // FROM tcp_cleanup_rbuf
-    u64 tx; // FROM tcp_sendmsg
-    u32 last_time_segs_out;
+    size_t rx; // FROM tcp_cleanup_rbuf
+    size_t tx; // FROM tcp_sendmsg
+    u32 last_segs_out;
     u32 segs_out; // total number of segments sent
-    u32 last_time_segs_in;
+    u32 last_segs_in;
     u32 segs_in; // total number of segments in
 };
 
@@ -105,6 +112,7 @@ struct sock_stats_s
 {
     u64 txrx_ts;
     struct tcp_metrics_s metrics;
+    bool is_reported;
 };
 
 enum
@@ -124,10 +132,7 @@ struct packet_count
 
 struct packet_info
 {
-    u32 src_ip;
-    u32 dst_ip;
-    u16 src_port;
-    u16 dst_port;
+    struct addr_pair skbap;
     u32 proto;
     int packet_count;
     struct packet_count count;
@@ -137,13 +142,6 @@ struct protocol_stats
 {
     uint64_t rx_count;
     uint64_t tx_count;
-};
-
-struct addr_pair {
-    u32 saddr;  
-    u32 daddr;  
-    u16 sport;  
-    u16 dport;  
 };
 
 static const char *tcp_states[] = {
@@ -177,8 +175,6 @@ struct tid_map_value
     u32 hook;
     void *ctx;
 };
-
-typedef u64 stack_trace_t[MAX_STACK_DEPTH];
 struct drop_event
 {
     u8 type;
@@ -223,30 +219,30 @@ struct SymbolEntry
     char name[30];
 };
 // 4-tuple 结构体定义
-struct tuple_key {
-    uint32_t saddr; 
-    uint32_t daddr; 
-    uint16_t sport; 
-    uint16_t dport; 
+struct tuple_key
+{
+    struct addr_pair skbap;
     u8 packet_type;
 };
-
-struct packet_stats {
+struct packet_stats
+{
     u64 syn_count;
     u64 synack_count;
     u64 fin_count;
-    struct tuple_key key; 
+    struct tuple_key key;
 };
-
-struct tcp_event {
-    u32 saddr;
-    u32 daddr;
-    u16 sport;
-    u16 dport;
+struct tcp_event
+{
+    struct addr_pair skbap;
     struct packet_stats sum;
 };
-
-
-
+struct tcp_rate
+{
+    struct addr_pair skbap;
+    u64 tcp_ato;
+    u64 tcp_rto;
+    u64 tcp_delack_max;
+    u32 pid;
+};
 
 #endif
