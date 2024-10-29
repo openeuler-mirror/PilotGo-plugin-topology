@@ -3,7 +3,6 @@ package handler
 import (
 	"fmt"
 	"net/http"
-	"strconv"
 	"time"
 
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/agentmanager"
@@ -19,20 +18,21 @@ import (
 func HeartbeatHandle(ctx *gin.Context) {
 	// agent发送的心跳参数为uuid、ip:port、HeartbeatInterval、time，
 	// 写入redis的数据为 (heartbeat-<uuid>: {"UUID": "f7504bef-76e9-446c-95ee-196878b398a1", "Addr": "10.44.55.66:9992", "HeartbeatInterval": 60, "Time": "2023-12-22T17:09:23+08:00"})
-	uuid := ctx.Query("uuid")
-	addr := ctx.Query("agentaddr")
-	heartbeatinterval, _ := strconv.Atoi(ctx.Query("interval"))
-
-	key := "heartbeat-topoagent-" + uuid
-	value := redismanager.AgentHeartbeat{
-		UUID:              uuid,
-		Addr:              addr,
-		HeartbeatInterval: heartbeatinterval,
-		Time:              time.Now(),
+	value := redismanager.AgentHeartbeat{}
+	if err := ctx.ShouldBindJSON(&value); err != nil {
+		err := errors.New("bind json failed **errstackfatal**0")
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"code":  -1,
+			"error": err.Error(),
+			"data":  nil,
+		})
+		errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
 	}
+	key := "heartbeat-topoagent-" + value.UUID
+	value.Time = time.Now()
 
 	if agentmanager.Global_AgentManager == nil {
-		err := errors.New("Global_AgentManager is nil **errstackfatal**0") // err top
+		err := errors.New("Global_AgentManager is nil **errstackfatal**0")
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"code":  -1,
 			"error": err.Error(),
@@ -42,8 +42,8 @@ func HeartbeatHandle(ctx *gin.Context) {
 		return
 	}
 
-	if agentmanager.Global_AgentManager.GetAgent_P(uuid) == nil {
-		err := errors.Errorf("unknown agent's heartbeat: %s, %s **warn**1", uuid, addr) // err top
+	if agentmanager.Global_AgentManager.GetAgent_P(value.UUID) == nil {
+		err := errors.Errorf("unknown agent's heartbeat: %s, %s **warn**1", value.UUID, value.Addr) // err top
 		errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
 		ctx.JSON(http.StatusUnauthorized, gin.H{
 			"code":  -1,
