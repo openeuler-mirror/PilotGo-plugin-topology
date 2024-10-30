@@ -45,14 +45,18 @@ func InitErrorManager() {
 				}
 
 				switch errarr[1] {
-				case "debug": // 只打印最底层error的message，不展开错误链的调用栈
+				// 只打印最底层error的message，不展开错误链的调用栈
+				case "debug":
 					logger.Debug("%+v\n", strings.Split(errors.Cause(topoerr.Err).Error(), "**")[0])
-				case "warn": // 只打印最底层error的message，不展开错误链的调用栈
+				// 只打印最底层error的message，不展开错误链的调用栈
+				case "warn":
 					logger.Warn("%+v\n", strings.Split(errors.Cause(topoerr.Err).Error(), "**")[0])
-				case "errstack": // 打印错误链的调用栈
+				// 打印错误链的调用栈
+				case "errstack":
 					fmt.Fprintf(Global_ErrorManager.Out, "%+v\n", topoerr.Err)
 					// errors.EORE(err)
-				case "errstackfatal": // 打印错误链的调用栈，并结束程序
+				// 打印错误链的调用栈，并结束程序
+				case "errstackfatal": 
 					fmt.Fprintf(Global_ErrorManager.Out, "%+v\n", topoerr.Err)
 					// errors.EORE(err)
 					topoerr.Cancel()

@@ -41,8 +41,22 @@ func sendHeartbeat(addr string) error {
 	m_u_struct := &machineuuid{}
 	json.Unmarshal(m_u_bytes, m_u_struct)
 
-	url := fmt.Sprintf("http://%s/plugin/topology/api/heartbeat?agentaddr=%s&uuid=%s&interval=%d", conf.Config().Topo.Server_addr, addr, m_u_struct.Agentuuid, conf.Config().Topo.Heartbeat)
-	resp, err := httputils.Post(url, nil)
+	type AgentHeartbeat struct {
+		UUID              string
+		Addr              string
+		HeartbeatInterval int
+		Time              time.Time
+	}
+	url := fmt.Sprintf("http://%s/plugin/topology/api/heartbeat", conf.Config().Topo.Server_addr)
+	body := AgentHeartbeat{
+		UUID:              m_u_struct.Agentuuid,
+		Addr:              addr,
+		HeartbeatInterval: conf.Config().Topo.Heartbeat,
+	}
+	params := &httputils.Params{
+		Body: body,
+	}
+	resp, err := httputils.Post(url, params)
 	if err != nil {
 		err = errors.Errorf("failed to send heartbeat: %s", err.Error())
 		return err
