@@ -25,4 +25,8 @@ func Close() {
 		Global_influx_client.Close()
 		logger.Info("close the connection to influx\n")
 	}
+
+	Global_cancelFunc()
+
+	Global_wg.Wait()
 }
