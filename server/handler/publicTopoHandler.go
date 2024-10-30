@@ -87,6 +87,7 @@ func SingleHostTreeHandle(ctx *gin.Context) {
 	// 		"tree": nodes,
 	// 	},
 	// })
+	// signal.Close()
 	// os.Exit(1)
 
 	response.Success(ctx, map[string]interface{}{
@@ -133,6 +134,7 @@ func MultiHostHandle(ctx *gin.Context) {
 	// 		"combos": combos,
 	// 	},
 	// })
+	// signal.Close()
 	// os.Exit(1)
 
 	response.Success(ctx, map[string]interface{}{

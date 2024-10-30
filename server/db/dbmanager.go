@@ -11,6 +11,7 @@ import (
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/db/mysqlmanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/db/redismanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/errormanager"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/global"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/pluginclient"
 	"gitee.com/openeuler/PilotGo/sdk/logger"
 )
@@ -33,6 +34,8 @@ func InitDB() {
 
 // 初始化图数据库
 func initGraphDB() {
+	global.Global_graph_database = conf.Global_Config.Topo.GraphDB
+
 	switch conf.Global_Config.Topo.GraphDB {
 	case "neo4j":
 		graphmanager.Global_Neo4j = graphmanager.Neo4jInit(conf.Global_Config.Neo4j.Addr, conf.Global_Config.Neo4j.Username, conf.Global_Config.Neo4j.Password, conf.Global_Config.Neo4j.DB)

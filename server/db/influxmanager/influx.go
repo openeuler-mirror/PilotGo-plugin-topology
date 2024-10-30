@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/conf"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/global"
 	influx "github.com/influxdata/influxdb-client-go/v2"
 	"github.com/pkg/errors"
 )
@@ -29,8 +30,8 @@ func InfluxdbInit(conf *conf.InfluxConf) *InfluxClient {
 		Bucket:       conf.Bucket,
 	}
 
-	i.Client = influx.NewClient(i.ServerURL, i.Token)
-
+	global.Global_influx_client = influx.NewClient(i.ServerURL, i.Token)
+	i.Client = global.Global_influx_client
 	return i
 }
 

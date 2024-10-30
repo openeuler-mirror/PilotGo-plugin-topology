@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/agentmanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/conf"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/db"
@@ -21,8 +19,6 @@ func main() {
 	// 	ApplicationName: "topo-server",
 	// 	ServerAddress:   "http://localhost:4040",
 	// })
-
-	fmt.Println("hello topology")
 
 	/*
 		init config
