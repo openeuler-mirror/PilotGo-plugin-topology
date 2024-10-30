@@ -53,7 +53,9 @@ func RedisInit(url, pass string, db int, dialTimeout time.Duration) *RedisClient
 			DB:       r.DB,
 		}
 	}
-	r.Client = *redis.NewClient(cfg)
+
+	global.Global_redis_client = redis.NewClient(cfg)
+	r.Client = *global.Global_redis_client
 
 	// 使用超时上下文，验证redis
 	timeoutCtx, cancelFunc := context.WithTimeout(context.Background(), dialTimeout)

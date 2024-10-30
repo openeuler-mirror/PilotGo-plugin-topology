@@ -1,9 +1,23 @@
 package global
 
+import (
+	"github.com/go-redis/redis/v8"
+	"github.com/neo4j/neo4j-go-driver/v4/neo4j"
+	influx "github.com/influxdata/influxdb-client-go/v2"
+)
+
 var (
 	NODE_TYPES   []string
 	EDGE_TYPES   []string
 	DEFAULT_TAGS []string
+)
+
+var (
+	Global_graph_database string
+
+	Global_neo4j_driver  neo4j.Driver
+	Global_redis_client  *redis.Client
+	Global_influx_client influx.Client
 )
 
 const (
@@ -39,14 +53,14 @@ const (
 
 // 事件类型
 const (
-	EVENT_TYPE_0 = "kernel"
-	EVENT_TYPE_1 = "user_level"
-	EVENT_TYPE_2 = "mail"
-	EVENT_TYPE_3 = "system_daemons"
-	EVENT_TYPE_4 = "security_authorizaion"
-	EVENT_TYPE_5 = "by_log_service"
-	EVENT_TYPE_7 = "network_news"
-	EVENT_TYPE_9 = "clock_daemon"
+	EVENT_TYPE_0  = "kernel"
+	EVENT_TYPE_1  = "user_level"
+	EVENT_TYPE_2  = "mail"
+	EVENT_TYPE_3  = "system_daemons"
+	EVENT_TYPE_4  = "security_authorizaion"
+	EVENT_TYPE_5  = "by_log_service"
+	EVENT_TYPE_7  = "network_news"
+	EVENT_TYPE_9  = "clock_daemon"
 	EVENT_TYPE_11 = "ftp_daemon"
 	EVENT_TYPE_12 = "ntp_daemon"
 	EVENT_TYPE_13 = "log_audit"

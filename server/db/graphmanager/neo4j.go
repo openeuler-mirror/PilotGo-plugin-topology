@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/errormanager"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/global"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/graph"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/pluginclient"
 	"github.com/neo4j/neo4j-go-driver/v4/neo4j"
@@ -41,7 +42,8 @@ func Neo4jInit(url, user, pass, db string) *Neo4jClient {
 		errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
 	}
 
-	n.Driver = driver
+	global.Global_neo4j_driver = driver
+	n.Driver = global.Global_neo4j_driver
 	return n
 }
 

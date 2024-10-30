@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/global"
 	"gitee.com/openeuler/PilotGo/sdk/logger"
 )
 
@@ -19,24 +20,26 @@ type Topoerror struct {
 
 @exit_after_print: 打印完错误链信息后是否结束主程序
 */
-func ErrorTransmit(ctx context.Context, err error, exit_after_print bool) {
+func ErrorTransmit(_ctx context.Context, _err error, _exit_after_print bool) {
 	if Global_ErrorManager == nil {
 		logger.Error("globalerrormanager is nil")
+		global.Close()
 		os.Exit(1)
 	}
 
-	if exit_after_print {
-		cctx, cancelF := context.WithCancel(ctx)
+	if _exit_after_print {
+		cctx, cancelF := context.WithCancel(_ctx)
 		Global_ErrorManager.ErrCh <- &Topoerror{
-			Err:    err,
+			Err:    _err,
 			Cancel: cancelF,
 		}
 		<-cctx.Done()
 		close(Global_ErrorManager.ErrCh)
+		global.Close()
 		os.Exit(1)
 	}
 
 	Global_ErrorManager.ErrCh <- &Topoerror{
-		Err: err,
+		Err: _err,
 	}
 }
