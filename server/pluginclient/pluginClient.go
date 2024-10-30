@@ -1,7 +1,6 @@
 package pluginclient
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"time"
@@ -14,8 +13,6 @@ import (
 )
 
 var Global_Client *client.Client
-
-var Global_Context context.Context
 
 func InitPluginClient() {
 	if conf.Global_Config != nil && conf.Global_Config.Topo.Https_enabled {
@@ -32,8 +29,6 @@ func InitPluginClient() {
 	GetExtentions()
 
 	GetTags()
-
-	Global_Context = context.Background()
 
 	go uploadResource()
 }

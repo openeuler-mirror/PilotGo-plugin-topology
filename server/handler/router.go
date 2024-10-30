@@ -9,7 +9,9 @@ import (
 
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/conf"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/errormanager"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/global"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/pluginclient"
+	"gitee.com/openeuler/PilotGo/sdk/logger"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 )
@@ -21,27 +23,48 @@ func InitWebServer() {
 		return
 	}
 
+	engine := gin.Default()
+	gin.SetMode(gin.ReleaseMode)
+	pluginclient.Global_Client.RegisterHandlers(engine)
+	InitRouter(engine)
+	StaticRouter(engine)
+
+	webserver := &http.Server{
+		Addr:    conf.Global_Config.Topo.Addr,
+		Handler: engine,
+	}
+
+	global.Global_wg.Add(1)
 	go func() {
-		engine := gin.Default()
-		gin.SetMode(gin.ReleaseMode)
-		pluginclient.Global_Client.RegisterHandlers(engine)
-		InitRouter(engine)
-		StaticRouter(engine)
+		defer global.Global_wg.Done()
 
 		if conf.Global_Config.Topo.Https_enabled {
-			err := engine.RunTLS(conf.Global_Config.Topo.Addr, conf.Global_Config.Topo.Public_certificate, conf.Global_Config.Topo.Private_key)
-			if err != nil {
+			if err := webserver.ListenAndServeTLS(conf.Global_Config.Topo.Addr, conf.Global_Config.Topo.Public_certificate, conf.Global_Config.Topo.Private_key); err != nil {
 				err = errors.Errorf("%s, addr: %s **errstackfatal**2", err.Error(), conf.Global_Config.Topo.Addr) // err top
 				errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
 			}
-		} else {
-			err := engine.Run(conf.Global_Config.Topo.Addr)
-			if err != nil {
-				err = errors.Errorf("%s **errstackfatal**2", err.Error()) // err top
-				errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
-			}
+		}
+		if err := webserver.ListenAndServe(); err != nil {
+			err = errors.Errorf("%s **errstackfatal**2", err.Error()) // err top
+			errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
 		}
 	}()
+
+	go func() {
+		<-global.Global_cancelCtx.Done()
+		
+		logger.Info("shutting down web server...")
+
+		ctx, cancel := context.WithTimeout(global.RootContext, 1*time.Second)
+		defer cancel()
+
+		if err := webserver.Shutdown(ctx); err != nil {
+			logger.Error("web server shutdown error: %s", err.Error())
+		} else {
+			logger.Info("web server stopped gracefully")
+		}
+	}()
+
 }
 
 func InitRouter(router *gin.Engine) {

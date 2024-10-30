@@ -13,9 +13,10 @@ import (
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/db/mysqlmanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/db/redismanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/errormanager"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/generator"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/global"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/graph"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/pluginclient"
-	"gitee.com/openeuler/PilotGo-plugin-topology/server/generator"
 	"gitee.com/openeuler/PilotGo/sdk/logger"
 	"github.com/pkg/errors"
 )
@@ -43,13 +44,21 @@ func InitPeriodCollectWorking(batch []string, noderules [][]mysqlmanager.Filter_
 
 	agentmanager.Global_AgentManager.UpdateMachineList()
 
+	global.Global_wg.Add(1)
 	go func(_interval int64, _gdb graphmanager.GraphdbIface, _noderules [][]mysqlmanager.Filter_rule) {
+		defer global.Global_wg.Done()
 		for {
-			redismanager.Global_Redis.ActiveHeartbeatDetection(batch)
-			running_agent_num := redismanager.Global_Redis.UpdateTopoRunningAgentList(batch, false)
-			unixtime_now := time.Now().Unix()
-			DataProcessWorking(unixtime_now, running_agent_num, _gdb, nil, _noderules)
-			time.Sleep(time.Duration(_interval) * time.Second)
+			select {
+			case <-global.Global_cancelCtx.Done():
+				logger.Info("cancelCtx is done, exit period collect goroutine")
+				return
+			default:
+				redismanager.Global_Redis.ActiveHeartbeatDetection(batch)
+				running_agent_num := redismanager.Global_Redis.UpdateTopoRunningAgentList(batch, false)
+				unixtime_now := time.Now().Unix()
+				DataProcessWorking(unixtime_now, running_agent_num, _gdb, nil, _noderules)
+				time.Sleep(time.Duration(_interval) * time.Second)
+			}
 		}
 	}(graphperiod, graphmanager.Global_GraphDB, noderules)
 }

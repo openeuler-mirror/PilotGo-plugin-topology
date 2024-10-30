@@ -7,6 +7,7 @@ import (
 
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/conf"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/errormanager"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/global"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/pluginclient"
 	"gitee.com/openeuler/PilotGo/sdk/utils/httputils"
 	"github.com/pkg/errors"
@@ -30,13 +31,20 @@ func WaitingForHandshake() {
 }
 
 func Wait4TopoServerReady() {
+	defer global.Global_wg.Done()
+	global.Global_wg.Add(1)
 	for {
-		url := "http://" + conf.Global_Config.Topo.Addr + "/plugin_manage/info"
-		resp, err := httputils.Get(url, nil)
-		if err == nil && resp != nil && resp.StatusCode == http.StatusOK {
+		select {
+		case <-global.Global_cancelCtx.Done():
 			break
+		default:
+			url := "http://" + conf.Global_Config.Topo.Addr + "/plugin_manage/info"
+			resp, err := httputils.Get(url, nil)
+			if err == nil && resp != nil && resp.StatusCode == http.StatusOK {
+				break
+			}
+			time.Sleep(100 * time.Millisecond)
 		}
-		time.Sleep(100 * time.Millisecond)
 	}
 }
 

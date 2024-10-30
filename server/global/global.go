@@ -1,15 +1,25 @@
 package global
 
 import (
+	"context"
+	"sync"
+
 	"github.com/go-redis/redis/v8"
-	"github.com/neo4j/neo4j-go-driver/v4/neo4j"
 	influx "github.com/influxdata/influxdb-client-go/v2"
+	"github.com/neo4j/neo4j-go-driver/v4/neo4j"
 )
 
 var (
 	NODE_TYPES   []string
 	EDGE_TYPES   []string
 	DEFAULT_TAGS []string
+)
+
+var Global_wg sync.WaitGroup
+
+var (
+	RootContext                         = context.Background()
+	Global_cancelCtx, Global_cancelFunc = context.WithCancel(context.Background())
 )
 
 var (
