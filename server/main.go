@@ -34,7 +34,7 @@ func main() {
 	/*
 		init error control
 	*/
-	errormanager.InitErrorManager()
+	errormanager.CreateErrorManager()
 
 	/*
 		init agent manager

@@ -8,9 +8,20 @@ import (
 	"gitee.com/openeuler/PilotGo/sdk/logger"
 )
 
-type Topoerror struct {
-	Err    error
+type FinalError struct {
+	Err error
+
+	Severity string
+
 	Cancel context.CancelFunc
+
+	PrintStack bool
+
+	ExitAfterPrint bool
+}
+
+func (e *FinalError) Error() string {
+	return e.Err.Error()
 }
 
 /*
@@ -20,26 +31,32 @@ type Topoerror struct {
 
 @exit_after_print: 打印完错误链信息后是否结束主程序
 */
-func ErrorTransmit(_ctx context.Context, _err error, _exit_after_print bool) {
-	if Global_ErrorManager == nil {
+func ErrorTransmit(_severity string, _err error, _exit_after_print, _print_stack bool) {
+	if ErrorManager == nil {
 		logger.Error("globalerrormanager is nil")
 		global.Close()
 		os.Exit(1)
 	}
 
 	if _exit_after_print {
-		cctx, cancelF := context.WithCancel(_ctx)
-		Global_ErrorManager.ErrCh <- &Topoerror{
-			Err:    _err,
-			Cancel: cancelF,
+		ctx, cancel := context.WithCancel(ErrorManager.cancelCtx)
+		ErrorManager.ErrCh <- &FinalError{
+			Err:            _err,
+			Cancel:         cancel,
+			Severity:       _severity,
+			PrintStack:     _print_stack,
+			ExitAfterPrint: _exit_after_print,
 		}
-		<-cctx.Done()
-		close(Global_ErrorManager.ErrCh)
+		<-ctx.Done()
+		close(ErrorManager.ErrCh)
 		global.Close()
 		os.Exit(1)
 	}
 
-	Global_ErrorManager.ErrCh <- &Topoerror{
-		Err: _err,
+	ErrorManager.ErrCh <- &FinalError{
+		Err:            _err,
+		PrintStack:     _print_stack,
+		ExitAfterPrint: _exit_after_print,
+		Cancel:         nil,
 	}
 }
