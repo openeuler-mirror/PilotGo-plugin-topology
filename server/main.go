@@ -5,11 +5,10 @@ import (
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/conf"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/db"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/db/mysqlmanager"
-	"gitee.com/openeuler/PilotGo-plugin-topology/server/errormanager"
-	"gitee.com/openeuler/PilotGo-plugin-topology/server/global"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/handler"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/logger"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/pluginclient"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/resourcemanage"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/service"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/signal"
 	// "github.com/pyroscope-io/pyroscope/pkg/agent/profiler"
@@ -28,14 +27,19 @@ func main() {
 	conf.InitConfig()
 
 	/*
+		init logger
+	*/
+	logger.InitLogger()
+
+	/*
+		init error control、resource release、goroutine end
+	*/
+	resourcemanage.InitResourceManage()
+
+	/*
 		init plugin client
 	*/
 	pluginclient.InitPluginClient()
-
-	/*
-		init error control
-	*/
-	errormanager.CreateErrorManager(global.END)
 
 	/*
 		init agent manager
@@ -52,11 +56,6 @@ func main() {
 		init web server
 	*/
 	handler.InitWebServer()
-
-	/*
-		init logger
-	*/
-	logger.InitLogger()
 
 	/*
 		init machine agent list

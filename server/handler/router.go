@@ -11,6 +11,7 @@ import (
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/errormanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/global"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/pluginclient"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/resourcemanage"
 	"gitee.com/openeuler/PilotGo/sdk/logger"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -34,9 +35,9 @@ func InitWebServer() {
 		Handler: engine,
 	}
 
-	global.END.Wg.Add(1)
+	resourcemanage.ERManager.Wg.Add(1)
 	go func() {
-		defer global.END.Wg.Done()
+		defer resourcemanage.ERManager.Wg.Done()
 
 		if conf.Global_Config.Topo.Https_enabled {
 			if err := webserver.ListenAndServeTLS(conf.Global_Config.Topo.Addr, conf.Global_Config.Topo.Public_certificate, conf.Global_Config.Topo.Private_key); err != nil {
@@ -51,7 +52,7 @@ func InitWebServer() {
 	}()
 
 	go func() {
-		<-global.END.CancelCtx.Done()
+		<-resourcemanage.ERManager.GoCancelCtx.Done()
 
 		logger.Info("shutting down web server...")
 

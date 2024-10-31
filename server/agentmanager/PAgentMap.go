@@ -6,9 +6,8 @@ import (
 	"time"
 
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/conf"
-	"gitee.com/openeuler/PilotGo-plugin-topology/server/errormanager"
-	"gitee.com/openeuler/PilotGo-plugin-topology/server/global"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/pluginclient"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/resourcemanage"
 	"gitee.com/openeuler/PilotGo/sdk/utils/httputils"
 	"github.com/pkg/errors"
 )
@@ -31,11 +30,11 @@ func WaitingForHandshake() {
 }
 
 func Wait4TopoServerReady() {
-	defer global.END.Wg.Done()
-	global.END.Wg.Add(1)
+	defer resourcemanage.ERManager.Wg.Done()
+	resourcemanage.ERManager.Wg.Add(1)
 	for {
 		select {
-		case <-global.END.CancelCtx.Done():
+		case <-resourcemanage.ERManager.GoCancelCtx.Done():
 			break
 		default:
 			url := "http://" + conf.Global_Config.Topo.Addr + "/plugin_manage/info"

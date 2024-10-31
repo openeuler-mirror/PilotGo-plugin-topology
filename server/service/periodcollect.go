@@ -14,9 +14,9 @@ import (
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/db/redismanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/errormanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/generator"
-	"gitee.com/openeuler/PilotGo-plugin-topology/server/global"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/graph"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/pluginclient"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/resourcemanage"
 	"gitee.com/openeuler/PilotGo/sdk/logger"
 	"github.com/pkg/errors"
 )
@@ -25,7 +25,7 @@ func InitPeriodCollectWorking(batch []string, noderules [][]mysqlmanager.Filter_
 	if graphmanager.Global_GraphDB == nil {
 		err := errors.New("global_graphdb is nil **debug**0")
 		errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
-		return 
+		return
 	}
 
 	graphperiod := conf.Global_Config.Neo4j.Period
@@ -44,12 +44,12 @@ func InitPeriodCollectWorking(batch []string, noderules [][]mysqlmanager.Filter_
 
 	agentmanager.Global_AgentManager.UpdateMachineList()
 
-	global.END.Wg.Add(1)
+	resourcemanage.ERManager.Wg.Add(1)
 	go func(_interval int64, _gdb graphmanager.GraphdbIface, _noderules [][]mysqlmanager.Filter_rule) {
-		defer global.END.Wg.Done()
+		defer resourcemanage.ERManager.Wg.Done()
 		for {
 			select {
-			case <-global.END.CancelCtx.Done():
+			case <-resourcemanage.ERManager.GoCancelCtx.Done():
 				logger.Info("cancelCtx is done, exit period collect goroutine")
 				return
 			default:

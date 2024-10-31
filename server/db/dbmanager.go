@@ -10,9 +10,9 @@ import (
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/db/influxmanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/db/mysqlmanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/db/redismanager"
-	"gitee.com/openeuler/PilotGo-plugin-topology/server/errormanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/global"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/pluginclient"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/resourcemanage"
 	"gitee.com/openeuler/PilotGo/sdk/logger"
 )
 
@@ -91,12 +91,12 @@ func ClearGraphData(retention int64) {
 
 	graphmanager.Global_GraphDB.ClearExpiredData(retention)
 
-	global.END.Wg.Add(1)
+	resourcemanage.ERManager.Wg.Add(1)
 	go func() {
-		defer global.END.Wg.Done()
+		defer resourcemanage.ERManager.Wg.Done()
 		for {
 			select {
-			case <-global.END.CancelCtx.Done():
+			case <-resourcemanage.ERManager.GoCancelCtx.Done():
 				return
 			default:
 				current := time.Now()

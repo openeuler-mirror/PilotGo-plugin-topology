@@ -5,7 +5,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"gitee.com/openeuler/PilotGo-plugin-topology/server/global"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/resourcemanage"
 	"gitee.com/openeuler/PilotGo/sdk/logger"
 )
 
@@ -16,7 +16,7 @@ func SignalMonitoring() {
 	for s := range ch {
 		switch s {
 		case syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT:
-			global.END.Close()
+			resourcemanage.ERManager.ResourceRelease()
 			os.Exit(1)
 		default:
 			logger.Warn("unknown signal-> %s\n", s.String())
