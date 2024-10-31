@@ -6,6 +6,7 @@ import (
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/db"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/db/mysqlmanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/errormanager"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/global"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/handler"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/logger"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/pluginclient"
@@ -34,7 +35,7 @@ func main() {
 	/*
 		init error control
 	*/
-	errormanager.CreateErrorManager()
+	errormanager.CreateErrorManager(global.END)
 
 	/*
 		init agent manager

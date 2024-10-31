@@ -91,12 +91,12 @@ func ClearGraphData(retention int64) {
 
 	graphmanager.Global_GraphDB.ClearExpiredData(retention)
 
-	global.Global_wg.Add(1)
+	global.END.Wg.Add(1)
 	go func() {
-		defer global.Global_wg.Done()
+		defer global.END.Wg.Done()
 		for {
 			select {
-			case <-global.Global_cancelCtx.Done():
+			case <-global.END.CancelCtx.Done():
 				return
 			default:
 				current := time.Now()

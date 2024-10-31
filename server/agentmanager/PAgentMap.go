@@ -31,11 +31,11 @@ func WaitingForHandshake() {
 }
 
 func Wait4TopoServerReady() {
-	defer global.Global_wg.Done()
-	global.Global_wg.Add(1)
+	defer global.END.Wg.Done()
+	global.END.Wg.Add(1)
 	for {
 		select {
-		case <-global.Global_cancelCtx.Done():
+		case <-global.END.CancelCtx.Done():
 			break
 		default:
 			url := "http://" + conf.Global_Config.Topo.Addr + "/plugin_manage/info"

@@ -12,6 +12,26 @@ import (
 	"github.com/pkg/errors"
 )
 
+type ResourceReleaseIface interface {
+	Close()
+}
+
+type FinalError struct {
+	Err error
+
+	Severity string
+
+	Cancel context.CancelFunc
+
+	PrintStack bool
+
+	ExitAfterPrint bool
+}
+
+func (e *FinalError) Error() string {
+	return e.Err.Error()
+}
+
 var ErrorManager *ErrorManagement
 
 type ErrorManagement struct {
@@ -21,14 +41,16 @@ type ErrorManagement struct {
 
 	cancelCtx  context.Context
 	cancelFunc context.CancelFunc
+
+	end ResourceReleaseIface
 }
 
-func CreateErrorManager() {
+func CreateErrorManager(_end ResourceReleaseIface) {
 	ErrorManager = &ErrorManagement{
 		ErrCh: make(chan error, 20),
+		end:   _end,
 	}
-
-	ErrorManager.cancelCtx, ErrorManager.cancelFunc = context.WithCancel(global.Global_cancelCtx)
+	ErrorManager.cancelCtx, ErrorManager.cancelFunc = context.WithCancel(global.END.CancelCtx)
 
 	switch conf.Global_Config.Logopts.Driver {
 	case "stdout":
@@ -41,9 +63,9 @@ func CreateErrorManager() {
 		ErrorManager.out = logfile
 	}
 
-	global.Global_wg.Add(1)
+	global.END.Wg.Add(1)
 	go func(ch <-chan error) {
-		defer global.Global_wg.Done()
+		defer global.END.Wg.Done()
 		for {
 			select {
 			case <-ErrorManager.cancelCtx.Done():
@@ -95,4 +117,41 @@ func CreateErrorManager() {
 			}
 		}
 	}(ErrorManager.ErrCh)
+}
+
+/*
+@ctx:	插件服务端初始上下文（默认为pluginclient.Global_Context）
+
+@err:	最终生成的error
+
+@exit_after_print: 打印完错误链信息后是否结束主程序
+*/
+func ErrorTransmit(_severity string, _err error, _exit_after_print, _print_stack bool) {
+	if ErrorManager == nil {
+		logger.Error("globalerrormanager is nil")
+		ErrorManager.end.Close()
+		os.Exit(1)
+	}
+
+	if _exit_after_print {
+		ctx, cancel := context.WithCancel(ErrorManager.cancelCtx)
+		ErrorManager.ErrCh <- &FinalError{
+			Err:            _err,
+			Cancel:         cancel,
+			Severity:       _severity,
+			PrintStack:     _print_stack,
+			ExitAfterPrint: _exit_after_print,
+		}
+		<-ctx.Done()
+		close(ErrorManager.ErrCh)
+		ErrorManager.end.Close()
+		os.Exit(1)
+	}
+
+	ErrorManager.ErrCh <- &FinalError{
+		Err:            _err,
+		PrintStack:     _print_stack,
+		ExitAfterPrint: _exit_after_print,
+		Cancel:         nil,
+	}
 }

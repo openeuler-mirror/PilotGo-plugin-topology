@@ -16,7 +16,7 @@ func SignalMonitoring() {
 	for s := range ch {
 		switch s {
 		case syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT:
-			global.Close()
+			global.END.Close()
 			os.Exit(1)
 		default:
 			logger.Warn("unknown signal-> %s\n", s.String())

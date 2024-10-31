@@ -44,12 +44,12 @@ func InitPeriodCollectWorking(batch []string, noderules [][]mysqlmanager.Filter_
 
 	agentmanager.Global_AgentManager.UpdateMachineList()
 
-	global.Global_wg.Add(1)
+	global.END.Wg.Add(1)
 	go func(_interval int64, _gdb graphmanager.GraphdbIface, _noderules [][]mysqlmanager.Filter_rule) {
-		defer global.Global_wg.Done()
+		defer global.END.Wg.Done()
 		for {
 			select {
-			case <-global.Global_cancelCtx.Done():
+			case <-global.END.CancelCtx.Done():
 				logger.Info("cancelCtx is done, exit period collect goroutine")
 				return
 			default:
