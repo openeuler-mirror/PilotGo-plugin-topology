@@ -34,9 +34,9 @@ func InitWebServer() {
 		Handler: engine,
 	}
 
-	global.Global_wg.Add(1)
+	global.END.Wg.Add(1)
 	go func() {
-		defer global.Global_wg.Done()
+		defer global.END.Wg.Done()
 
 		if conf.Global_Config.Topo.Https_enabled {
 			if err := webserver.ListenAndServeTLS(conf.Global_Config.Topo.Addr, conf.Global_Config.Topo.Public_certificate, conf.Global_Config.Topo.Private_key); err != nil {
@@ -51,8 +51,8 @@ func InitWebServer() {
 	}()
 
 	go func() {
-		<-global.Global_cancelCtx.Done()
-		
+		<-global.END.CancelCtx.Done()
+
 		logger.Info("shutting down web server...")
 
 		ctx, cancel := context.WithTimeout(global.RootContext, 1*time.Second)

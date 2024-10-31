@@ -2,7 +2,6 @@ package global
 
 import (
 	"context"
-	"sync"
 
 	"github.com/go-redis/redis/v8"
 	influx "github.com/influxdata/influxdb-client-go/v2"
@@ -15,11 +14,8 @@ var (
 	DEFAULT_TAGS []string
 )
 
-var Global_wg sync.WaitGroup
-
 var (
-	RootContext                         = context.Background()
-	Global_cancelCtx, Global_cancelFunc = context.WithCancel(context.Background())
+	RootContext = context.Background()
 )
 
 var (

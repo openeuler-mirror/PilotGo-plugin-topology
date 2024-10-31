@@ -1,12 +1,31 @@
 package global
 
 import (
+	"context"
 	"fmt"
+	"sync"
 
 	"gitee.com/openeuler/PilotGo/sdk/logger"
 )
 
-func Close() {
+var END *ResourceRelease
+
+func init() {
+	ctx, cancel := context.WithCancel(RootContext)
+	END = &ResourceRelease{
+		CancelCtx:  ctx,
+		CancelFunc: cancel,
+	}
+}
+
+type ResourceRelease struct {
+	Wg sync.WaitGroup
+
+	CancelCtx  context.Context
+	CancelFunc context.CancelFunc
+}
+
+func (rr *ResourceRelease) Close() {
 	switch Global_graph_database {
 	case "neo4j":
 		if Global_neo4j_driver != nil {
@@ -26,7 +45,7 @@ func Close() {
 		logger.Info("close the connection to influx\n")
 	}
 
-	Global_cancelFunc()
+	rr.CancelFunc()
 
-	Global_wg.Wait()
+	rr.Wg.Wait()
 }
