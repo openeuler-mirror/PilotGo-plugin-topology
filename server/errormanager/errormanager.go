@@ -1,70 +1,98 @@
 package errormanager
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os"
-	"strings"
 
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/conf"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/global"
 	"gitee.com/openeuler/PilotGo/sdk/logger"
 	"github.com/pkg/errors"
 )
 
-var Global_ErrorManager *ErrorManager
+var ErrorManager *ErrorManagement
 
-type ErrorManager struct {
-	ErrCh chan *Topoerror
+type ErrorManagement struct {
+	ErrCh chan error
 
-	Out io.Writer
+	out io.Writer
+
+	cancelCtx  context.Context
+	cancelFunc context.CancelFunc
 }
 
-func InitErrorManager() {
-	Global_ErrorManager = &ErrorManager{
-		ErrCh: make(chan *Topoerror, 20),
+func CreateErrorManager() {
+	ErrorManager = &ErrorManagement{
+		ErrCh: make(chan error, 20),
 	}
+
+	ErrorManager.cancelCtx, ErrorManager.cancelFunc = context.WithCancel(global.Global_cancelCtx)
 
 	switch conf.Global_Config.Logopts.Driver {
 	case "stdout":
-		Global_ErrorManager.Out = os.Stdout
+		ErrorManager.out = os.Stdout
 	case "file":
 		logfile, err := os.OpenFile(conf.Global_Config.Logopts.Path, os.O_WRONLY|os.O_CREATE, 0666)
 		if err != nil {
 			panic(err)
 		}
-		Global_ErrorManager.Out = logfile
+		ErrorManager.out = logfile
 	}
 
-	go func(ch <-chan *Topoerror) {
-		for topoerr := range ch {
-			if topoerr.Err != nil {
-				errarr := strings.Split(errors.Cause(topoerr.Err).Error(), "**")
-				if len(errarr) < 2 {
-					logger.Error("topoerror type required in root error (err: %+v)", topoerr.Err)
-					os.Exit(1)
+	global.Global_wg.Add(1)
+	go func(ch <-chan error) {
+		defer global.Global_wg.Done()
+		for {
+			select {
+			case <-ErrorManager.cancelCtx.Done():
+				return
+			case _error := <-ch:
+				_terror, ok := _error.(*FinalError)
+				if !ok {
+					fmt.Fprintf(ErrorManager.out, "%+v\n", _error)
+					continue
 				}
 
-				switch errarr[1] {
-				// 只打印最底层error的message，不展开错误链的调用栈
-				case "debug":
-					logger.Debug("%+v\n", strings.Split(errors.Cause(topoerr.Err).Error(), "**")[0])
-				// 只打印最底层error的message，不展开错误链的调用栈
-				case "warn":
-					logger.Warn("%+v\n", strings.Split(errors.Cause(topoerr.Err).Error(), "**")[0])
-				// 打印错误链的调用栈
-				case "errstack":
-					fmt.Fprintf(Global_ErrorManager.Out, "%+v\n", topoerr.Err)
-					// errors.EORE(err)
-				// 打印错误链的调用栈，并结束程序
-				case "errstackfatal": 
-					fmt.Fprintf(Global_ErrorManager.Out, "%+v\n", topoerr.Err)
-					// errors.EORE(err)
-					topoerr.Cancel()
-				default:
-					fmt.Printf("only support \"debug warn errstack errstackfatal\" error type: %+v\n", topoerr.Err)
-					os.Exit(1)
+				if _terror.Err != nil {
+					if !_terror.PrintStack && !_terror.ExitAfterPrint {
+						switch _terror.Severity {
+						case "debug":
+							logger.Debug(errors.Cause(_terror.Err).Error())
+						case "info":
+							logger.Info(errors.Cause(_terror.Err).Error())
+						case "warn":
+							logger.Warn(errors.Cause(_terror.Err).Error())
+						case "error":
+							logger.Error(errors.Cause(_terror.Err).Error())
+						default:
+							logger.Error("only support \"debug info warn error\" type: %s\n", errors.Cause(_terror.Err).Error())
+						}
+					} else if _terror.PrintStack && !_terror.ExitAfterPrint {
+						logger.ErrorStack("%+v", _terror.Err)
+						// errors.EORE(err)
+					} else if !_terror.PrintStack && _terror.ExitAfterPrint {
+						switch _terror.Severity {
+						case "debug":
+							logger.Debug(errors.Cause(_terror.Err).Error())
+						case "info":
+							logger.Info(errors.Cause(_terror.Err).Error())
+						case "warn":
+							logger.Warn(errors.Cause(_terror.Err).Error())
+						case "error":
+							logger.Error(errors.Cause(_terror.Err).Error())
+						default:
+							logger.Error("only support \"debug info warn error\" type: %s\n", errors.Cause(_terror.Err).Error())
+						}
+						_terror.Cancel()
+					} else if _terror.PrintStack && _terror.ExitAfterPrint {
+						logger.ErrorStack("%+v", _terror.Err)
+						// errors.EORE(err)
+						_terror.Cancel()
+					}
 				}
 			}
 		}
-	}(Global_ErrorManager.ErrCh)
+	}(ErrorManager.ErrCh)
 }
