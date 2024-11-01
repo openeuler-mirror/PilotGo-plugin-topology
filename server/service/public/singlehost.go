@@ -17,11 +17,11 @@ package public
 // 	nodes, edges, collect_errlist, process_errlist := dataprocesser.Process_data(agentnum)
 // 	if len(collect_errlist) != 0 || len(process_errlist) != 0 {
 // 		for i, cerr := range collect_errlist {
-// 			collect_errlist[i] = errors.Wrap(cerr, "**3")
+// 			collect_errlist[i] = errors.Wrap(cerr, " ")
 // 		}
 
 // 		for i, perr := range process_errlist {
-// 			process_errlist[i] = errors.Wrap(perr, "**7")
+// 			process_errlist[i] = errors.Wrap(perr, " ")
 // 		}
 // 	}
 
@@ -63,23 +63,23 @@ package public
 /*
 	// if len(collect_errlist) != 0 && len(process_errlist) != 0 {
 	// 	for i, cerr := range collect_errlist {
-	// 		collect_errlist[i] = errors.Wrap(cerr, "**3")
+	// 		collect_errlist[i] = errors.Wrap(cerr, " ")
 	// 	}
 
 	// 	for i, perr := range process_errlist {
-	// 		process_errlist[i] = errors.Wrap(perr, "**7")
+	// 		process_errlist[i] = errors.Wrap(perr, " ")
 	// 	}
 
 	// 	return nil, nil, collect_errlist, process_errlist
 	// } else if len(collect_errlist) != 0 && len(process_errlist) == 0 {
 	// 	for i, cerr := range collect_errlist {
-	// 		collect_errlist[i] = errors.Wrap(cerr, "**3")
+	// 		collect_errlist[i] = errors.Wrap(cerr, " ")
 	// 	}
 
 	// 	return nil, nil, collect_errlist, nil
 	// } else if len(collect_errlist) == 0 && len(process_errlist) != 0 {
 	// 	for i, perr := range process_errlist {
-	// 		process_errlist[i] = errors.Wrap(perr, "**7")
+	// 		process_errlist[i] = errors.Wrap(perr, " ")
 	// 	}
 
 	// 	return nil, nil, nil, process_errlist

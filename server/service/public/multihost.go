@@ -9,7 +9,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func MultiHostService() ([]*graph.Node, []*graph.Edge, []map[string]string, error) {
+func MultiHostService() ([]*graph.Node, []*graph.Edge, []map[string]string, error, bool) {
 	var latest string
 	var nodes []*graph.Node
 	var edges []*graph.Edge
@@ -23,14 +23,14 @@ func MultiHostService() ([]*graph.Node, []*graph.Edge, []map[string]string, erro
 	combos := make([]map[string]string, 0)
 
 	if graphmanager.Global_GraphDB == nil {
-		err := errors.New("global_graphdb is nil **errstackfatal**1")
-		return nil, nil, nil, err
+		err := errors.New("global_graphdb is nil")
+		return nil, nil, nil, err, true
 	}
 
 	times, err := graphmanager.Global_GraphDB.Timestamps_query()
 	if err != nil {
-		err = errors.Wrap(err, " **2")
-		return nil, nil, nil, err
+		err = errors.Wrap(err, " ")
+		return nil, nil, nil, err, false
 	}
 
 	if len(times) != 0 {
@@ -40,14 +40,14 @@ func MultiHostService() ([]*graph.Node, []*graph.Edge, []map[string]string, erro
 			latest = times[len(times)-2]
 		}
 	} else {
-		err := errors.New("the number of timestamp is zero **errstack**0")
-		return nil, nil, nil, err
+		err := errors.New("the number of timestamp is zero")
+		return nil, nil, nil, err, false
 	}
 
 	nodes, err = graphmanager.Global_GraphDB.MultiHost_node_query(latest)
 	if err != nil {
-		err = errors.Wrap(err, " **2")
-		return nil, nil, nil, err
+		err = errors.Wrap(err, " ")
+		return nil, nil, nil, err, false
 	}
 
 	for _, _node := range nodes {
@@ -56,8 +56,8 @@ func MultiHostService() ([]*graph.Node, []*graph.Edge, []map[string]string, erro
 
 	edges, err = graphmanager.Global_GraphDB.MultiHost_relation_query(latest)
 	if err != nil {
-		err = errors.Wrap(err, " **2")
-		return nil, nil, nil, err
+		err = errors.Wrap(err, " ")
+		return nil, nil, nil, err, false
 	}
 
 	for _, _edge := range edges {
@@ -155,5 +155,5 @@ func MultiHostService() ([]*graph.Node, []*graph.Edge, []map[string]string, erro
 		}
 	}
 
-	return multi_nodes, multi_edges, combos, nil
+	return multi_nodes, multi_edges, combos, nil, false
 }

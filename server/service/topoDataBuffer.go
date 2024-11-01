@@ -5,9 +5,8 @@ import (
 	"sync"
 
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/agentmanager"
-	"gitee.com/openeuler/PilotGo-plugin-topology/server/errormanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/graph"
-	"gitee.com/openeuler/PilotGo-plugin-topology/server/pluginclient"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/resourcemanage"
 	"github.com/pkg/errors"
 )
 
@@ -145,7 +144,7 @@ func UpdateGlobalTopoDataBuffer(custom_topodata *graph.TopoDataBuffer) {
 						err := graph.Global_TopoDataBuffer.Nodes.Remove(global_node)
 						if err != nil {
 							err = errors.Wrap(err, "->")
-							errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
+							resourcemanage.ERManager.ErrorTransmit("error", err, false, true)
 							continue
 						}
 						global_edge_id_slice_any, ok := graph.Global_TopoDataBuffer.Edges.Node_Edges_map.Load(global_node.ID)
@@ -161,7 +160,7 @@ func UpdateGlobalTopoDataBuffer(custom_topodata *graph.TopoDataBuffer) {
 							err := graph.Global_TopoDataBuffer.Edges.Remove(global_edge.ID)
 							if err != nil {
 								err = errors.Wrap(err, "->")
-								errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
+								resourcemanage.ERManager.ErrorTransmit("error", err, false, true)
 							}
 						}
 					}

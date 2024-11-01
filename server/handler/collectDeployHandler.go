@@ -9,8 +9,8 @@ import (
 	"github.com/pkg/errors"
 
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/conf"
-	"gitee.com/openeuler/PilotGo-plugin-topology/server/errormanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/pluginclient"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/resourcemanage"
 	"gitee.com/openeuler/PilotGo/sdk/common"
 	"gitee.com/openeuler/PilotGo/sdk/response"
 	"github.com/gin-gonic/gin"
@@ -21,24 +21,24 @@ func DeployCollectEndpointHandle(ctx *gin.Context) {
 		MachineUUIDs []string `json:"uuids"`
 	}{}
 	if err := ctx.ShouldBind(uuids); err != nil {
-		err = errors.Errorf("%s **errstack**0", err.Error())
-		errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
+		err = errors.New(err.Error())
+		resourcemanage.ERManager.ErrorTransmit("error", err, false, true)
 		response.Fail(ctx, nil, "parameter error")
 		return
 	}
 
 	file, err := os.Open(strings.TrimSuffix(conf.Global_Config.Topo.Path, "/") + "/deploy-collect-endpoint.sh")
 	if err != nil {
-		err = errors.Errorf("%s **errstack**0", err.Error())
-		errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
+		err = errors.New(err.Error())
+		resourcemanage.ERManager.ErrorTransmit("error", err, false, true)
 		response.Fail(ctx, nil, "open file error: "+errors.Cause(err).Error())
 		return
 	}
 	defer file.Close()
 	script_bytes, err := io.ReadAll(file)
 	if err != nil {
-		err = errors.Errorf("%s **errstack**0", err.Error())
-		errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
+		err = errors.New(err.Error())
+		resourcemanage.ERManager.ErrorTransmit("error", err, false, true)
 		response.Fail(ctx, nil, "read file error: "+errors.Cause(err).Error())
 		return
 	}
@@ -53,14 +53,14 @@ func DeployCollectEndpointHandle(ctx *gin.Context) {
 		"--fleet=10.41.161.101:8220",
 	})
 	if err != nil {
-		err = errors.Errorf("%s **errstack**0", err.Error())
-		errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
+		err = errors.New(err.Error())
+		resourcemanage.ERManager.ErrorTransmit("error", err, false, true)
 		response.Fail(ctx, nil, errors.Cause(err).Error())
 		return
 	}
 	for _, res := range cmdresults {
-		err := errors.Errorf("collect endpoint deploy: [retcode:%d][uuid:%s][ip:%s][stdout:%s][stderr:%s] **warn**0", res.RetCode, res.MachineUUID, res.MachineIP, res.Stdout, res.Stderr)
-		errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
+		err := errors.Errorf("collect endpoint deploy: [retcode:%d][uuid:%s][ip:%s][stdout:%s][stderr:%s]", res.RetCode, res.MachineUUID, res.MachineIP, res.Stdout, res.Stderr)
+		resourcemanage.ERManager.ErrorTransmit("warn", err, false, false)
 	}
 
 	response.Success(ctx, nil, "collect endpoint deploy")
@@ -72,24 +72,24 @@ func CollectEndpointHandle(ctx *gin.Context) {
 		MachineUUIDs []string `json:"uuids"`
 	}{}
 	if err := ctx.ShouldBind(uuids); err != nil {
-		err = errors.Errorf("%s **errstack**0", err.Error())
-		errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
+		err = errors.New(err.Error())
+		resourcemanage.ERManager.ErrorTransmit("error", err, false, true)
 		response.Fail(ctx, nil, "parameter error")
 		return
 	}
 
 	file, err := os.Open(strings.TrimSuffix(conf.Global_Config.Topo.Path, "/") + "/collect-endpoint.sh")
 	if err != nil {
-		err = errors.Errorf("%s **errstack**0", err.Error())
-		errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
+		err = errors.New(err.Error())
+		resourcemanage.ERManager.ErrorTransmit("error", err, false, true)
 		response.Fail(ctx, nil, "open file error: "+errors.Cause(err).Error())
 		return
 	}
 	defer file.Close()
 	script_bytes, err := io.ReadAll(file)
 	if err != nil {
-		err = errors.Errorf("%s **errstack**0", err.Error())
-		errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
+		err = errors.New(err.Error())
+		resourcemanage.ERManager.ErrorTransmit("error", err, false, true)
 		response.Fail(ctx, nil, "read file error: "+errors.Cause(err).Error())
 		return
 	}
@@ -109,14 +109,14 @@ func CollectEndpointHandle(ctx *gin.Context) {
 		})
 	}
 	if err != nil {
-		err = errors.Errorf("%s **errstack**0", err.Error())
-		errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
+		err = errors.New(err.Error())
+		resourcemanage.ERManager.ErrorTransmit("error", err, false, true)
 		response.Fail(ctx, nil, errors.Cause(err).Error())
 		return
 	}
 	for _, res := range cmdresults {
-		err := errors.Errorf("collect endpoint deploy: [retcode:%d][uuid:%s][ip:%s][stdout:%s][stderr:%s] **warn**0", res.RetCode, res.MachineUUID, res.MachineIP, res.Stdout, res.Stderr)
-		errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
+		err := errors.Errorf("collect endpoint deploy: [retcode:%d][uuid:%s][ip:%s][stdout:%s][stderr:%s]", res.RetCode, res.MachineUUID, res.MachineIP, res.Stdout, res.Stderr)
+		resourcemanage.ERManager.ErrorTransmit("warn", err, false, false)
 	}
 
 	response.Success(ctx, nil, fmt.Sprintf("collect endpoint %s", action))

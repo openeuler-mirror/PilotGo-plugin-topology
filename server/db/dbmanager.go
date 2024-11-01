@@ -11,7 +11,6 @@ import (
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/db/mysqlmanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/db/redismanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/global"
-	"gitee.com/openeuler/PilotGo-plugin-topology/server/pluginclient"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/resourcemanage"
 	"gitee.com/openeuler/PilotGo/sdk/logger"
 )
@@ -21,8 +20,8 @@ func InitDB() {
 		initGraphDB()
 		ClearGraphData(conf.Global_Config.Neo4j.Retention)
 	} else {
-		err := errors.New("do not save graph data **warn**0")
-		errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
+		err := errors.New("do not save graph data")
+		resourcemanage.ERManager.ErrorTransmit("warn", err, false, false)
 	}
 
 	initRedis()
@@ -43,8 +42,8 @@ func initGraphDB() {
 	case "otherDB":
 
 	default:
-		err := errors.Errorf("unknown database in topo_server.yaml: %s **errstackfatal**4", conf.Global_Config.Topo.GraphDB) // err top
-		errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
+		err := errors.Errorf("unknown database in topo_server.yaml: %s", conf.Global_Config.Topo.GraphDB)
+		resourcemanage.ERManager.ErrorTransmit("error", err, true, true)
 	}
 
 	if graphmanager.Global_GraphDB != nil {
@@ -84,8 +83,8 @@ func initInflux() {
 
 func ClearGraphData(retention int64) {
 	if graphmanager.Global_GraphDB == nil {
-		err := errors.New("global_graphdb is nil **errstackfatal**0")
-		errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
+		err := errors.New("global_graphdb is nil")
+		resourcemanage.ERManager.ErrorTransmit("error", err, true, true)
 		return
 	}
 

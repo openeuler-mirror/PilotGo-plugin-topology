@@ -6,10 +6,9 @@ import (
 	"strconv"
 	"time"
 
-	"gitee.com/openeuler/PilotGo-plugin-topology/server/errormanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/global"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/graph"
-	"gitee.com/openeuler/PilotGo-plugin-topology/server/pluginclient"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/resourcemanage"
 	"github.com/neo4j/neo4j-go-driver/v4/neo4j"
 	"github.com/pkg/errors"
 )
@@ -38,8 +37,8 @@ func Neo4jInit(url, user, pass, db string) *Neo4jClient {
 		config.MaxConnectionLifetime = 1 * time.Hour
 	})
 	if err != nil {
-		err := errors.Errorf("create neo4j driver failed: %s **errstackfatal**2", err.Error()) // err top
-		errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
+		err := errors.Errorf("create neo4j driver failed: %s", err.Error())
+		resourcemanage.ERManager.ErrorTransmit("error", err, true, true)
 	}
 
 	global.Global_neo4j_driver = driver
@@ -73,7 +72,7 @@ func (n *Neo4jClient) Node_create(unixtime string, node *graph.Node) error {
 		return result.Consume()
 	})
 	if err != nil {
-		err = errors.Errorf("neo4j writetransaction failed: %s, %s **errstack**9", err.Error(), cqlIN)
+		err = errors.Errorf("neo4j writetransaction failed: %s, %s", err.Error(), cqlIN)
 		return err
 	}
 
@@ -106,7 +105,7 @@ func (n *Neo4jClient) Edge_create(unixtime string, edge *graph.Edge) error {
 		return result.Consume()
 	})
 	if err != nil {
-		err = errors.Errorf("neo4j writetransaction failed: %s, %s **errstack**9", err.Error(), cqlIN)
+		err = errors.Errorf("neo4j writetransaction failed: %s, %s", err.Error(), cqlIN)
 		return err
 	}
 
@@ -125,7 +124,7 @@ func (n *Neo4jClient) Timestamps_query() ([]string, error) {
 	_, err := session.ReadTransaction(func(tx neo4j.Transaction) (interface{}, error) {
 		result, err := tx.Run(cqlOUT, nil)
 		if err != nil {
-			err = errors.Errorf("neo4j query failed: %s, %s **errstack**2", err.Error(), cqlOUT)
+			err = errors.Errorf("neo4j query failed: %s, %s", err.Error(), cqlOUT)
 			return nil, err
 		}
 
@@ -140,7 +139,7 @@ func (n *Neo4jClient) Timestamps_query() ([]string, error) {
 		}
 
 		if err := result.Err(); err != nil {
-			err = errors.Errorf("iterate result failed: %s, %s **errstack**1", err.Error(), cqlOUT)
+			err = errors.Errorf("iterate result failed: %s, %s", err.Error(), cqlOUT)
 			return nil, err
 		}
 
@@ -148,7 +147,7 @@ func (n *Neo4jClient) Timestamps_query() ([]string, error) {
 	})
 
 	if err != nil {
-		err = errors.Errorf("query Readtransaction error: %s, %s **errstack**26", err.Error(), cqlOUT)
+		err = errors.Errorf("query Readtransaction error: %s, %s", err.Error(), cqlOUT)
 		return nil, err
 	}
 
@@ -182,7 +181,7 @@ func (n *Neo4jClient) Node_query(cypher string, varia string) ([]*graph.Node, er
 	_, err := session.ReadTransaction(func(tx neo4j.Transaction) (interface{}, error) {
 		result, err := tx.Run(cypher, nil)
 		if err != nil {
-			err = errors.Errorf("neo4j query failed: %s, %s **errstack**2", err.Error(), cypher)
+			err = errors.Errorf("neo4j query failed: %s, %s", err.Error(), cypher)
 			return nil, err
 		}
 
@@ -195,7 +194,7 @@ func (n *Neo4jClient) Node_query(cypher string, varia string) ([]*graph.Node, er
 			}
 		}
 		if err := result.Err(); err != nil {
-			err = errors.Errorf("iterate node result failed: %s, %s **errstack**1", err.Error(), cypher)
+			err = errors.Errorf("iterate node result failed: %s, %s", err.Error(), cypher)
 			return nil, err
 		}
 
@@ -203,7 +202,7 @@ func (n *Neo4jClient) Node_query(cypher string, varia string) ([]*graph.Node, er
 	})
 
 	if err != nil {
-		err = errors.Errorf("node Readtransaction error: %s, %s **errstack**24", err.Error(), cypher)
+		err = errors.Errorf("node Readtransaction error: %s, %s", err.Error(), cypher)
 	}
 	return list, err
 }
@@ -224,7 +223,7 @@ func (n *Neo4jClient) Relation_query(cypher string, varia string) ([]*graph.Edge
 	_, err := session.ReadTransaction(func(tx neo4j.Transaction) (interface{}, error) {
 		result, err := tx.Run(cypher, nil)
 		if err != nil {
-			err = errors.Errorf("RelationshipQuery failed: %s, %s **errstack**2", err.Error(), cypher)
+			err = errors.Errorf("RelationshipQuery failed: %s, %s", err.Error(), cypher)
 			return nil, err
 		}
 		for result.Next() {
@@ -236,14 +235,14 @@ func (n *Neo4jClient) Relation_query(cypher string, varia string) ([]*graph.Edge
 			}
 		}
 		if err = result.Err(); err != nil {
-			err = errors.Errorf("iterate relation result failed: %s, %s **errstack**1", err.Error(), cypher)
+			err = errors.Errorf("iterate relation result failed: %s, %s", err.Error(), cypher)
 			return nil, err
 		}
 		return list, result.Err()
 	})
 
 	if err != nil {
-		err = errors.Errorf("relation Readtransaction error: %s, %s **errstack**22", err.Error(), cypher)
+		err = errors.Errorf("relation Readtransaction error: %s, %s", err.Error(), cypher)
 	}
 	return list, err
 }
@@ -261,18 +260,18 @@ func (n *Neo4jClient) ClearExpiredData(retention int64) {
 
 	result, err := session.Run(cqlIN, params)
 	if err != nil {
-		err = errors.Errorf("ClearExpiredData failed: %s, %s **warn**1", err.Error(), cqlIN) // err top
-		errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
+		err = errors.Errorf("ClearExpiredData failed: %s, %s", err.Error(), cqlIN)
+		resourcemanage.ERManager.ErrorTransmit("warn", err, false, false)
 		return
 	}
 
 	summary, err := result.Consume()
 	if err != nil {
-		err = errors.Errorf("failed to consume ClearExpiredData result: %s, %s **warn**2", err.Error(), cqlIN) // err top
-		errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
+		err = errors.Errorf("failed to consume ClearExpiredData result: %s, %s", err.Error(), cqlIN)
+		resourcemanage.ERManager.ErrorTransmit("warn", err, false, false)
 		return
 	}
 
-	err = errors.Errorf("delete %d nodes **debug**0", summary.Counters().NodesDeleted()) // err top
-	errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
+	err = errors.Errorf("delete %d nodes", summary.Counters().NodesDeleted())
+	resourcemanage.ERManager.ErrorTransmit("debug", err, false, false)
 }

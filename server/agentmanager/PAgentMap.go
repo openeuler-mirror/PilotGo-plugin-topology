@@ -35,12 +35,12 @@ func Wait4TopoServerReady() {
 	for {
 		select {
 		case <-resourcemanage.ERManager.GoCancelCtx.Done():
-			break
+			return
 		default:
 			url := "http://" + conf.Global_Config.Topo.Addr + "/plugin_manage/info"
 			resp, err := httputils.Get(url, nil)
 			if err == nil && resp != nil && resp.StatusCode == http.StatusOK {
-				break
+				return
 			}
 			time.Sleep(100 * time.Millisecond)
 		}
@@ -52,8 +52,8 @@ func (am *AgentManager) InitMachineList() {
 	Wait4TopoServerReady()
 
 	if pluginclient.Global_Client == nil {
-		err := errors.New("Global_Client is nil **errstackfatal**2") // err top
-		errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
+		err := errors.New("Global_Client is nil")
+		resourcemanage.ERManager.ErrorTransmit("error", err, true, true)
 		return
 	}
 
@@ -61,8 +61,8 @@ func (am *AgentManager) InitMachineList() {
 
 	machine_list, err := pluginclient.Global_Client.MachineList()
 	if err != nil {
-		err = errors.Errorf("%s **errstackfatal**2", err.Error()) // err top
-		errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
+		err = errors.Errorf(err.Error())
+		resourcemanage.ERManager.ErrorTransmit("error", err, true, true)
 	}
 
 	for _, m := range machine_list {
@@ -79,8 +79,8 @@ func (am *AgentManager) InitMachineList() {
 func (am *AgentManager) UpdateMachineList() {
 	machine_list, err := pluginclient.Global_Client.MachineList()
 	if err != nil {
-		err = errors.Errorf("%s **errstackfatal**2", err.Error()) // err top
-		errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
+		err = errors.Errorf(err.Error())
+		resourcemanage.ERManager.ErrorTransmit("error", err, true, true)
 	}
 
 	am.PAgentMap.Range(func(key, value interface{}) bool {

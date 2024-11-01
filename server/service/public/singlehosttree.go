@@ -7,7 +7,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func SingleHostTreeService(uuid string) (*graph.TreeTopoNode, error) {
+func SingleHostTreeService(uuid string) (*graph.TreeTopoNode, error, bool) {
 	var latest string
 	var treerootnode *graph.TreeTopoNode
 	var single_nodes []*graph.Node
@@ -17,14 +17,14 @@ func SingleHostTreeService(uuid string) (*graph.TreeTopoNode, error) {
 	nodes_type_map := make(map[string][]*graph.Node)
 
 	if graphmanager.Global_GraphDB == nil {
-		err := errors.New("global_graphdb is nil **errstackfatal**1")
-		return nil, err
+		err := errors.New("global_graphdb is nil")
+		return nil, err, true
 	}
 
 	times, err := graphmanager.Global_GraphDB.Timestamps_query()
 	if err != nil {
-		err = errors.Wrap(err, " **2")
-		return nil, err
+		err = errors.Wrap(err, " ")
+		return nil, err, false
 	}
 
 	if len(times) != 0 {
@@ -34,14 +34,14 @@ func SingleHostTreeService(uuid string) (*graph.TreeTopoNode, error) {
 			latest = times[len(times)-2]
 		}
 	} else {
-		err := errors.New("the number of timestamp is zero **errstack**0")
-		return nil, err
+		err := errors.New("the number of timestamp is zero")
+		return nil, err, false
 	}
 
 	single_nodes, err = graphmanager.Global_GraphDB.SingleHost_node_query(uuid, latest)
 	if err != nil {
-		err = errors.Wrap(err, " **2")
-		return nil, err
+		err = errors.Wrap(err, " ")
+		return nil, err, false
 	}
 
 	for _, node := range single_nodes {
@@ -58,8 +58,8 @@ func SingleHostTreeService(uuid string) (*graph.TreeTopoNode, error) {
 	}
 
 	if treerootnode == nil {
-		err := errors.New("there are no host node in single_nodes **errstack**5")
-		return nil, err
+		err := errors.New("there are no host node in single_nodes")
+		return nil, err, false
 	}
 
 	for _, node := range nodes_type_map[global.NODE_RESOURCE] {
@@ -86,5 +86,5 @@ func SingleHostTreeService(uuid string) (*graph.TreeTopoNode, error) {
 		}
 	}
 
-	return treerootnode, nil
+	return treerootnode, nil, false
 }

@@ -45,7 +45,7 @@ func InitConfig() {
 	bytes, err := global.FileReadBytes(ConfigFile())
 	if err != nil {
 		flag.Usage()
-		// err = errors.Wrapf(err, "open file failed: %s, %s", ConfigFile(), err.Error()) // err top
+		// err = errors.Wrapf(err, "open file failed: %s, %s", ConfigFile(), err.Error())
 		fmt.Printf("%s\n", err.Error())
 		os.Exit(1)
 	}
@@ -54,7 +54,7 @@ func InitConfig() {
 
 	err = yaml.Unmarshal(bytes, Global_Config)
 	if err != nil {
-		err = errors.Errorf("yaml unmarshal failed: %s", err.Error()) // err top
+		err = errors.Errorf("yaml unmarshal failed: %s", err.Error())
 		fmt.Printf("%+v\n", err)
 		os.Exit(1)
 	}

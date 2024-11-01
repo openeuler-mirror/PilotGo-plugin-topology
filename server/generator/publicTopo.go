@@ -7,10 +7,9 @@ import (
 	"sync/atomic"
 
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/agentmanager"
-	"gitee.com/openeuler/PilotGo-plugin-topology/server/errormanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/global"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/graph"
-	"gitee.com/openeuler/PilotGo-plugin-topology/server/pluginclient"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/resourcemanage"
 	"github.com/pkg/errors"
 )
 
@@ -86,8 +85,8 @@ func (p *PublicTopo) CreateNodeEntities(agent *agentmanager.Agent, nodes *graph.
 
 			nodes.Add(net_node)
 		} else {
-			err := errors.Errorf("syntax error: %s **errstack**13", net.Laddr) // err top
-			errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
+			err := errors.Errorf("syntax error: %s", net.Laddr)
+			resourcemanage.ERManager.ErrorTransmit("error", err, false, true)
 		}
 	}
 
