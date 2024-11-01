@@ -6,8 +6,7 @@ import (
 	"strings"
 
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/agentmanager"
-	"gitee.com/openeuler/PilotGo-plugin-topology/server/errormanager"
-	"gitee.com/openeuler/PilotGo-plugin-topology/server/pluginclient"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/resourcemanage"
 	"gitee.com/openeuler/PilotGo/sdk/utils/httputils"
 	docker "github.com/fsouza/go-dockerclient"
 
@@ -17,11 +16,11 @@ import (
 func ContainerList(agent *agentmanager.Agent) ([]docker.APIContainers, error) {
 	resp, err := httputils.Get("http://"+agent.IP+":"+agent.Port+"/plugin/topology/api/container_list", nil)
 	if err != nil {
-		return nil, errors.Errorf("get container list from agent %s failed: %s **errstack**0", agent.IP, err.Error())
+		return nil, errors.Errorf("get container list from agent %s failed: %s", agent.IP, err.Error())
 	}
 
 	if resp == nil || resp.StatusCode != 200 {
-		return nil, errors.Errorf("get container list from agent %s failed: %+v **errstack**0", agent.IP, resp)
+		return nil, errors.Errorf("get container list from agent %s failed: %+v", agent.IP, resp)
 	}
 
 	resp_body := struct {
@@ -32,7 +31,7 @@ func ContainerList(agent *agentmanager.Agent) ([]docker.APIContainers, error) {
 
 	err = json.Unmarshal(resp.Body, &resp_body)
 	if err != nil {
-		return nil, errors.Errorf("json unmarshal from agent %s failed: %s **errstack**2", agent.IP, err.Error())
+		return nil, errors.Errorf("json unmarshal from agent %s failed: %s", agent.IP, err.Error())
 	}
 
 	return resp_body.Data, nil
@@ -103,8 +102,8 @@ func ProcessMatching(agent *agentmanager.Agent, exename, cmdline, component stri
 
 		containers, err := ContainerList(agent)
 		if err != nil {
-			err = errors.Wrap(err, " **errstack**0") // err top
-			errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
+			err = errors.Wrap(err, " ")
+			resourcemanage.ERManager.ErrorTransmit("error", err, false, true)
 			break
 		}
 

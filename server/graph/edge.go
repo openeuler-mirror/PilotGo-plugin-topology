@@ -98,14 +98,14 @@ func (e *Edges) Remove(id string) error {
 		e.Edges = append(e.Edges[:i], e.Edges[i+1:]...)
 		// 从e.lookup中移除边
 		if _, ok := e.Lookup.LoadAndDelete(id); !ok {
-			return errors.Errorf("edge %+v not fount in lookup sync.map **errstack**0", id)
+			return errors.Errorf("edge %+v not fount in lookup sync.map", id)
 		}
 		// 从e.node_edges_map中移除边
 		if _, ok := e.Node_Edges_map.LoadAndDelete(id); !ok {
-			return errors.Errorf("edge %+v not fount in node_edges_map sync.map **errstack**0", id)
+			return errors.Errorf("edge %+v not fount in node_edges_map sync.map", id)
 		}
 		return nil
 	}
 
-	return errors.Errorf("edge %+v not fount in slice **errstack**0", id)
+	return errors.Errorf("edge %+v not fount in slice", id)
 }

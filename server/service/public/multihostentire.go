@@ -16,11 +16,11 @@ package public
 // 	nodes, edges, collect_errlist, process_errlist := dataprocesser.Process_data(agentnum)
 // 	if len(collect_errlist) != 0 || len(process_errlist) != 0 {
 // 		for i, cerr := range collect_errlist {
-// 			collect_errlist[i] = errors.Wrap(cerr, "**3")
+// 			collect_errlist[i] = errors.Wrap(cerr, " ")
 // 		}
 
 // 		for i, perr := range process_errlist {
-// 			process_errlist[i] = errors.Wrap(perr, "**7")
+// 			process_errlist[i] = errors.Wrap(perr, " ")
 // 		}
 // 	}
 
@@ -82,7 +82,7 @@ package public
 // 					edgeid := start_nodeid + "_belong_" + nodes.Lookup[start_nodeid].UUID + "_process_" + nodes.Lookup[start_nodeid].Metrics["Ppid"]
 // 					edge1, ok := edges.Lookup.Load(edgeid)
 // 					if !ok {
-// 						fmt.Printf("%+v\n", errors.Errorf("faild to load edge from edges.lookup: %s**2", edgeid))
+// 						fmt.Printf("%+v\n", errors.Errorf("faild to load edge from edges.lookup: %s", edgeid))
 // 					}
 
 // 					if _, ok := multi_edges_map[edge1.(*meta.Edge).ID]; !ok {
@@ -107,7 +107,7 @@ package public
 // 				edgeid_to_1 := start_nodeid + "_belong_" + nodes.Lookup[start_nodeid].UUID + "_process_" + nodes.Lookup[start_nodeid].Metrics["Ppid"]
 // 				edge_to_1, ok := edges.Lookup.Load(edgeid_to_1)
 // 				if !ok {
-// 					fmt.Printf("%+v\n", errors.Errorf("faild to load edge from edges.lookup: %s**2", edgeid_to_1))
+// 					fmt.Printf("%+v\n", errors.Errorf("faild to load edge from edges.lookup: %s", edgeid_to_1))
 // 				}
 
 // 				if _, ok := multi_edges_map[edge_to_1.(*meta.Edge).ID]; !ok {
@@ -127,7 +127,7 @@ package public
 
 // 				edge_to_host, ok := edges.Lookup.Load(edgeid_to_host)
 // 				if !ok {
-// 					fmt.Printf("%+v\n", errors.Errorf("faild to load edge from edges.lookup: %s**2", edgeid_to_host))
+// 					fmt.Printf("%+v\n", errors.Errorf("faild to load edge from edges.lookup: %s", edgeid_to_host))
 // 				}
 
 // 				if _, ok := multi_edges_map[edge_to_host.(*meta.Edge).ID]; !ok {

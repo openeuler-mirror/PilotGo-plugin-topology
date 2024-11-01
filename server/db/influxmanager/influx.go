@@ -37,7 +37,7 @@ func InfluxdbInit(conf *conf.InfluxConf) *InfluxClient {
 
 func (i *InfluxClient) WriteWithLineProtocol(measurement string, tags map[string]string, fields map[string]interface{}) error {
 	if measurement == "" || len(fields) == 0 {
-		err := errors.Errorf("write to influxdb failed: measurement(%s), tags(%+v), fields(%+v) **errstack**0", measurement, tags, fields)
+		err := errors.Errorf("write to influxdb failed: measurement(%s), tags(%+v), fields(%+v)", measurement, tags, fields)
 		return err
 	}
 
@@ -57,7 +57,7 @@ func (i *InfluxClient) Query(measurement, start, end string) error {
 
 	result, err := queryAPI.Query(context.Background(), query)
 	if err != nil {
-		err = errors.Errorf("%s **errstack**0", err.Error())
+		err = errors.Errorf(err.Error())
 		return err
 	}
 

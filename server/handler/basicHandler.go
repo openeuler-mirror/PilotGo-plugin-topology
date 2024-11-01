@@ -8,8 +8,8 @@ import (
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/agentmanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/db/graphmanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/db/redismanager"
-	"gitee.com/openeuler/PilotGo-plugin-topology/server/errormanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/pluginclient"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/resourcemanage"
 	"gitee.com/openeuler/PilotGo/sdk/response"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -20,31 +20,31 @@ func HeartbeatHandle(ctx *gin.Context) {
 	// 写入redis的数据为 (heartbeat-<uuid>: {"UUID": "f7504bef-76e9-446c-95ee-196878b398a1", "Addr": "10.44.55.66:9992", "HeartbeatInterval": 60, "Time": "2023-12-22T17:09:23+08:00"})
 	value := redismanager.AgentHeartbeat{}
 	if err := ctx.ShouldBindJSON(&value); err != nil {
-		err := errors.New("bind json failed **errstackfatal**0")
+		err := errors.New("bind json failed")
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"code":  -1,
 			"error": err.Error(),
 			"data":  nil,
 		})
-		errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
+		resourcemanage.ERManager.ErrorTransmit("error", err, true, true)
 	}
 	key := "heartbeat-topoagent-" + value.UUID
 	value.Time = time.Now()
 
 	if agentmanager.Global_AgentManager == nil {
-		err := errors.New("Global_AgentManager is nil **errstackfatal**0")
+		err := errors.New("Global_AgentManager is nil")
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"code":  -1,
 			"error": err.Error(),
 			"data":  nil,
 		})
-		errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
+		resourcemanage.ERManager.ErrorTransmit("error", err, true, true)
 		return
 	}
 
 	if agentmanager.Global_AgentManager.GetAgent_P(value.UUID) == nil {
-		err := errors.Errorf("unknown agent's heartbeat: %s, %s **warn**1", value.UUID, value.Addr) // err top
-		errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
+		err := errors.Errorf("unknown agent's heartbeat: %s, %s", value.UUID, value.Addr)
+		resourcemanage.ERManager.ErrorTransmit("warn", err, false, false)
 		ctx.JSON(http.StatusUnauthorized, gin.H{
 			"code":  -1,
 			"error": err.Error(),
@@ -54,20 +54,20 @@ func HeartbeatHandle(ctx *gin.Context) {
 	}
 
 	if redismanager.Global_Redis == nil {
-		err := errors.New("Global_Redis is nil **errstackfatal**0") // err top
+		err := errors.New("Global_Redis is nil")
 		ctx.JSON(http.StatusUnauthorized, gin.H{
 			"code":  -1,
 			"error": err.Error(),
 			"data":  nil,
 		})
-		errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
+		resourcemanage.ERManager.ErrorTransmit("error", err, true, true)
 		return
 	}
 
 	err := redismanager.Global_Redis.Set(key, value)
 	if err != nil {
-		err = errors.Wrap(err, " **errstack**2") // err top
-		errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
+		err = errors.Wrap(err, " ")
+		resourcemanage.ERManager.ErrorTransmit("error", err, false, true)
 
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"code":  -1,
@@ -86,16 +86,16 @@ func HeartbeatHandle(ctx *gin.Context) {
 
 func TimestampsHandle(ctx *gin.Context) {
 	if graphmanager.Global_GraphDB == nil {
-		err := errors.New("Global_GraphDB is nil **errstackfatal**0") // err top
+		err := errors.New("Global_GraphDB is nil")
 		response.Fail(ctx, nil, err.Error())
-		errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
+		resourcemanage.ERManager.ErrorTransmit("error", err, true, true)
 		return
 	}
 
 	times, err := graphmanager.Global_GraphDB.Timestamps_query()
 	if err != nil {
-		err = errors.Wrap(err, " **errstack**2")
-		errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
+		err = errors.Wrap(err, " ")
+		resourcemanage.ERManager.ErrorTransmit("error", err, false, true)
 
 		response.Fail(ctx, nil, err.Error())
 		return
@@ -108,9 +108,9 @@ func AgentListHandle(ctx *gin.Context) {
 	agentmap := make(map[string]string)
 
 	if agentmanager.Global_AgentManager == nil {
-		err := errors.New("Global_AgentManager is nil **errstackfatal**0")
+		err := errors.New("Global_AgentManager is nil")
 		response.Fail(ctx, nil, err.Error())
-		errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
+		resourcemanage.ERManager.ErrorTransmit("error", err, true, true)
 		return
 	}
 
@@ -130,16 +130,16 @@ func AgentListHandle(ctx *gin.Context) {
 
 func BatchListHandle(ctx *gin.Context) {
 	if pluginclient.Global_Client == nil {
-		err := errors.New("Global_Client is nil **errstackfatal**0")
+		err := errors.New("Global_Client is nil")
 		response.Fail(ctx, nil, err.Error())
-		errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
+		resourcemanage.ERManager.ErrorTransmit("error", err, true, true)
 		return
 	}
 
 	batchlist, err := pluginclient.Global_Client.BatchList()
 	if err != nil {
-		err = errors.Errorf("%s **warn**0", err.Error())
-		errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
+		err = errors.New(err.Error())
+		resourcemanage.ERManager.ErrorTransmit("warn", err, false, false)
 		response.Fail(ctx, nil, err.Error())
 		return
 	}
@@ -157,24 +157,24 @@ func BatchMachineListHandle(ctx *gin.Context) {
 	}
 
 	if pluginclient.Global_Client == nil {
-		err := errors.New("Global_Client is nil **errstackfatal**0")
+		err := errors.New("Global_Client is nil")
 		response.Fail(ctx, nil, err.Error())
-		errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
+		resourcemanage.ERManager.ErrorTransmit("error", err, true, true)
 		return
 	}
 
 	machine_uuids, err := pluginclient.Global_Client.BatchUUIDList(BatchId)
 	if err != nil {
-		err = errors.Errorf("%s **errstack**0", err.Error())
-		errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
+		err = errors.New(err.Error())
+		resourcemanage.ERManager.ErrorTransmit("error", err, false, true)
 		response.Fail(ctx, nil, err.Error())
 		return
 	}
 
 	if agentmanager.Global_AgentManager == nil {
-		err := errors.New("Global_AgentManager is nil **errstackfatal**0")
+		err := errors.New("Global_AgentManager is nil")
 		response.Fail(ctx, nil, err.Error())
-		errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
+		resourcemanage.ERManager.ErrorTransmit("error", err, true, true)
 		return
 	}
 

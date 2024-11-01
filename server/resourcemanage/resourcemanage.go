@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"sync"
+	"time"
 
 	"gitee.com/openeuler/PilotGo/sdk/logger"
 	"github.com/pkg/errors"
@@ -27,11 +28,11 @@ type FinalError struct {
 }
 
 func (e *FinalError) Error() string {
-	return e.Err.Error()
+	return fmt.Sprintf("%+v", e.Err)
 }
 
 type ErrorReleaseManagement struct {
-	errChan chan error
+	ErrChan chan error
 
 	cancelCtx    context.Context
 	cancelFunc   context.CancelFunc
@@ -51,9 +52,9 @@ func CreateErrorReleaseManager(_ctx context.Context, _releaseFunc ResourceReleas
 	}
 
 	ErrorM := &ErrorReleaseManagement{
-		errChan:    make(chan error, 20),
-		errEndChan: make(chan struct{}),
-		releaseFunc:  _releaseFunc,
+		ErrChan:     make(chan error, 20),
+		errEndChan:  make(chan struct{}),
+		releaseFunc: _releaseFunc,
 	}
 	ErrorM.cancelCtx, ErrorM.cancelFunc = context.WithCancel(_ctx)
 	ErrorM.GoCancelCtx, ErrorM.GoCancelFunc = context.WithCancel(_ctx)
@@ -67,9 +68,9 @@ func (erm *ErrorReleaseManagement) errorFactory() {
 	for {
 		select {
 		case <-erm.errEndChan:
-			logger.Info("errormanager exit")
+			logger.Info("error management stopped")
 			return
-		case _error := <-erm.errChan:
+		case _error := <-erm.ErrChan:
 			_terror, ok := _error.(*FinalError)
 			if !ok {
 				logger.Error("plain error: %s", _error.Error())
@@ -126,20 +127,24 @@ func (erm *ErrorReleaseManagement) ResourceRelease() {
 
 	close(erm.errEndChan)
 
-	close(erm.errChan)
+	close(erm.ErrChan)
+
+	time.Sleep(100 * time.Millisecond)
 }
 
 /*
-@ctx:	插件服务端初始上下文（默认为pluginclient.Global_Context）
+@severity: debug info warn error
 
 @err:	最终生成的error
 
-@exit_after_print: 打印完错误链信息后是否结束主程序
+@exit_after_print: 打印完异常日志后是否结束主程序
+
+@print_stack: 是否打印异常日志错误链，打印错误链时默认severity为error
 */
 func (erm *ErrorReleaseManagement) ErrorTransmit(_severity string, _err error, _exit_after_print, _print_stack bool) {
 	if _exit_after_print {
 		ctx, cancel := context.WithCancel(erm.cancelCtx)
-		erm.errChan <- &FinalError{
+		erm.ErrChan <- &FinalError{
 			Err:            _err,
 			Cancel:         cancel,
 			Severity:       _severity,
@@ -151,10 +156,11 @@ func (erm *ErrorReleaseManagement) ErrorTransmit(_severity string, _err error, _
 		os.Exit(1)
 	}
 
-	erm.errChan <- &FinalError{
+	erm.ErrChan <- &FinalError{
 		Err:            _err,
+		Cancel:         nil,
+		Severity:       _severity,
 		PrintStack:     _print_stack,
 		ExitAfterPrint: _exit_after_print,
-		Cancel:         nil,
 	}
 }

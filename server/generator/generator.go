@@ -13,9 +13,8 @@ import (
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/agentmanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/conf"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/db/mysqlmanager"
-	"gitee.com/openeuler/PilotGo-plugin-topology/server/errormanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/graph"
-	"gitee.com/openeuler/PilotGo-plugin-topology/server/pluginclient"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/resourcemanage"
 	"gitee.com/openeuler/PilotGo/sdk/logger"
 	"gitee.com/openeuler/PilotGo/sdk/utils/httputils"
 	"github.com/mitchellh/mapstructure"
@@ -53,10 +52,10 @@ func (t *TopoGenerator) ProcessingData(agentnum int) (*graph.Nodes, *graph.Edges
 		Nodes:        make([]*graph.Node, 0),
 	}
 	edges := &graph.Edges{
-		Lock:      sync.Mutex{},
-		Lookup:    sync.Map{},
+		Lock:           sync.Mutex{},
+		Lookup:         sync.Map{},
 		Node_Edges_map: sync.Map{},
-		Edges:     make([]*graph.Edge, 0),
+		Edges:          make([]*graph.Edge, 0),
 	}
 
 	var wg sync.WaitGroup
@@ -67,13 +66,13 @@ func (t *TopoGenerator) ProcessingData(agentnum int) (*graph.Nodes, *graph.Edges
 	collect_errorlist = t.collectInstantData()
 	if len(collect_errorlist) != 0 {
 		for i, err := range collect_errorlist {
-			collect_errorlist[i] = errors.Wrap(err, "**7")
+			collect_errorlist[i] = errors.Wrap(err, " ")
 		}
 	}
 
 	start := time.Now()
 
-	ctx1, cancel1 := context.WithCancel(pluginclient.Global_Context)
+	ctx1, cancel1 := context.WithCancel(resourcemanage.ERManager.GoCancelCtx)
 	go func(cancelfunc context.CancelFunc) {
 		for {
 			if atomic.LoadInt32(t.Factory.Return_Agent_node_count()) == int32(agentnum) {
@@ -84,8 +83,8 @@ func (t *TopoGenerator) ProcessingData(agentnum int) (*graph.Nodes, *graph.Edges
 	}(cancel1)
 
 	if agentmanager.Global_AgentManager == nil {
-		err := errors.New("Global_AgentManager is nil **errstackfatal**0") // err top
-		errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
+		err := errors.New("Global_AgentManager is nil")
+		resourcemanage.ERManager.ErrorTransmit("error", err, true, true)
 		return nil, nil, nil, nil
 	}
 
@@ -102,7 +101,7 @@ func (t *TopoGenerator) ProcessingData(agentnum int) (*graph.Nodes, *graph.Edges
 					err := t.Factory.CreateNodeEntities(_agent, _nodes)
 					if err != nil {
 						process_errorlist_rwlock.Lock()
-						process_errorlist = append(process_errorlist, errors.Wrap(err, "**2"))
+						process_errorlist = append(process_errorlist, errors.Wrap(err, " "))
 						process_errorlist_rwlock.Unlock()
 					}
 
@@ -111,7 +110,7 @@ func (t *TopoGenerator) ProcessingData(agentnum int) (*graph.Nodes, *graph.Edges
 					err = t.Factory.CreateEdgeEntities(_agent, _edges, _nodes)
 					if err != nil {
 						process_errorlist_rwlock.Lock()
-						process_errorlist = append(process_errorlist, errors.Wrap(err, "**2"))
+						process_errorlist = append(process_errorlist, errors.Wrap(err, " "))
 						process_errorlist_rwlock.Unlock()
 					}
 
@@ -138,8 +137,8 @@ func (t *TopoGenerator) collectInstantData() []error {
 	var errorlist_rwlock sync.RWMutex
 
 	if agentmanager.Global_AgentManager == nil {
-		err := errors.New("Global_AgentManager is nil **errstackfatal**0") // err top
-		errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
+		err := errors.New("Global_AgentManager is nil")
+		resourcemanage.ERManager.ErrorTransmit("error", err, true, true)
 		return nil
 	}
 
@@ -156,7 +155,7 @@ func (t *TopoGenerator) collectInstantData() []error {
 				err := t.getCollectDataFromTopoAgent(agent)
 				if err != nil {
 					errorlist_rwlock.Lock()
-					errorlist = append(errorlist, errors.Wrapf(err, "%s**2", agent.IP))
+					errorlist = append(errorlist, errors.Wrap(err, agent.IP))
 					errorlist_rwlock.Unlock()
 				}
 				agentmanager.Global_AgentManager.AddAgent_T(agent)
@@ -186,7 +185,7 @@ func (t *TopoGenerator) getCollectDataFromTopoAgent(agent *agentmanager.Agent) e
 
 	resp, err := httputils.Get(url, nil)
 	if err != nil {
-		return errors.Errorf("%s, %s **errstack**2", url, err.Error())
+		return errors.Errorf("%s, %s", url, err.Error())
 	}
 
 	// ttcode
@@ -198,7 +197,7 @@ func (t *TopoGenerator) getCollectDataFromTopoAgent(agent *agentmanager.Agent) e
 	logger.Info("\033[32mtopo server 采集数据大小\033[0m: %s, %d kb\n", agent.UUID, fileInfo.Size()/1024)
 
 	if statuscode := resp.StatusCode; statuscode != 200 {
-		return errors.Errorf("%v, %s **errstack**2", resp.StatusCode, url)
+		return errors.Errorf("%v, %s", resp.StatusCode, url)
 	}
 
 	results := struct {
@@ -209,7 +208,7 @@ func (t *TopoGenerator) getCollectDataFromTopoAgent(agent *agentmanager.Agent) e
 
 	err = json.Unmarshal(resp.Body, &results)
 	if err != nil {
-		return errors.Errorf("%s **errstack**2", err.Error())
+		return errors.New(err.Error())
 	}
 
 	collectdata := &struct {

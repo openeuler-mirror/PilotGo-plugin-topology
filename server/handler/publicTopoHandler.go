@@ -1,10 +1,7 @@
 package handler
 
 import (
-	"strings"
-
-	"gitee.com/openeuler/PilotGo-plugin-topology/server/errormanager"
-	"gitee.com/openeuler/PilotGo-plugin-topology/server/pluginclient"
+	"gitee.com/openeuler/PilotGo-plugin-topology/server/resourcemanage"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/service/public"
 	"gitee.com/openeuler/PilotGo/sdk/response"
 	"github.com/gin-gonic/gin"
@@ -17,19 +14,19 @@ import (
 
 // 	if len(collect_errlist) != 0 || len(process_errlist) != 0 {
 // 		for i, cerr := range collect_errlist {
-// 			collect_errlist[i] = errors.Wrap(cerr, "**errstack**4") // err top
-// 			agentmanager.Topo.ErrCh <- collect_errlist[i]
+// 			collect_errlist[i] = errors.Wrap(cerr, " ")
+//          resourcemanage.ERManager.ErrorTransmit("error", collect_errlist[i], false, true)
 // 		}
 
 // 		for i, perr := range process_errlist {
-// 			process_errlist[i] = errors.Wrap(perr, "**errstack**10") // err top
-// 			agentmanager.Topo.ErrCh <- process_errlist[i]
+// 			process_errlist[i] = errors.Wrap(perr, " ")
+//          resourcemanage.ERManager.ErrorTransmit("error", process_errlist[i], false, true)
 // 		}
 // 	}
 
 // 	if len(nodes) == 0 || len(edges) == 0 {
-// 		err := errors.New("nodes list is null or edges list is null **errstack**0") // err top
-// 		agentmanager.Topo.ErrCh <- err
+// 		err := errors.New("nodes list is null or edges list is null")
+//      resourcemanage.ERManager.ErrorTransmit("error", err, false, true)
 
 // 		ctx.JSON(http.StatusBadRequest, gin.H{
 // 			"code":  -1,
@@ -51,26 +48,23 @@ import (
 
 func SingleHostTreeHandle(ctx *gin.Context) {
 	uuid := ctx.Param("uuid")
-	nodes, err := public.SingleHostTreeService(uuid)
+	nodes, err, exit := public.SingleHostTreeService(uuid)
 	if err != nil {
-		switch strings.Split(errors.Cause(err).Error(), "**")[1] {
-		case "errstack":
-			err = errors.Wrap(err, " **errstack**2") // err top
-			errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
-			response.Fail(ctx, nil, err.Error())
-			return
-		case "errstackfatal":
-			err = errors.Wrap(err, " **errstackfatal**2") // err top
+		if exit {
+			err = errors.Wrap(err, " ")
 			response.Fail(ctx, nil, errors.Cause(err).Error())
-			errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
+			resourcemanage.ERManager.ErrorTransmit("error", err, true, true)
 			return
 		}
-
+		err = errors.Wrap(err, " ")
+		resourcemanage.ERManager.ErrorTransmit("error", err, false, true)
+		response.Fail(ctx, nil, err.Error())
+		return
 	}
 
 	if nodes == nil {
-		err := errors.New("node tree is null **errstack**0") // err top
-		errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
+		err := errors.New("node tree is null")
+		resourcemanage.ERManager.ErrorTransmit("error", err, false, true)
 
 		response.Fail(ctx, nil, err.Error())
 		return
@@ -96,26 +90,23 @@ func SingleHostTreeHandle(ctx *gin.Context) {
 }
 
 func MultiHostHandle(ctx *gin.Context) {
-	nodes, edges, combos, err := public.MultiHostService()
+	nodes, edges, combos, err, exit := public.MultiHostService()
 	if err != nil {
-		switch strings.Split(errors.Cause(err).Error(), "**")[1] {
-		case "errstack":
-			err = errors.Wrap(err, " **errstack**2") // err top
-			errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
-			response.Fail(ctx, nil, err.Error())
-			return
-		case "errstackfatal":
-			err = errors.Wrap(err, " **errstack**2") // err top
+		if exit {
+			err = errors.Wrap(err, " ")
 			response.Fail(ctx, nil, errors.Cause(err).Error())
-			errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
+			resourcemanage.ERManager.ErrorTransmit("error", err, true, true)
 			return
 		}
-
+		err = errors.Wrap(err, " ")
+		resourcemanage.ERManager.ErrorTransmit("error", err, false, true)
+		response.Fail(ctx, nil, err.Error())
+		return
 	}
 
 	if len(nodes) == 0 || len(edges) == 0 {
-		err := errors.New("nodes list is null or edges list is null **errstack**0") // err top
-		errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
+		err := errors.New("nodes list is null or edges list is null")
+		resourcemanage.ERManager.ErrorTransmit("error", err, false, true)
 
 		response.Fail(ctx, nil, err.Error())
 		return

@@ -10,7 +10,7 @@ import (
 func FileReadString(filePath string) (string, error) {
 	content, err := os.ReadFile(filePath)
 	if err != nil {
-		return "", errors.Errorf("%s **errstack**0", err.Error())
+		return "", errors.New(err.Error())
 	}
 
 	return string(content), nil

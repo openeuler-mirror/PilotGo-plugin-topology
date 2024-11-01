@@ -3,12 +3,12 @@ package handler
 import (
 	"context"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-contrib/timeout"
 
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/conf"
-	"gitee.com/openeuler/PilotGo-plugin-topology/server/errormanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/global"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/pluginclient"
 	"gitee.com/openeuler/PilotGo-plugin-topology/server/resourcemanage"
@@ -19,8 +19,8 @@ import (
 
 func InitWebServer() {
 	if pluginclient.Global_Client == nil {
-		err := errors.New("Global_Client is nil **errstackfatal**2") // err top
-		errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
+		err := errors.New("Global_Client is nil")
+		resourcemanage.ERManager.ErrorTransmit("error", err, true, true)
 		return
 	}
 
@@ -37,21 +37,31 @@ func InitWebServer() {
 
 	resourcemanage.ERManager.Wg.Add(1)
 	go func() {
-		defer resourcemanage.ERManager.Wg.Done()
-
 		if conf.Global_Config.Topo.Https_enabled {
-			if err := webserver.ListenAndServeTLS(conf.Global_Config.Topo.Addr, conf.Global_Config.Topo.Public_certificate, conf.Global_Config.Topo.Private_key); err != nil {
-				err = errors.Errorf("%s, addr: %s **errstackfatal**2", err.Error(), conf.Global_Config.Topo.Addr) // err top
-				errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
+			if err := webserver.ListenAndServeTLS(conf.Global_Config.Topo.Public_certificate, conf.Global_Config.Topo.Private_key); err != nil {
+				if strings.Contains(err.Error(), "Server closed") {
+					err = errors.New(err.Error())
+					resourcemanage.ERManager.ErrorTransmit("info", err, false, false)
+					return
+				}
+				err = errors.Errorf("%s, addr: %s", err.Error(), conf.Global_Config.Topo.Addr)
+				resourcemanage.ERManager.ErrorTransmit("error", err, true, true)
 			}
 		}
 		if err := webserver.ListenAndServe(); err != nil {
-			err = errors.Errorf("%s **errstackfatal**2", err.Error()) // err top
-			errormanager.ErrorTransmit(pluginclient.Global_Context, err, true)
+			if strings.Contains(err.Error(), "Server closed") {
+				err = errors.New(err.Error())
+				resourcemanage.ERManager.ErrorTransmit("info", err, false, false)
+				return
+			}
+			err = errors.New(err.Error())
+			resourcemanage.ERManager.ErrorTransmit("error", err, true, true)
 		}
 	}()
 
 	go func() {
+		defer resourcemanage.ERManager.Wg.Done()
+
 		<-resourcemanage.ERManager.GoCancelCtx.Done()
 
 		logger.Info("shutting down web server...")
@@ -62,10 +72,9 @@ func InitWebServer() {
 		if err := webserver.Shutdown(ctx); err != nil {
 			logger.Error("web server shutdown error: %s", err.Error())
 		} else {
-			logger.Info("web server stopped gracefully")
+			logger.Info("web server stopped")
 		}
 	}()
-
 }
 
 func InitRouter(router *gin.Engine) {

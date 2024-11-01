@@ -22,7 +22,7 @@ var StaticFiles embed.FS
 func StaticRouter(router *gin.Engine) {
 	sf, err := fs.Sub(StaticFiles, "assets")
 	if err != nil {
-		err = errors.Errorf("%s **errstack**2", err.Error()) // err top
+		err = errors.New(err.Error())
 		errormanager.ErrorTransmit(pluginclient.Global_Context, err, false)
 		return
 	}

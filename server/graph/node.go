@@ -53,7 +53,7 @@ func (ns *Nodes) Remove(node *Node) error {
 				}
 			}
 		} else {
-			return errors.Errorf("failed to remove node: %v from nodes.lookupbytype **errstack**0", node)
+			return errors.Errorf("failed to remove node: %v from nodes.lookupbytype", node)
 		}
 		// 移除ns.lookupbyuuid中的node节点
 		if uuidnodes, ok := ns.LookupByUUID[ns.Nodes[i].UUID]; ok && len(uuidnodes) > 0 {
@@ -64,7 +64,7 @@ func (ns *Nodes) Remove(node *Node) error {
 				}
 			}
 		} else {
-			return errors.Errorf("failed to remove node: %v from nodes.lookupbyuuid **errstack**0", node)
+			return errors.Errorf("failed to remove node: %v from nodes.lookupbyuuid", node)
 		}
 		// 移除ns.nodes和ns.lookup中的node节点
 		ns.Nodes = append(ns.Nodes[:i], ns.Nodes[i+1:]...)
@@ -73,5 +73,5 @@ func (ns *Nodes) Remove(node *Node) error {
 		return nil
 	}
 
-	return errors.Errorf("node %s not found**errstack**0", node.ID)
+	return errors.Errorf("node %s not found", node.ID)
 }
