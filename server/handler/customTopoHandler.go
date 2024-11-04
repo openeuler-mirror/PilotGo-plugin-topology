@@ -178,12 +178,12 @@ func RunCustomTopoHandle(ctx *gin.Context) {
 	select {
 	case <-ctx.Request.Context().Done():
 		return
-	case res := <-doneChan:
-		if len(res.Combos) != 0 && len(res.Edges.Edges) != 0 && len(res.Nodes.Nodes) != 0 {
+	case data := <-doneChan:
+		if len(data.Combos) != 0 && len(data.Edges.Edges) != 0 && len(data.Nodes.Nodes) != 0 {
 			response.Success(ctx, map[string]interface{}{
-				"nodes":  res.Nodes.Nodes,
-				"edges":  res.Edges.Edges,
-				"combos": res.Combos,
+				"nodes":  data.Nodes.Nodes,
+				"edges":  data.Edges.Edges,
+				"combos": data.Combos,
 			}, "")
 		}
 	}

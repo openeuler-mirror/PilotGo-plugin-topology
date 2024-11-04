@@ -126,7 +126,6 @@ func (erm *ErrorReleaseManagement) ResourceRelease() {
 	erm.Wg.Wait()
 
 	close(erm.errEndChan)
-
 	close(erm.ErrChan)
 
 	time.Sleep(100 * time.Millisecond)
