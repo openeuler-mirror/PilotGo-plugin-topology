@@ -220,11 +220,11 @@ func (r *RedisClient) UpdateTopoRunningAgentList(uuids []string, updateonce bool
 		})
 
 		if len(abort_reason) != 0 {
-			logger.Debug("========agent status========")
+			logger.Warn("========agent status========")
 			for _, r := range abort_reason {
-				logger.Debug(r)
+				logger.Warn(r)
 			}
-			logger.Debug("============================")
+			logger.Warn("============================")
 		}
 
 		if updateonce {

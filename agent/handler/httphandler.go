@@ -15,6 +15,9 @@ import (
 )
 
 func RawMetricDataHandle(ctx *gin.Context) {
+	// ttcode
+	fmt.Printf(">>>req.header: %+v\n", ctx.Request.Header)
+
 	// 验证topo server请求来源
 	if ctx.RemoteIP() != strings.Split(conf.Config().Topo.Server_addr, ":")[0] {
 		err := errors.Errorf("unknow client request from %s: %s", ctx.RemoteIP(), ctx.Request.URL)

@@ -63,9 +63,7 @@ func InitWebServer() {
 		defer resourcemanage.ERManager.Wg.Done()
 
 		<-resourcemanage.ERManager.GoCancelCtx.Done()
-
 		logger.Info("shutting down web server...")
-
 		ctx, cancel := context.WithTimeout(global.RootContext, 1*time.Second)
 		defer cancel()
 

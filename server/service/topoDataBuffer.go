@@ -10,42 +10,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-// 在parent_pid的子进程树中搜索target_pid
-func searchTargetPid(process_map map[int32][]int32, parent_pid, target_pid int32) bool {
-	find_target := false
-	for _, sub_pid := range process_map[parent_pid] {
-		if sub_pid == target_pid {
-			find_target = true
-			break
-		}
-		find_target = searchTargetPid(process_map, sub_pid, target_pid)
-		if find_target {
-			return true
-		}
-	}
-	return find_target
-}
-
-// 判断两个process node是否属于同一个应用
-func IsSamePstreeBranch(old_node, new_node *graph.Node, new_process_slice []*graph.Process) bool {
-	var small_pid, big_pid int32
-	old_node_pid, _ := strconv.Atoi(old_node.Metrics["Pid"])
-	new_node_pid, _ := strconv.Atoi(new_node.Metrics["Pid"])
-	if old_node_pid > new_node_pid {
-		small_pid = int32(new_node_pid)
-		big_pid = int32(old_node_pid)
-	} else {
-		small_pid = int32(old_node_pid)
-		big_pid = int32(new_node_pid)
-	}
-
-	new_process_map := make(map[int32][]int32)
-	for _, process := range new_process_slice {
-		new_process_map[int32(process.Pid)] = process.Cpid
-	}
-	return (old_node.Metrics["Ppid"] == new_node.Metrics["Ppid"] || searchTargetPid(new_process_map, small_pid, big_pid))
-}
-
 // 更新全局图数据缓存
 func UpdateGlobalTopoDataBuffer(custom_topodata *graph.TopoDataBuffer) {
 	if graph.Global_TopoDataBuffer == nil || graph.Global_TopoDataBuffer.TopoConfId != custom_topodata.TopoConfId {
@@ -70,7 +34,7 @@ func UpdateGlobalTopoDataBuffer(custom_topodata *graph.TopoDataBuffer) {
 				for _, global_node := range _global_node_slice {
 					for _, custom_node := range custom_topodata.Nodes.LookupByUUID[_uuid] {
 						if global_node.Name == custom_node.Name {
-							if global_node.Metrics["Pid"] == custom_node.Metrics["Pid"] || IsSamePstreeBranch(global_node, custom_node, agentmanager.Global_AgentManager.GetAgent_T(_uuid).Processes_2) {
+							if global_node.Metrics["Pid"] == custom_node.Metrics["Pid"] || isSamePstreeBranch(global_node, custom_node, agentmanager.Global_AgentManager.GetAgent_T(_uuid).Processes_2) {
 								// 更新节点数据
 								global_node.LayoutAttr = custom_node.LayoutAttr
 								global_node.Metrics = custom_node.Metrics
@@ -170,4 +134,40 @@ func UpdateGlobalTopoDataBuffer(custom_topodata *graph.TopoDataBuffer) {
 		}
 		wg.Wait()
 	}
+}
+
+// 在parent_pid的子进程树中搜索target_pid
+func searchTargetPid(process_map map[int32][]int32, parent_pid, target_pid int32) bool {
+	find_target := false
+	for _, sub_pid := range process_map[parent_pid] {
+		if sub_pid == target_pid {
+			find_target = true
+			break
+		}
+		find_target = searchTargetPid(process_map, sub_pid, target_pid)
+		if find_target {
+			return true
+		}
+	}
+	return find_target
+}
+
+// 判断两个process node是否属于同一个应用
+func isSamePstreeBranch(old_node, new_node *graph.Node, new_process_slice []*graph.Process) bool {
+	var small_pid, big_pid int32
+	old_node_pid, _ := strconv.Atoi(old_node.Metrics["Pid"])
+	new_node_pid, _ := strconv.Atoi(new_node.Metrics["Pid"])
+	if old_node_pid > new_node_pid {
+		small_pid = int32(new_node_pid)
+		big_pid = int32(old_node_pid)
+	} else {
+		small_pid = int32(old_node_pid)
+		big_pid = int32(new_node_pid)
+	}
+
+	new_process_map := make(map[int32][]int32)
+	for _, process := range new_process_slice {
+		new_process_map[int32(process.Pid)] = process.Cpid
+	}
+	return (old_node.Metrics["Ppid"] == new_node.Metrics["Ppid"] || searchTargetPid(new_process_map, small_pid, big_pid))
 }
