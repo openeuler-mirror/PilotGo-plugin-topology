@@ -34,7 +34,7 @@ func main() {
 	/*
 		init error control、resource release、goroutine end
 	*/
-	resourcemanage.InitResourceManage()
+	resourcemanage.InitResourceManager()
 
 	/*
 		init plugin client
