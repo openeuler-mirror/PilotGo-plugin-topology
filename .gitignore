@@ -17,8 +17,8 @@ PilotGo-plugin-topology-agent
 PilotGo-plugin-topology-server
 
 # static files
-server/handler/assets/
-server/handler/index.html
+cmd/server/handler/frontendResource/assets/
+cmd/server/handler/frontendResource/index.html
 web/node_modules
 web/dist/
 web/src/assets/*.json
