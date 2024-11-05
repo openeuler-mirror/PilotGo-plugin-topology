@@ -5,7 +5,7 @@ import (
 	"gitee.com/openeuler/PilotGo/sdk/logger"
 )
 
-func InitResourceManage() {
+func InitResourceManager() {
 	ermanager, err := CreateErrorReleaseManager(global.RootContext, global.Close)
 	if err != nil {
 		logger.Fatal(err.Error())
