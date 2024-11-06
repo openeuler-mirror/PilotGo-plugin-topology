@@ -8,8 +8,8 @@ import (
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/agentmanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/db/graphmanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/db/redismanager"
+	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/global"
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/pluginclient"
-	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/resourcemanage"
 	"gitee.com/openeuler/PilotGo/sdk/response"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -26,7 +26,7 @@ func HeartbeatHandle(ctx *gin.Context) {
 			"error": err.Error(),
 			"data":  nil,
 		})
-		resourcemanage.ERManager.ErrorTransmit("error", err, true, true)
+		global.ERManager.ErrorTransmit("error", err, true, true)
 	}
 	key := "heartbeat-topoagent-" + value.UUID
 	value.Time = time.Now()
@@ -38,13 +38,13 @@ func HeartbeatHandle(ctx *gin.Context) {
 			"error": err.Error(),
 			"data":  nil,
 		})
-		resourcemanage.ERManager.ErrorTransmit("error", err, true, true)
+		global.ERManager.ErrorTransmit("error", err, true, true)
 		return
 	}
 
 	if agentmanager.Global_AgentManager.GetAgent_P(value.UUID) == nil {
 		err := errors.Errorf("unknown agent's heartbeat: %s, %s", value.UUID, value.Addr)
-		resourcemanage.ERManager.ErrorTransmit("warn", err, false, false)
+		global.ERManager.ErrorTransmit("warn", err, false, false)
 		ctx.JSON(http.StatusUnauthorized, gin.H{
 			"code":  -1,
 			"error": err.Error(),
@@ -60,14 +60,14 @@ func HeartbeatHandle(ctx *gin.Context) {
 			"error": err.Error(),
 			"data":  nil,
 		})
-		resourcemanage.ERManager.ErrorTransmit("error", err, true, true)
+		global.ERManager.ErrorTransmit("error", err, true, true)
 		return
 	}
 
 	err := redismanager.Global_Redis.Set(key, value)
 	if err != nil {
 		err = errors.Wrap(err, " ")
-		resourcemanage.ERManager.ErrorTransmit("error", err, false, true)
+		global.ERManager.ErrorTransmit("error", err, false, true)
 
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"code":  -1,
@@ -88,14 +88,14 @@ func TimestampsHandle(ctx *gin.Context) {
 	if graphmanager.Global_GraphDB == nil {
 		err := errors.New("Global_GraphDB is nil")
 		response.Fail(ctx, nil, err.Error())
-		resourcemanage.ERManager.ErrorTransmit("error", err, true, true)
+		global.ERManager.ErrorTransmit("error", err, true, true)
 		return
 	}
 
 	times, err := graphmanager.Global_GraphDB.Timestamps_query()
 	if err != nil {
 		err = errors.Wrap(err, " ")
-		resourcemanage.ERManager.ErrorTransmit("error", err, false, true)
+		global.ERManager.ErrorTransmit("error", err, false, true)
 
 		response.Fail(ctx, nil, err.Error())
 		return
@@ -110,7 +110,7 @@ func AgentListHandle(ctx *gin.Context) {
 	if agentmanager.Global_AgentManager == nil {
 		err := errors.New("Global_AgentManager is nil")
 		response.Fail(ctx, nil, err.Error())
-		resourcemanage.ERManager.ErrorTransmit("error", err, true, true)
+		global.ERManager.ErrorTransmit("error", err, true, true)
 		return
 	}
 
@@ -132,14 +132,14 @@ func BatchListHandle(ctx *gin.Context) {
 	if pluginclient.Global_Client == nil {
 		err := errors.New("Global_Client is nil")
 		response.Fail(ctx, nil, err.Error())
-		resourcemanage.ERManager.ErrorTransmit("error", err, true, true)
+		global.ERManager.ErrorTransmit("error", err, true, true)
 		return
 	}
 
 	batchlist, err := pluginclient.Global_Client.BatchList()
 	if err != nil {
 		err = errors.New(err.Error())
-		resourcemanage.ERManager.ErrorTransmit("warn", err, false, false)
+		global.ERManager.ErrorTransmit("warn", err, false, false)
 		response.Fail(ctx, nil, err.Error())
 		return
 	}
@@ -159,14 +159,14 @@ func BatchMachineListHandle(ctx *gin.Context) {
 	if pluginclient.Global_Client == nil {
 		err := errors.New("Global_Client is nil")
 		response.Fail(ctx, nil, err.Error())
-		resourcemanage.ERManager.ErrorTransmit("error", err, true, true)
+		global.ERManager.ErrorTransmit("error", err, true, true)
 		return
 	}
 
 	machine_uuids, err := pluginclient.Global_Client.BatchUUIDList(BatchId)
 	if err != nil {
 		err = errors.New(err.Error())
-		resourcemanage.ERManager.ErrorTransmit("error", err, false, true)
+		global.ERManager.ErrorTransmit("error", err, false, true)
 		response.Fail(ctx, nil, err.Error())
 		return
 	}
@@ -174,7 +174,7 @@ func BatchMachineListHandle(ctx *gin.Context) {
 	if agentmanager.Global_AgentManager == nil {
 		err := errors.New("Global_AgentManager is nil")
 		response.Fail(ctx, nil, err.Error())
-		resourcemanage.ERManager.ErrorTransmit("error", err, true, true)
+		global.ERManager.ErrorTransmit("error", err, true, true)
 		return
 	}
 

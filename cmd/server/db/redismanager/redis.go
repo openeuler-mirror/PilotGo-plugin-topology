@@ -12,7 +12,6 @@ import (
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/agentmanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/conf"
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/global"
-	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/resourcemanage"
 	"gitee.com/openeuler/PilotGo/sdk/logger"
 	"gitee.com/openeuler/PilotGo/sdk/utils/httputils"
 	"github.com/go-redis/redis/v8"
@@ -62,7 +61,7 @@ func RedisInit(url, pass string, db int, dialTimeout time.Duration) *RedisClient
 	_, err := r.Client.Ping(timeoutCtx).Result()
 	if err != nil {
 		err = errors.Errorf("redis connection timeout: %s", err.Error())
-		resourcemanage.ERManager.ErrorTransmit("error", err, true, true)
+		global.ERManager.ErrorTransmit("error", err, true, true)
 	}
 
 	return r
@@ -135,7 +134,7 @@ func (r *RedisClient) UpdateTopoRunningAgentList(uuids []string, updateonce bool
 
 	if agentmanager.Global_AgentManager == nil {
 		err := errors.New("Global_AgentManager is nil")
-		resourcemanage.ERManager.ErrorTransmit("error", err, true, true)
+		global.ERManager.ErrorTransmit("error", err, true, true)
 		return -1
 	}
 
@@ -150,7 +149,7 @@ func (r *RedisClient) UpdateTopoRunningAgentList(uuids []string, updateonce bool
 		agent_keys, err := r.Scan("heartbeat-topoagent*")
 		if err != nil {
 			err = errors.Wrap(err, " ")
-			resourcemanage.ERManager.ErrorTransmit("error", err, false, true)
+			global.ERManager.ErrorTransmit("error", err, false, true)
 			continue
 		}
 
@@ -162,7 +161,7 @@ func (r *RedisClient) UpdateTopoRunningAgentList(uuids []string, updateonce bool
 					v, err := r.Get(key, &AgentHeartbeat{})
 					if err != nil {
 						err = errors.Wrap(err, " ")
-						resourcemanage.ERManager.ErrorTransmit("error", err, false, true)
+						global.ERManager.ErrorTransmit("error", err, false, true)
 						return
 					}
 
@@ -197,7 +196,7 @@ func (r *RedisClient) UpdateTopoRunningAgentList(uuids []string, updateonce bool
 
 					if ok, err := global.IsIPandPORTValid(agentp.IP, agentmanager.Global_AgentManager.AgentPort); !ok {
 						err := errors.Errorf("%s:%s is unreachable (%s) %s", agentp.IP, agentmanager.Global_AgentManager.AgentPort, err.Error(), agentp.UUID)
-						resourcemanage.ERManager.ErrorTransmit("warn", err, false, false)
+						global.ERManager.ErrorTransmit("warn", err, false, false)
 						abort_reason = append(abort_reason, fmt.Sprintf("%s:ip||port不可达", agentvalue.UUID))
 						return
 					}
@@ -258,7 +257,7 @@ func (r *RedisClient) ActiveHeartbeatDetection(uuids []string) {
 			err = json.Unmarshal(resp.Body, &resp_body)
 			if err != nil {
 				err = errors.Errorf(err.Error())
-				resourcemanage.ERManager.ErrorTransmit("error", err, false, true)
+				global.ERManager.ErrorTransmit("error", err, false, true)
 				return
 			}
 
@@ -273,7 +272,7 @@ func (r *RedisClient) ActiveHeartbeatDetection(uuids []string) {
 			err = r.Set(key, value)
 			if err != nil {
 				err = errors.Wrap(err, " ")
-				resourcemanage.ERManager.ErrorTransmit("error", err, false, true)
+				global.ERManager.ErrorTransmit("error", err, false, true)
 				return
 			}
 		}
@@ -281,7 +280,7 @@ func (r *RedisClient) ActiveHeartbeatDetection(uuids []string) {
 
 	if agentmanager.Global_AgentManager == nil {
 		err := errors.New("Global_AgentManager is nil")
-		resourcemanage.ERManager.ErrorTransmit("error", err, true, true)
+		global.ERManager.ErrorTransmit("error", err, true, true)
 		return
 	}
 

@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/agentmanager"
+	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/global"
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/graph"
-	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/resourcemanage"
 	"github.com/pkg/errors"
 )
 
@@ -124,7 +124,7 @@ func (wcm *WebClientsManagement) UpdateClientTopoDataBuffer(_token string, _cust
 						err := wcm.Get(_token).Nodes.Remove(global_node)
 						if err != nil {
 							err = errors.Wrap(err, "->")
-							resourcemanage.ERManager.ErrorTransmit("error", err, false, true)
+							global.ERManager.ErrorTransmit("error", err, false, true)
 							continue
 						}
 						global_edge_id_slice_any, ok := wcm.Get(_token).Edges.Node_Edges_map.Load(global_node.ID)
@@ -140,7 +140,7 @@ func (wcm *WebClientsManagement) UpdateClientTopoDataBuffer(_token string, _cust
 							err := wcm.Get(_token).Edges.Remove(global_edge.ID)
 							if err != nil {
 								err = errors.Wrap(err, "->")
-								resourcemanage.ERManager.ErrorTransmit("error", err, false, true)
+								global.ERManager.ErrorTransmit("error", err, false, true)
 							}
 						}
 					}
@@ -206,11 +206,11 @@ func (wcm *WebClientsManagement) Get(_token string) *graph.TopoDataBuffer {
 
 // TODO:
 func (wcm *WebClientsManagement) HeartbeatDetect() {
-	defer resourcemanage.ERManager.Wg.Done()
-	resourcemanage.ERManager.Wg.Add(1)
+	defer global.ERManager.Wg.Done()
+	global.ERManager.Wg.Add(1)
 	for {
 		select {
-		case <-resourcemanage.ERManager.GoCancelCtx.Done():
+		case <-global.ERManager.GoCancelCtx.Done():
 			return
 		case <-time.After(1 * time.Second):
 			for k, v := range wcm.webClients {

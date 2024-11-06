@@ -10,7 +10,7 @@ import (
 	"net/http"
 	"strings"
 
-	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/resourcemanage"
+	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/global"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 )
@@ -22,7 +22,7 @@ func StaticRouter(router *gin.Engine) {
 	sf, err := fs.Sub(StaticFiles, "assets")
 	if err != nil {
 		err = errors.New(err.Error())
-		resourcemanage.ERManager.ErrorTransmit("error", err, false, true)
+		global.ERManager.ErrorTransmit("error", err, false, true)
 		return
 	}
 

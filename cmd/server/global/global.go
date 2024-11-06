@@ -3,6 +3,7 @@ package global
 import (
 	"context"
 
+	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/resourcemanage"
 	"github.com/go-redis/redis/v8"
 	influx "github.com/influxdata/influxdb-client-go/v2"
 	"github.com/neo4j/neo4j-go-driver/v4/neo4j"
@@ -17,6 +18,8 @@ var (
 var (
 	RootContext = context.Background()
 )
+
+var ERManager *resourcemanage.ErrorReleaseManagement
 
 var (
 	Global_graph_database string

@@ -13,8 +13,8 @@ import (
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/agentmanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/conf"
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/db/mysqlmanager"
+	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/global"
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/graph"
-	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/resourcemanage"
 	"gitee.com/openeuler/PilotGo/sdk/logger"
 	"gitee.com/openeuler/PilotGo/sdk/utils/httputils"
 	"github.com/mitchellh/mapstructure"
@@ -72,7 +72,7 @@ func (t *TopoGenerator) ProcessingData(agentnum int) (*graph.Nodes, *graph.Edges
 
 	start := time.Now()
 
-	ctx1, cancel1 := context.WithCancel(resourcemanage.ERManager.GoCancelCtx)
+	ctx1, cancel1 := context.WithCancel(global.ERManager.GoCancelCtx)
 	go func(cancelfunc context.CancelFunc) {
 		for {
 			if atomic.LoadInt32(t.Factory.Return_Agent_node_count()) == int32(agentnum) {
@@ -84,7 +84,7 @@ func (t *TopoGenerator) ProcessingData(agentnum int) (*graph.Nodes, *graph.Edges
 
 	if agentmanager.Global_AgentManager == nil {
 		err := errors.New("Global_AgentManager is nil")
-		resourcemanage.ERManager.ErrorTransmit("error", err, true, true)
+		global.ERManager.ErrorTransmit("error", err, true, true)
 		return nil, nil, nil, nil
 	}
 
@@ -138,7 +138,7 @@ func (t *TopoGenerator) collectInstantData() []error {
 
 	if agentmanager.Global_AgentManager == nil {
 		err := errors.New("Global_AgentManager is nil")
-		resourcemanage.ERManager.ErrorTransmit("error", err, true, true)
+		global.ERManager.ErrorTransmit("error", err, true, true)
 		return nil
 	}
 

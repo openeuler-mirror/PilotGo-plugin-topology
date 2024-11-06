@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/conf"
+	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/global"
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/pluginclient"
-	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/resourcemanage"
 	"gitee.com/openeuler/PilotGo/sdk/utils/httputils"
 	"github.com/pkg/errors"
 )
@@ -30,11 +30,11 @@ func WaitingForHandshake() {
 }
 
 func Wait4TopoServerReady() {
-	defer resourcemanage.ERManager.Wg.Done()
-	resourcemanage.ERManager.Wg.Add(1)
+	defer global.ERManager.Wg.Done()
+	global.ERManager.Wg.Add(1)
 	for {
 		select {
-		case <-resourcemanage.ERManager.GoCancelCtx.Done():
+		case <-global.ERManager.GoCancelCtx.Done():
 			return
 		default:
 			url := "http://" + conf.Global_Config.Topo.Addr + "/plugin_manage/info"
@@ -53,7 +53,7 @@ func (am *AgentManager) InitMachineList() {
 
 	if pluginclient.Global_Client == nil {
 		err := errors.New("Global_Client is nil")
-		resourcemanage.ERManager.ErrorTransmit("error", err, true, true)
+		global.ERManager.ErrorTransmit("error", err, true, true)
 		return
 	}
 
@@ -62,7 +62,7 @@ func (am *AgentManager) InitMachineList() {
 	machine_list, err := pluginclient.Global_Client.MachineList()
 	if err != nil {
 		err = errors.Errorf(err.Error())
-		resourcemanage.ERManager.ErrorTransmit("error", err, true, true)
+		global.ERManager.ErrorTransmit("error", err, true, true)
 	}
 
 	for _, m := range machine_list {
@@ -80,7 +80,7 @@ func (am *AgentManager) UpdateMachineList() {
 	machine_list, err := pluginclient.Global_Client.MachineList()
 	if err != nil {
 		err = errors.Errorf(err.Error())
-		resourcemanage.ERManager.ErrorTransmit("error", err, true, true)
+		global.ERManager.ErrorTransmit("error", err, true, true)
 	}
 
 	am.PAgentMap.Range(func(key, value interface{}) bool {
