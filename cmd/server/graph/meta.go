@@ -11,8 +11,6 @@ import (
 	"github.com/shirou/gopsutil/process"
 )
 
-var Global_TopoDataBuffer *TopoDataBuffer
-
 type TopoDataBuffer struct {
 	TopoConfId string
 	Nodes      *Nodes
