@@ -1,14 +1,13 @@
 <template>
-
   <div id="topoDisplay" class="topoContaint" v-loading="loading">
     <el-page-header @back="goBack">
       <template #content>
-        <span style="font-size: 14px;"> 拓扑图 </span>
+        <span style="font-size: 14px"> 拓扑图 </span>
       </template>
       <template #extra>
         <div class="flex items-center">
           <el-dropdown @command="changeInterval">
-            <span style="font-size: 14px;"> 定时器 </span>
+            <span style="font-size: 14px"> 定时器 </span>
             <template #dropdown>
               <el-dropdown-menu>
                 <el-dropdown-item command="关闭">关闭</el-dropdown-item>
@@ -20,8 +19,13 @@
       </template>
     </el-page-header>
     <!-- 展示topo图 -->
-    <PGTopo ref="topoRef" style="width: 100%;height: calc(100% - 50px);" :graph_mode="graphMode"
-      :time_interval="timeInterval" v-on:click-topo-canvas="clickTopoCanvas" />
+    <PGTopo
+      ref="topoRef"
+      style="width: 100%; height: calc(100% - 50px)"
+      :graph_mode="graphMode"
+      :time_interval="timeInterval"
+      v-on:click-topo-canvas="clickTopoCanvas"
+    />
     <!-- 嵌套抽屉组件展示数据 -->
     <nodeDetail />
     <!-- 嵌套抽屉组件展示日志信息 -->
@@ -32,63 +36,84 @@
       <ArrowUpBold class="up_log_up" v-if="!showLogChart" />
       <ArrowDownBold class="up_log_down" v-else />
     </el-icon>
-    <el-dialog v-model="dialog" :title="title" width="80%" @close="closeDialog" destroy-on-close>
-      <logStream v-if="dialog" :log_data="log_stream" :log_total="log_total" v-on:get-more="getMoreLogStream"
-        v-on:get-time-range-log="getRangeTimeLog" />
+    <el-dialog
+      v-model="dialog"
+      :title="title"
+      width="80%"
+      @close="closeDialog"
+      destroy-on-close
+    >
+      <logStream
+        v-if="log_type === 'elk'"
+        :log_data="elklog_stream"
+        :log_total="elklog_total"
+        v-on:get-more="getMoreLogStream"
+        v-on:get-time-range-log="getRangeTimeLog"
+      />
+
+      <logStream
+        v-show="log_type === 'plugin'"
+        :log_data="pluginlog_stream"
+        :log_total="pluginlog_total"
+        :service_list="serviceList"
+        v-on:get-ws-logs="getWsLogs"
+      />
     </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ElMessage } from 'element-plus'
-import { onBeforeUnmount, onMounted, ref, watch, watchEffect, nextTick } from 'vue';
-import PGTopo from '@/components/PGTopo.vue';
-import nodeDetail from './nodeDetail.vue';
-import LogChart from './topoLogs/index.vue';
-import logStream from './topoLogs/logStream.vue';
+import { ElMessage } from "element-plus";
+import { onBeforeUnmount, onMounted, ref, watch, watchEffect, nextTick } from "vue";
+import PGTopo from "@/components/PGTopo.vue";
+import nodeDetail from "./nodeDetail.vue";
+import LogChart from "./topoLogs/index.vue";
+import logStream from "./topoLogs/logStream_plugin.vue";
 
 import { getCustomTopo, getTopoData, getUuidTopo } from "@/request/api";
-import { getELKProcessLogStream } from '@/request/elk';
-import { useTopoStore } from '@/stores/topo';
-import { useConfigStore } from '@/stores/config';
-import router from '@/router';
+import { getELKProcessLogStream } from "@/request/elk";
+import { useTopoStore } from "@/stores/topo";
+import { useConfigStore } from "@/stores/config";
+import router from "@/router";
+import socket from "@/utils/socket";
+import { formatDate } from "@/utils/dateFormat";
 
-const graphMode = ref('default');
-const timeInterval = ref('关闭');
-let time_interval_num: number = 0
+const graphMode = ref("default");
+const timeInterval = ref("关闭");
+let time_interval_num: number = 0;
 let timer: any;
 const showTopo = ref(false);
 const loading = ref(false);
-let request_type: string
-let request_id: string | number
+let request_type: string;
+let request_id: string | number;
 
 let showLogChart = ref(false);
-const logChart = ref(null)
+const logChart = ref(null);
 
-const topoRef = ref(null)
+const topoRef = ref(null);
 
 const dialog = ref(false);
-const title = ref('日志详情');
+const title = ref("日志详情");
+const log_type = ref("plugin");
 onMounted(() => {
   loading.value = true;
-})
+});
 onBeforeUnmount(() => {
   // 离开页面，清空点击事件缓存数据
   useTopoStore().$reset();
-})
+});
 
 // 点击画布关闭日志tab
-const clickTopoCanvas = (_e: any) => {
+const clickTopoCanvas = () => {
   showLogChart.value = false;
-}
-
+};
 
 const goBack = () => {
   if (timer) {
     clearInterval(timer);
   }
-  router.push('topoList');
-}
+  router.push("topoList");
+};
 
 watchEffect(() => {
   request_type = useConfigStore().topo_request.type;
@@ -96,8 +121,8 @@ watchEffect(() => {
   nextTick(() => {
     let topoData = {};
     switch (request_type) {
-      case 'custom':
-        getCustomTopo({ id: request_id as number }).then(res => {
+      case "custom":
+        getCustomTopo({ id: request_id as number }).then((res) => {
           if (res.data.code === 200) {
             topoData = res.data.data;
             loading.value = false;
@@ -108,49 +133,49 @@ watchEffect(() => {
             useTopoStore().topo_data = topoData;
           } else {
             ElMessage.error(res.data.msg);
-            router.push('topoList');
+            router.push("topoList");
           }
-        })
+        });
 
-        topoTimer(request_id, '关闭');
+        topoTimer(request_id, "关闭");
 
         break;
-      case 'single':
-        getUuidTopo({ uuid: request_id as string }).then(res => {
+      case "single":
+        getUuidTopo({ uuid: request_id as string }).then((res) => {
           if (res.data.code === 200) {
             topoData = res.data.data;
             loading.value = false;
             showTopo.value = true;
             setTimeout(() => {
               useTopoStore().topo_data = topoData;
-            }, 200)
+            }, 200);
           } else {
             ElMessage.error(res.data.msg);
-            router.push('topoList');
+            router.push("topoList");
           }
-        })
+        });
         break;
 
       default:
-        getTopoData().then(res => {
+        getTopoData().then((res) => {
           if (res.data.code === 200) {
             topoData = res.data.data;
             useTopoStore().topo_data = topoData;
             showTopo.value = true;
             loading.value = false;
           }
-        })
+        });
         break;
     }
+  });
+});
 
-
-  })
-
-})
-
-watch(() => timeInterval.value, (newdata) => {
-  topoTimer(request_id, newdata);
-})
+watch(
+  () => timeInterval.value,
+  (newdata) => {
+    topoTimer(request_id, newdata);
+  }
+);
 
 function changeInterval(command: string) {
   timeInterval.value = command;
@@ -160,33 +185,33 @@ function changeInterval(command: string) {
 function topoTimer(request_id: any, interval: string) {
   let topoData = {};
 
-  if (interval === '关闭') {
-    clearInterval(timer)
+  if (interval === "关闭") {
+    clearInterval(timer);
   } else {
     switch (timeInterval.value) {
-      case '5s':
-        time_interval_num = 5000
+      case "5s":
+        time_interval_num = 5000;
         break;
-      case '10s':
-        time_interval_num = 10000
+      case "10s":
+        time_interval_num = 10000;
         break;
-      case '15s':
-        time_interval_num = 15000
+      case "15s":
+        time_interval_num = 15000;
         break;
-      case '1m':
-        time_interval_num = 60000
+      case "1m":
+        time_interval_num = 60000;
         break;
-      case '5m':
-        time_interval_num = 300000
+      case "5m":
+        time_interval_num = 300000;
         break;
     }
 
     try {
       if (timer) {
-        clearInterval(timer)
+        clearInterval(timer);
       }
       timer = setInterval(() => {
-        getCustomTopo({ id: request_id as number }).then(res => {
+        getCustomTopo({ id: request_id as number }).then((res) => {
           if (res.data.code === 200) {
             topoData = res.data.data;
             loading.value = false;
@@ -197,32 +222,31 @@ function topoTimer(request_id: any, interval: string) {
             useTopoStore().topo_data = topoData;
           } else {
             ElMessage.error(res.data.msg);
-            router.push('topoList');
+            router.push("topoList");
           }
-        })
-      }, time_interval_num)
-
+        });
+      }, time_interval_num);
     } catch (error) {
-      console.error(error)
+      console.error(error);
     }
   }
 }
 
 // 请求某一个日志文件流
 interface TimeRange {
-  start: Date,
-  end: Date
+  start: Date;
+  end: Date;
 }
-const log_stream = ref([]);
+const elklog_stream = ref([]);
 const logfile_params = ref({} as any);
-const log_total = ref(0);
+const elklog_total = ref(0);
 const isRangeLog = ref(false);
 const timeRange = ref({} as TimeRange);
 const handleShowLog = (node_info?: any, _size?: number) => {
   logfile_params.value = node_info;
   if (node_info) {
     dialog.value = true;
-    title.value = node_info.process_name + '日志流';
+    title.value = node_info.process_name + "日志流";
   }
   let log_query = {
     id: "log_stream",
@@ -233,33 +257,33 @@ const handleShowLog = (node_info?: any, _size?: number) => {
       queryfield_hostname: node_info.host_name,
       queryfield_processname: node_info.process_name,
       from: 0,
-      size: 20
-    }
-  }
+      size: 20,
+    },
+  };
   if (_size) {
     log_query.params.size = _size;
   }
   if (isRangeLog.value) {
-    log_query.params.queryfield_range_gte = timeRange.value.start.getTime()
-    log_query.params.queryfield_range_lte = timeRange.value.end.getTime()
+    log_query.params.queryfield_range_gte = timeRange.value.start.getTime();
+    log_query.params.queryfield_range_lte = timeRange.value.end.getTime();
   }
   getELKProcessLogStream(log_query).then((res: any) => {
     if (res.data.code === 200) {
       if (res.data.data.hits.length > 0) {
-        log_stream.value = res.data.data.hits;
-        log_total.value = res.data.data.total;
+        elklog_stream.value = res.data.data.hits;
+        elklog_total.value = res.data.data.total;
       } else {
-        ElMessage.info('当前文件无日志数据')
+        ElMessage.info("当前文件无日志数据");
       }
     } else {
-      ElMessage.error(res.data.msg)
+      ElMessage.error(res.data.msg);
     }
-  })
-}
+  });
+};
 
 const getMoreLogStream = (size: number) => {
   handleShowLog(logfile_params.value, size);
-}
+};
 
 const getRangeTimeLog = (time_range: TimeRange) => {
   if (time_range) {
@@ -267,29 +291,143 @@ const getRangeTimeLog = (time_range: TimeRange) => {
     timeRange.value = time_range;
     handleShowLog(logfile_params.value, 20);
   }
+};
+
+// ----------与目标服务器通信消息处理-----------
+interface logItem {
+  timestamp: string;
+  message: string;
+  level: string;
+  targetName: string;
 }
+const serviceList = ref([] as any);
+const pluginlog_stream = ref([] as logItem[]);
+const pluginlog_total = ref(0);
+const getPluginLogStream = () => {
+  socket.init(receiveMessage, "");
+  setTimeout(() => {
+    if (socket.socket_open) {
+      socket.send({
+        type: 1,
+        joptions: null,
+        data: useTopoStore().node_click_info.target_ip + ":9995",
+      });
+    }
+  }, 500);
+};
+
+const receiveMessage = (message: any) => {
+  let result = JSON.parse(message.data);
+  switch (result.type) {
+    case 3:
+      // 与目标机器建立连接
+      socket.send({ type: 2, joptions: null, data: null });
+      break;
+
+    default:
+      if (result.data.type === 0) {
+        // 返回消息属于日志条目
+        if (noTail.value) {
+          // 固定时间段
+          pluginlog_stream.value = pluginlog_stream.value.concat(result.data.data.hits);
+          pluginlog_total.value = result.data.data.total;
+        } else {
+          pluginlog_stream.value.push(result.data.data);
+        }
+      } else {
+        // 返回消息属于主机服务列表
+        let severiceOptios = [] as any[];
+        Object.keys(result.data.data).forEach((i: string) => {
+          let selectItem = { label: "", options: [] };
+          selectItem["label"] = i;
+          selectItem["options"] = result.data.data[i].map((j: string) => {
+            let opt = { label: "", value: "" };
+            opt["label"] = j;
+            opt["value"] = j;
+            return opt;
+          });
+          severiceOptios.push(selectItem);
+        });
+        serviceList.value = JSON.parse(JSON.stringify(severiceOptios));
+      }
+      break;
+  }
+};
+// 发送ws日志请求
+const noTail = ref(false); // false:实时  true:固定时间段
+const getWsLogs = (params: any) => {
+  noTail.value = params.noTail;
+  if (params.isResetLog) {
+    pluginlog_stream.value = [];
+    pluginlog_total.value = 0;
+  }
+  let joptions = {
+    severity: params.severity,
+    since:
+      params.timeRange[0] == ""
+        ? ""
+        : formatDate(params.timeRange[0], "YYYY-MM-DD HH:ii:ss"),
+    until:
+      params.timeRange[1] == ""
+        ? ""
+        : formatDate(params.timeRange[1], "YYYY-MM-DD HH:ii:ss"),
+    unit: "",
+    user: "",
+    transport: "",
+    notail: params.noTail,
+    from: params.from,
+    size: params.size ? params.size : null,
+  } as any;
+  let selected_service = serviceList.value.find((group: any) =>
+    group.options.some((option: any) => option.label == params.service)
+  );
+  selected_service.label === "systemd"
+    ? (joptions["unit"] = params.service)
+    : (joptions[`${selected_service.label}`] = params.service);
+  socket.send({
+    type: params.type ? params.type : 0,
+    joptions,
+    data: null,
+  });
+};
+
 // 关闭日志流弹窗事件
 const closeDialog = () => {
   isRangeLog.value = false;
-  timeRange.value = { start: new Date(new Date().getTime() - 2 * 60 * 60 * 1000), end: new Date() }
-}
+  timeRange.value = {
+    start: new Date(new Date().getTime() - 2 * 60 * 60 * 1000),
+    end: new Date(),
+  };
+  useTopoStore().$reset();
+  socket.close();
+  pluginlog_stream.value = [];
+  pluginlog_total.value = 0;
+};
 
-/* 
-* 监听topo图节点右键查看日志事件
-* node_click_info:{host_name:节点|父节点name,node_id:节点id,process_name:进程name}
-*/
-watch(() => useTopoStore().node_click_info, (node_click_info) => {
-  if (node_click_info.node_id) {
-    dialog.value = true;
-    let query_params = {
-      process_name: node_click_info.process_name,
-      value: [new Date().getTime() - 60 * 1000],
-      host_name: node_click_info.host_name,
-    };
-    handleShowLog(query_params);
-  }
-
-}, { immediate: true, deep: true })
+/*
+ * 监听topo图节点右键查看日志事件
+ * node_click_info:{host_name:节点|父节点name,node_id:节点id,process_name:进程name}
+ */
+watch(
+  () => useTopoStore().node_click_info,
+  (node_click_info) => {
+    console.log("监听到新节点：", node_click_info);
+    if (node_click_info.node_id) {
+      dialog.value = true;
+      if (log_type.value === "elk") {
+        let query_params = {
+          process_name: node_click_info.process_name,
+          value: [new Date().getTime() - 60 * 1000],
+          host_name: node_click_info.host_name,
+        };
+        handleShowLog(query_params);
+      } else {
+        getPluginLogStream();
+      }
+    }
+  },
+  { immediate: true, deep: true }
+);
 </script>
 
 <style scoped lang="scss">
@@ -300,7 +438,6 @@ watch(() => useTopoStore().node_click_info, (node_click_info) => {
   position: relative;
 
   @keyframes bounce {
-
     0%,
     100% {
       transform: translateY(0);
@@ -325,7 +462,7 @@ watch(() => useTopoStore().node_click_info, (node_click_info) => {
 
   .fade-enter-active,
   .fade-leave-active {
-    transition: all .5s ease-in-out;
+    transition: all 0.5s ease-in-out;
   }
 
   .fade-enter-from,

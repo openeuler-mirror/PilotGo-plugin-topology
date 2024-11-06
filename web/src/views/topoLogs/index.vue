@@ -273,6 +273,8 @@ const getRangeTimeLog = (time_range: TimeRange) => {
 const closeDialog = () => {
   isRangeLog.value = false;
   timeRange.value = { start: new Date(new Date().getTime() - 2 * 60 * 60 * 1000), end: new Date() }
+  // 清空点击节点信息
+  useTopoStore().$reset();
 }
 
 </script>

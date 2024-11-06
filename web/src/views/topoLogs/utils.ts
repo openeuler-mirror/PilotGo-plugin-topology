@@ -54,35 +54,35 @@ export const setBorderRadius = (series: any) => {
 // 日志等级
 export let levels = [
   {
-    value: 'emergency',
+    value: '0',
     label: 'emergency',
   },
   {
-    value: 'alert',
-    label: 'emergency',
+    value: '1',
+    label: 'alert',
   },
   {
-    value: 'critical',
+    value: '2',
     label: 'critical',
   },
   {
-    value: 'error',
+    value: '3',
     label: 'error',
   },
   {
-    value: 'warning',
+    value: '4',
     label: 'warning',
   },
   {
-    value: 'notice',
+    value: '5',
     label: 'notice',
   },
   {
-    value: 'informational',
+    value: '6',
     label: 'informational',
   },
   {
-    value: 'debug',
+    value: '7',
     label: 'debug',
   },
 ]
