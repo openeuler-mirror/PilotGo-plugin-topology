@@ -10,6 +10,7 @@ import (
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/pluginclient"
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/resourcemanage"
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/service"
+	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/service/webclient"
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/signal"
 	// "github.com/pyroscope-io/pyroscope/pkg/cmd/agent/profiler"
 )
@@ -51,6 +52,11 @@ func main() {
 		neo4j mysql redis prometheus
 	*/
 	db.InitDB()
+
+	/*
+		浏览器客户端
+	*/
+	webclient.InitWebClientsManager()
 
 	/*
 		init web server

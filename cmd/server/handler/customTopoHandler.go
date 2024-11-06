@@ -6,8 +6,8 @@ import (
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/db/mysqlmanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/graph"
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/resourcemanage"
-	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/service"
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/service/custom"
+	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/service/webclient"
 	"gitee.com/openeuler/PilotGo/sdk/response"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -123,12 +123,14 @@ func UpdateCustomTopoHandle(ctx *gin.Context) {
 func RunCustomTopoHandle(ctx *gin.Context) {
 	// TODO: 执行业务之前先判断batch集群中的机器是否部署且运行topo-agent
 
+	tcid_str := ctx.Query("id")
+	webclient_id := ctx.Query("clientId")
+
 	doneChan := make(chan *graph.TopoDataBuffer, 1)
 
 	go func() {
 		var custom_topodata *graph.TopoDataBuffer = new(graph.TopoDataBuffer)
 
-		tcid_str := ctx.Query("id")
 		if tcid_str == "" {
 			err := errors.New("id is nil")
 			resourcemanage.ERManager.ErrorTransmit("error", err, false, true)
@@ -171,14 +173,21 @@ func RunCustomTopoHandle(ctx *gin.Context) {
 			return
 		}
 
-		service.UpdateGlobalTopoDataBuffer(custom_topodata)
-		doneChan <- graph.Global_TopoDataBuffer
+		webclient.WebClientsManager.UpdateClientTopoDataBuffer(webclient_id, custom_topodata)
+		
+		doneChan <- webclient.WebClientsManager.Get(webclient_id)
 	}()
 
 	select {
 	case <-ctx.Request.Context().Done():
 		return
 	case data := <-doneChan:
+		if data == nil {
+			err := errors.Errorf("topodatabuff is nill, client: %s, %s", ctx.Request.RemoteAddr, webclient_id)
+			resourcemanage.ERManager.ErrorTransmit("error", err, false, true)
+			response.Fail(ctx, nil, err.Error())
+			return
+		}
 		if len(data.Combos) != 0 && len(data.Edges.Edges) != 0 && len(data.Nodes.Nodes) != 0 {
 			response.Success(ctx, map[string]interface{}{
 				"nodes":  data.Nodes.Nodes,
