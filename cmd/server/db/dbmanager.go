@@ -11,7 +11,6 @@ import (
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/db/mysqlmanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/db/redismanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/global"
-	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/resourcemanage"
 	"gitee.com/openeuler/PilotGo/sdk/logger"
 )
 
@@ -21,7 +20,7 @@ func InitDB() {
 		ClearGraphData(conf.Global_Config.Neo4j.Retention)
 	} else {
 		err := errors.New("do not save graph data")
-		resourcemanage.ERManager.ErrorTransmit("warn", err, false, false)
+		global.ERManager.ErrorTransmit("warn", err, false, false)
 	}
 
 	initRedis()
@@ -43,7 +42,7 @@ func initGraphDB() {
 
 	default:
 		err := errors.Errorf("unknown database in topo_server.yaml: %s", conf.Global_Config.Topo.GraphDB)
-		resourcemanage.ERManager.ErrorTransmit("error", err, true, true)
+		global.ERManager.ErrorTransmit("error", err, true, true)
 	}
 
 	if graphmanager.Global_GraphDB != nil {
@@ -84,18 +83,18 @@ func initInflux() {
 func ClearGraphData(retention int64) {
 	if graphmanager.Global_GraphDB == nil {
 		err := errors.New("global_graphdb is nil")
-		resourcemanage.ERManager.ErrorTransmit("error", err, true, true)
+		global.ERManager.ErrorTransmit("error", err, true, true)
 		return
 	}
 
 	graphmanager.Global_GraphDB.ClearExpiredData(retention)
 
-	resourcemanage.ERManager.Wg.Add(1)
+	global.ERManager.Wg.Add(1)
 	go func() {
-		defer resourcemanage.ERManager.Wg.Done()
+		defer global.ERManager.Wg.Done()
 		for {
 			select {
-			case <-resourcemanage.ERManager.GoCancelCtx.Done():
+			case <-global.ERManager.GoCancelCtx.Done():
 				return
 			default:
 				current := time.Now()

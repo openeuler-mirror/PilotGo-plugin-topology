@@ -5,6 +5,7 @@ import (
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/conf"
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/db"
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/db/mysqlmanager"
+	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/global"
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/handler"
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/logger"
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/pluginclient"
@@ -12,6 +13,7 @@ import (
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/service"
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/service/webclient"
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/signal"
+	sdklogger "gitee.com/openeuler/PilotGo/sdk/logger"
 	// "github.com/pyroscope-io/pyroscope/pkg/cmd/agent/profiler"
 )
 
@@ -33,9 +35,13 @@ func main() {
 	logger.InitLogger()
 
 	/*
-		init error control、resource release、goroutine end
+		init error control、resource release、goroutine end management
 	*/
-	resourcemanage.InitResourceManager()
+	ermanager, err := resourcemanage.CreateErrorReleaseManager(global.RootContext, global.Close)
+	if err != nil {
+		sdklogger.Fatal(err.Error())
+	}
+	global.ERManager = ermanager
 
 	/*
 		init plugin client

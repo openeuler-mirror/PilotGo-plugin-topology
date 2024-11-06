@@ -1,7 +1,7 @@
 package handler
 
 import (
-	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/resourcemanage"
+	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/global"
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/service/public"
 	"gitee.com/openeuler/PilotGo/sdk/response"
 	"github.com/gin-gonic/gin"
@@ -15,18 +15,18 @@ import (
 // 	if len(collect_errlist) != 0 || len(process_errlist) != 0 {
 // 		for i, cerr := range collect_errlist {
 // 			collect_errlist[i] = errors.Wrap(cerr, " ")
-//          resourcemanage.ERManager.ErrorTransmit("error", collect_errlist[i], false, true)
+//          global.ERManager.ErrorTransmit("error", collect_errlist[i], false, true)
 // 		}
 
 // 		for i, perr := range process_errlist {
 // 			process_errlist[i] = errors.Wrap(perr, " ")
-//          resourcemanage.ERManager.ErrorTransmit("error", process_errlist[i], false, true)
+//          global.ERManager.ErrorTransmit("error", process_errlist[i], false, true)
 // 		}
 // 	}
 
 // 	if len(nodes) == 0 || len(edges) == 0 {
 // 		err := errors.New("nodes list is null or edges list is null")
-//      resourcemanage.ERManager.ErrorTransmit("error", err, false, true)
+//      global.ERManager.ErrorTransmit("error", err, false, true)
 
 // 		ctx.JSON(http.StatusBadRequest, gin.H{
 // 			"code":  -1,
@@ -53,18 +53,18 @@ func SingleHostTreeHandle(ctx *gin.Context) {
 		if exit {
 			err = errors.Wrap(err, " ")
 			response.Fail(ctx, nil, errors.Cause(err).Error())
-			resourcemanage.ERManager.ErrorTransmit("error", err, true, true)
+			global.ERManager.ErrorTransmit("error", err, true, true)
 			return
 		}
 		err = errors.Wrap(err, " ")
-		resourcemanage.ERManager.ErrorTransmit("error", err, false, true)
+		global.ERManager.ErrorTransmit("error", err, false, true)
 		response.Fail(ctx, nil, err.Error())
 		return
 	}
 
 	if nodes == nil {
 		err := errors.New("node tree is null")
-		resourcemanage.ERManager.ErrorTransmit("error", err, false, true)
+		global.ERManager.ErrorTransmit("error", err, false, true)
 
 		response.Fail(ctx, nil, err.Error())
 		return
@@ -95,18 +95,18 @@ func MultiHostHandle(ctx *gin.Context) {
 		if exit {
 			err = errors.Wrap(err, " ")
 			response.Fail(ctx, nil, errors.Cause(err).Error())
-			resourcemanage.ERManager.ErrorTransmit("error", err, true, true)
+			global.ERManager.ErrorTransmit("error", err, true, true)
 			return
 		}
 		err = errors.Wrap(err, " ")
-		resourcemanage.ERManager.ErrorTransmit("error", err, false, true)
+		global.ERManager.ErrorTransmit("error", err, false, true)
 		response.Fail(ctx, nil, err.Error())
 		return
 	}
 
 	if len(nodes) == 0 || len(edges) == 0 {
 		err := errors.New("nodes list is null or edges list is null")
-		resourcemanage.ERManager.ErrorTransmit("error", err, false, true)
+		global.ERManager.ErrorTransmit("error", err, false, true)
 
 		response.Fail(ctx, nil, err.Error())
 		return

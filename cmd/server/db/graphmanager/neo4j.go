@@ -8,7 +8,6 @@ import (
 
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/global"
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/graph"
-	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/resourcemanage"
 	"github.com/neo4j/neo4j-go-driver/v4/neo4j"
 	"github.com/pkg/errors"
 )
@@ -38,7 +37,7 @@ func Neo4jInit(url, user, pass, db string) *Neo4jClient {
 	})
 	if err != nil {
 		err := errors.Errorf("create neo4j driver failed: %s", err.Error())
-		resourcemanage.ERManager.ErrorTransmit("error", err, true, true)
+		global.ERManager.ErrorTransmit("error", err, true, true)
 	}
 
 	global.Global_neo4j_driver = driver
@@ -261,17 +260,17 @@ func (n *Neo4jClient) ClearExpiredData(retention int64) {
 	result, err := session.Run(cqlIN, params)
 	if err != nil {
 		err = errors.Errorf("ClearExpiredData failed: %s, %s", err.Error(), cqlIN)
-		resourcemanage.ERManager.ErrorTransmit("warn", err, false, false)
+		global.ERManager.ErrorTransmit("warn", err, false, false)
 		return
 	}
 
 	summary, err := result.Consume()
 	if err != nil {
 		err = errors.Errorf("failed to consume ClearExpiredData result: %s, %s", err.Error(), cqlIN)
-		resourcemanage.ERManager.ErrorTransmit("warn", err, false, false)
+		global.ERManager.ErrorTransmit("warn", err, false, false)
 		return
 	}
 
 	err = errors.Errorf("delete %d nodes", summary.Counters().NodesDeleted())
-	resourcemanage.ERManager.ErrorTransmit("debug", err, false, false)
+	global.ERManager.ErrorTransmit("debug", err, false, false)
 }

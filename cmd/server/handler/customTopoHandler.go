@@ -4,8 +4,8 @@ import (
 	"strconv"
 
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/db/mysqlmanager"
+	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/global"
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/graph"
-	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/resourcemanage"
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/service/custom"
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/service/webclient"
 	"gitee.com/openeuler/PilotGo/sdk/response"
@@ -18,14 +18,14 @@ func CustomTopoListHandle(ctx *gin.Context) {
 	err := ctx.ShouldBindQuery(query)
 	if err != nil {
 		err = errors.New("failed to load parameters in url")
-		resourcemanage.ERManager.ErrorTransmit("error", err, false, true)
+		global.ERManager.ErrorTransmit("error", err, false, true)
 		response.Fail(ctx, nil, errors.Cause(err).Error())
 		return
 	}
 
 	if query.PageSize == 0 && query.Page == 0 {
 		err := errors.New("query topo configuration list failed: page size and page can not be zero")
-		resourcemanage.ERManager.ErrorTransmit("error", err, false, true)
+		global.ERManager.ErrorTransmit("error", err, false, true)
 		response.Fail(ctx, nil, errors.Cause(err).Error())
 		return
 	}
@@ -35,11 +35,11 @@ func CustomTopoListHandle(ctx *gin.Context) {
 		if exit {
 			err = errors.Wrap(err, " ")
 			response.Fail(ctx, nil, errors.Cause(err).Error())
-			resourcemanage.ERManager.ErrorTransmit("error", err, true, true)
+			global.ERManager.ErrorTransmit("error", err, true, true)
 			return
 		}
 		err = errors.Wrap(err, " ")
-		resourcemanage.ERManager.ErrorTransmit("error", err, false, true)
+		global.ERManager.ErrorTransmit("error", err, false, true)
 		response.Fail(ctx, nil, errors.Cause(err).Error())
 		return
 	}
@@ -52,14 +52,14 @@ func CreateCustomTopoHandle(ctx *gin.Context) {
 
 	if err := ctx.ShouldBindJSON(tc); err != nil {
 		err = errors.Wrap(err, " ")
-		resourcemanage.ERManager.ErrorTransmit("error", err, false, true)
+		global.ERManager.ErrorTransmit("error", err, false, true)
 		response.Fail(ctx, nil, errors.Cause(err).Error())
 		return
 	}
 
 	if tc.Name == "" && tc.BatchId == 0 && len(tc.NodeRules) == 0 && len(tc.TagRules) == 0 {
 		err := errors.New("create topo configuration failed: topo configuration required")
-		resourcemanage.ERManager.ErrorTransmit("error", err, false, true)
+		global.ERManager.ErrorTransmit("error", err, false, true)
 		response.Fail(ctx, nil, errors.Cause(err).Error())
 		return
 	}
@@ -69,11 +69,11 @@ func CreateCustomTopoHandle(ctx *gin.Context) {
 		if exit {
 			err = errors.Wrap(err, " ")
 			response.Fail(ctx, nil, errors.Cause(err).Error())
-			resourcemanage.ERManager.ErrorTransmit("error", err, true, true)
+			global.ERManager.ErrorTransmit("error", err, true, true)
 			return
 		}
 		err = errors.Wrap(err, " ")
-		resourcemanage.ERManager.ErrorTransmit("error", err, false, true)
+		global.ERManager.ErrorTransmit("error", err, false, true)
 		response.Fail(ctx, nil, errors.Cause(err).Error())
 		return
 	}
@@ -91,14 +91,14 @@ func UpdateCustomTopoHandle(ctx *gin.Context) {
 	// fmt.Printf("%+v\n", ctx.Request.Body)
 	if err := ctx.ShouldBindJSON(&req_body); err != nil {
 		err = errors.Wrap(err, " ")
-		resourcemanage.ERManager.ErrorTransmit("error", err, false, true)
+		global.ERManager.ErrorTransmit("error", err, false, true)
 		response.Fail(ctx, nil, errors.Cause(err).Error())
 		return
 	}
 
 	if req_body.TC.Name == "" && req_body.TC.BatchId == 0 && len(req_body.TC.NodeRules) == 0 && len(req_body.TC.TagRules) == 0 {
 		err := errors.New("update topo configuration failed: topo configuration required")
-		resourcemanage.ERManager.ErrorTransmit("error", err, false, true)
+		global.ERManager.ErrorTransmit("error", err, false, true)
 		response.Fail(ctx, nil, errors.Cause(err).Error())
 		return
 	}
@@ -108,11 +108,11 @@ func UpdateCustomTopoHandle(ctx *gin.Context) {
 		if exit {
 			err = errors.Wrap(err, " ")
 			response.Fail(ctx, nil, errors.Cause(err).Error())
-			resourcemanage.ERManager.ErrorTransmit("error", err, true, true)
+			global.ERManager.ErrorTransmit("error", err, true, true)
 			return
 		}
 		err = errors.Wrap(err, " ")
-		resourcemanage.ERManager.ErrorTransmit("error", err, false, true)
+		global.ERManager.ErrorTransmit("error", err, false, true)
 		response.Fail(ctx, nil, errors.Cause(err).Error())
 		return
 	}
@@ -133,7 +133,7 @@ func RunCustomTopoHandle(ctx *gin.Context) {
 
 		if tcid_str == "" {
 			err := errors.New("id is nil")
-			resourcemanage.ERManager.ErrorTransmit("error", err, false, true)
+			global.ERManager.ErrorTransmit("error", err, false, true)
 			doneChan <- custom_topodata
 			response.Fail(ctx, nil, errors.Cause(err).Error())
 			return
@@ -143,7 +143,7 @@ func RunCustomTopoHandle(ctx *gin.Context) {
 		tcid_int, err := strconv.Atoi(tcid_str)
 		if err != nil {
 			err = errors.Wrap(err, " ")
-			resourcemanage.ERManager.ErrorTransmit("error", err, false, true)
+			global.ERManager.ErrorTransmit("error", err, false, true)
 			doneChan <- custom_topodata
 			response.Fail(ctx, nil, errors.Cause(err).Error())
 			return
@@ -156,25 +156,25 @@ func RunCustomTopoHandle(ctx *gin.Context) {
 				err = errors.Wrap(err, " ")
 				doneChan <- custom_topodata
 				response.Fail(ctx, nil, errors.Cause(err).Error())
-				resourcemanage.ERManager.ErrorTransmit("error", err, true, true)
+				global.ERManager.ErrorTransmit("error", err, true, true)
 				return
 			}
 			err = errors.Wrap(err, " ")
-			resourcemanage.ERManager.ErrorTransmit("error", err, false, true)
+			global.ERManager.ErrorTransmit("error", err, false, true)
 			doneChan <- custom_topodata
 			response.Fail(ctx, nil, errors.Cause(err).Error())
 			return
 		}
 		if len(custom_topodata.Nodes.Nodes) == 0 || len(custom_topodata.Edges.Edges) == 0 {
 			err := errors.New("nodes list is null or edges list is null")
-			resourcemanage.ERManager.ErrorTransmit("error", err, false, true)
+			global.ERManager.ErrorTransmit("error", err, false, true)
 			doneChan <- custom_topodata
 			response.Fail(ctx, nil, errors.Cause(err).Error())
 			return
 		}
 
 		webclient.WebClientsManager.UpdateClientTopoDataBuffer(webclient_id, custom_topodata)
-		
+
 		doneChan <- webclient.WebClientsManager.Get(webclient_id)
 	}()
 
@@ -184,7 +184,7 @@ func RunCustomTopoHandle(ctx *gin.Context) {
 	case data := <-doneChan:
 		if data == nil {
 			err := errors.Errorf("topodatabuff is nill, client: %s, %s", ctx.Request.RemoteAddr, webclient_id)
-			resourcemanage.ERManager.ErrorTransmit("error", err, false, true)
+			global.ERManager.ErrorTransmit("error", err, false, true)
 			response.Fail(ctx, nil, err.Error())
 			return
 		}
@@ -205,7 +205,7 @@ func DeleteCustomTopoHandle(ctx *gin.Context) {
 
 	if err := ctx.ShouldBindJSON(&req_body); err != nil {
 		err = errors.New(err.Error())
-		resourcemanage.ERManager.ErrorTransmit("error", err, false, true)
+		global.ERManager.ErrorTransmit("error", err, false, true)
 		response.Fail(ctx, nil, errors.Cause(err).Error())
 		return
 	}
@@ -214,11 +214,11 @@ func DeleteCustomTopoHandle(ctx *gin.Context) {
 		if exit {
 			err = errors.Wrap(err, " ")
 			response.Fail(ctx, nil, errors.Cause(err).Error())
-			resourcemanage.ERManager.ErrorTransmit("error", err, true, true)
+			global.ERManager.ErrorTransmit("error", err, true, true)
 			return
 		}
 		err = errors.Wrap(err, " ")
-		resourcemanage.ERManager.ErrorTransmit("error", err, false, true)
+		global.ERManager.ErrorTransmit("error", err, false, true)
 		response.Fail(ctx, nil, errors.Cause(err).Error())
 		return
 	}

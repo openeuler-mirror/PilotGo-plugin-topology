@@ -12,7 +12,6 @@ import (
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/global"
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/handler/frontendResource"
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/pluginclient"
-	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/resourcemanage"
 	"gitee.com/openeuler/PilotGo/sdk/logger"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -21,7 +20,7 @@ import (
 func InitWebServer() {
 	if pluginclient.Global_Client == nil {
 		err := errors.New("Global_Client is nil")
-		resourcemanage.ERManager.ErrorTransmit("error", err, true, true)
+		global.ERManager.ErrorTransmit("error", err, true, true)
 		return
 	}
 
@@ -36,34 +35,34 @@ func InitWebServer() {
 		Handler: engine,
 	}
 
-	resourcemanage.ERManager.Wg.Add(1)
+	global.ERManager.Wg.Add(1)
 	go func() {
 		if conf.Global_Config.Topo.Https_enabled {
 			if err := webserver.ListenAndServeTLS(conf.Global_Config.Topo.Public_certificate, conf.Global_Config.Topo.Private_key); err != nil {
 				if strings.Contains(err.Error(), "Server closed") {
 					err = errors.New(err.Error())
-					resourcemanage.ERManager.ErrorTransmit("info", err, false, false)
+					global.ERManager.ErrorTransmit("info", err, false, false)
 					return
 				}
 				err = errors.Errorf("%s, addr: %s", err.Error(), conf.Global_Config.Topo.Addr)
-				resourcemanage.ERManager.ErrorTransmit("error", err, true, true)
+				global.ERManager.ErrorTransmit("error", err, true, true)
 			}
 		}
 		if err := webserver.ListenAndServe(); err != nil {
 			if strings.Contains(err.Error(), "Server closed") {
 				err = errors.New(err.Error())
-				resourcemanage.ERManager.ErrorTransmit("info", err, false, false)
+				global.ERManager.ErrorTransmit("info", err, false, false)
 				return
 			}
 			err = errors.New(err.Error())
-			resourcemanage.ERManager.ErrorTransmit("error", err, true, true)
+			global.ERManager.ErrorTransmit("error", err, true, true)
 		}
 	}()
 
 	go func() {
-		defer resourcemanage.ERManager.Wg.Done()
+		defer global.ERManager.Wg.Done()
 
-		<-resourcemanage.ERManager.GoCancelCtx.Done()
+		<-global.ERManager.GoCancelCtx.Done()
 		logger.Info("shutting down web server...")
 		ctx, cancel := context.WithTimeout(global.RootContext, 1*time.Second)
 		defer cancel()

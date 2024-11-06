@@ -9,7 +9,6 @@ import (
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/agentmanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/global"
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/graph"
-	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/resourcemanage"
 	"github.com/pkg/errors"
 )
 
@@ -86,7 +85,7 @@ func (p *PublicTopo) CreateNodeEntities(agent *agentmanager.Agent, nodes *graph.
 			nodes.Add(net_node)
 		} else {
 			err := errors.Errorf("syntax error: %s", net.Laddr)
-			resourcemanage.ERManager.ErrorTransmit("error", err, false, true)
+			global.ERManager.ErrorTransmit("error", err, false, true)
 		}
 	}
 

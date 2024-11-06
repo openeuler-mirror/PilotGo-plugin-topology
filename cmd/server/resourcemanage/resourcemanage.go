@@ -11,7 +11,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-var ERManager *ErrorReleaseManagement
+// var ERManager *ErrorReleaseManagement
 
 type ResourceReleaseFunction func()
 

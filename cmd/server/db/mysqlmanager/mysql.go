@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/conf"
-	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/resourcemanage"
+	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/global"
 	"gitee.com/openeuler/PilotGo/sdk/response"
 	"github.com/pkg/errors"
 	"gorm.io/driver/mysql"
@@ -30,7 +30,7 @@ func MysqldbInit(conf *conf.MysqlConf) *MysqlClient {
 	err := ensureDatabase(conf)
 	if err != nil {
 		err = errors.Wrapf(err, " ")
-		resourcemanage.ERManager.ErrorTransmit("error", err, true, true)
+		global.ERManager.ErrorTransmit("error", err, true, true)
 	}
 
 	m := &MysqlClient{
@@ -50,13 +50,13 @@ func MysqldbInit(conf *conf.MysqlConf) *MysqlClient {
 	})
 	if err != nil {
 		err := errors.Errorf("mysql connect failed: %s(url: %s)", err.Error(), url)
-		resourcemanage.ERManager.ErrorTransmit("error", err, true, true)
+		global.ERManager.ErrorTransmit("error", err, true, true)
 	}
 
 	var db *sql.DB
 	if db, err = m.db.DB(); err != nil {
 		err = errors.Errorf("get mysql sql.db failed: %s", err.Error())
-		resourcemanage.ERManager.ErrorTransmit("error", err, true, true)
+		global.ERManager.ErrorTransmit("error", err, true, true)
 	}
 
 	db.SetMaxIdleConns(10)
@@ -66,7 +66,7 @@ func MysqldbInit(conf *conf.MysqlConf) *MysqlClient {
 	err = m.db.AutoMigrate(&Topo_configuration_DB{})
 	if err != nil {
 		err = errors.Errorf("mysql automigrate failed: %s", err.Error())
-		resourcemanage.ERManager.ErrorTransmit("error", err, true, true)
+		global.ERManager.ErrorTransmit("error", err, true, true)
 	}
 
 	return m
