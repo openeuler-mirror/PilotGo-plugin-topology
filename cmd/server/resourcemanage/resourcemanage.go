@@ -34,15 +34,19 @@ func (e *FinalError) Error() string {
 type ErrorReleaseManagement struct {
 	ErrChan chan error
 
+	errEndChan chan struct{}
+
+	// cancelCtx: 控制 ERManager 本身资源释放的上下文，子上下文：errortransmit
 	cancelCtx    context.Context
 	cancelFunc   context.CancelFunc
+
+	// GoCancelCtx: ERManager 用于控制项目指定goroutine优雅退出的上下文
 	GoCancelCtx  context.Context
 	GoCancelFunc context.CancelFunc
 
 	Wg sync.WaitGroup
 
-	errEndChan chan struct{}
-
+	// releaseFunc: 项目整体资源释放回调函数
 	releaseFunc ResourceReleaseFunction
 }
 
