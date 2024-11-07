@@ -13,6 +13,7 @@ import (
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/pluginclient"
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/webserver/frontendResource"
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/webserver/handle"
+	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/webserver/middleware"
 	"gitee.com/openeuler/PilotGo/sdk/logger"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -26,9 +27,10 @@ func InitWebServer() {
 	}
 
 	engine := gin.New()
-	engine.Use(gin.Recovery(), gin.LoggerWithConfig(gin.LoggerConfig{
-		Output:    gin.DefaultWriter,
-		SkipPaths: []string{"/plugin/topology/api/heartbeat", "/plugin_manage/bind", "/"},
+	engine.Use(gin.Recovery(), middleware.Logger([]string{
+		"/plugin/topology/api/heartbeat", 
+		"/plugin_manage/bind", 
+		"/",
 	}))
 	gin.SetMode(gin.ReleaseMode)
 	pluginclient.Global_Client.RegisterHandlers(engine)
