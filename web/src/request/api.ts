@@ -59,7 +59,7 @@ export function getCustomTopo(data: { id: number }) {
   return request({
     url: baseURL+'/api/run_custom_topo',
     method: 'get',
-    params: data
+    params: {...data,'clientId':`${parseInt(Math.random() * 1000 + '')}`}
   })
 }
 
