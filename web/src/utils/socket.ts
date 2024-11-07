@@ -21,7 +21,7 @@ interface socket {
 
 const socket: socket = {
   websocket: null,
-  connectURL: 'wss://10.41.107.29:8888/plugin/ws/logs', 
+  connectURL: `wss://10.41.107.29:8888/plugin/ws/logs?clientId=${parseInt(Math.random() * 1000 + '')}`, 
   // 开启标识
   socket_open: false,
   // 心跳timer

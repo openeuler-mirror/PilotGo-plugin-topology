@@ -234,8 +234,7 @@ const openRealTimeLog = (state: boolean) => {
 const log_size = ref(0);
 let is_continue = ref(true);
 const load = () => {
-  if (total_logs.value !== 0 && !is_continue.value) return;
-  console.log("滑动到底部可发起请求", total_logs.value, log_size.value);
+  if (total_logs.value !== 0 || !is_continue.value) return;
   if (log_size.value >= total_logs.value) {
     log_size.value = total_logs.value;
     is_continue.value = false;
