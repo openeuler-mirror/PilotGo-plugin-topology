@@ -61,7 +61,7 @@ func RedisInit(url, pass string, db int, dialTimeout time.Duration) *RedisClient
 	_, err := r.Client.Ping(timeoutCtx).Result()
 	if err != nil {
 		err = errors.Errorf("redis connection timeout: %s", err.Error())
-		global.ERManager.ErrorTransmit("error", err, true, true)
+		global.ERManager.ErrorTransmit("db", "error", err, true, true)
 	}
 
 	return r
@@ -134,7 +134,7 @@ func (r *RedisClient) UpdateTopoRunningAgentList(uuids []string, updateonce bool
 
 	if agentmanager.Global_AgentManager == nil {
 		err := errors.New("Global_AgentManager is nil")
-		global.ERManager.ErrorTransmit("error", err, true, true)
+		global.ERManager.ErrorTransmit("db", "error", err, true, true)
 		return -1
 	}
 
@@ -149,7 +149,7 @@ func (r *RedisClient) UpdateTopoRunningAgentList(uuids []string, updateonce bool
 		agent_keys, err := r.Scan("heartbeat-topoagent*")
 		if err != nil {
 			err = errors.Wrap(err, " ")
-			global.ERManager.ErrorTransmit("error", err, false, true)
+			global.ERManager.ErrorTransmit("db", "error", err, false, true)
 			continue
 		}
 
@@ -161,7 +161,7 @@ func (r *RedisClient) UpdateTopoRunningAgentList(uuids []string, updateonce bool
 					v, err := r.Get(key, &AgentHeartbeat{})
 					if err != nil {
 						err = errors.Wrap(err, " ")
-						global.ERManager.ErrorTransmit("error", err, false, true)
+						global.ERManager.ErrorTransmit("db", "error", err, false, true)
 						return
 					}
 
@@ -196,7 +196,7 @@ func (r *RedisClient) UpdateTopoRunningAgentList(uuids []string, updateonce bool
 
 					if ok, err := global.IsIPandPORTValid(agentp.IP, agentmanager.Global_AgentManager.AgentPort); !ok {
 						err := errors.Errorf("%s:%s is unreachable (%s) %s", agentp.IP, agentmanager.Global_AgentManager.AgentPort, err.Error(), agentp.UUID)
-						global.ERManager.ErrorTransmit("warn", err, false, false)
+						global.ERManager.ErrorTransmit("db", "warn", err, false, false)
 						abort_reason = append(abort_reason, fmt.Sprintf("%s:ip||port不可达", agentvalue.UUID))
 						return
 					}
@@ -257,7 +257,7 @@ func (r *RedisClient) ActiveHeartbeatDetection(uuids []string) {
 			err = json.Unmarshal(resp.Body, &resp_body)
 			if err != nil {
 				err = errors.Errorf(err.Error())
-				global.ERManager.ErrorTransmit("error", err, false, true)
+				global.ERManager.ErrorTransmit("db", "error", err, false, true)
 				return
 			}
 
@@ -272,7 +272,7 @@ func (r *RedisClient) ActiveHeartbeatDetection(uuids []string) {
 			err = r.Set(key, value)
 			if err != nil {
 				err = errors.Wrap(err, " ")
-				global.ERManager.ErrorTransmit("error", err, false, true)
+				global.ERManager.ErrorTransmit("db", "error", err, false, true)
 				return
 			}
 		}
@@ -280,7 +280,7 @@ func (r *RedisClient) ActiveHeartbeatDetection(uuids []string) {
 
 	if agentmanager.Global_AgentManager == nil {
 		err := errors.New("Global_AgentManager is nil")
-		global.ERManager.ErrorTransmit("error", err, true, true)
+		global.ERManager.ErrorTransmit("db", "error", err, true, true)
 		return
 	}
 
@@ -293,7 +293,7 @@ func (r *RedisClient) ActiveHeartbeatDetection(uuids []string) {
 
 				if ok, _ := global.IsIPandPORTValid(a.IP, agentmanager.Global_AgentManager.AgentPort); !ok {
 					// err := errors.Errorf("%s:%s is unreachable (%s) %s", a.IP, agentmanager.Topo.AgentPort, err.Error(), a.UUID)
-					// resourcemanage.ErrorTransmit("warn", err, false, false)
+					// resourcemanage.ErrorTransmit("db", "warn", err, false, false)
 					return
 				}
 
@@ -319,7 +319,7 @@ func (r *RedisClient) ActiveHeartbeatDetection(uuids []string) {
 
 			if ok, _ := global.IsIPandPORTValid(agent.IP, agentmanager.Global_AgentManager.AgentPort); !ok {
 				// err := errors.Errorf("%s:%s is unreachable (%s) %s", agent.IP, agentmanager.Topo.AgentPort, err.Error(), agent.UUID)
-				// resourcemanage.ErrorTransmit("warn", err, false, false)
+				// resourcemanage.ErrorTransmit("db", "warn", err, false, false)
 				return
 			}
 

@@ -20,7 +20,7 @@ func InitDB() {
 		ClearGraphData(conf.Global_Config.Neo4j.Retention)
 	} else {
 		err := errors.New("do not save graph data")
-		global.ERManager.ErrorTransmit("warn", err, false, false)
+		global.ERManager.ErrorTransmit("db", "warn", err, false, false)
 	}
 
 	initRedis()
@@ -42,7 +42,7 @@ func initGraphDB() {
 
 	default:
 		err := errors.Errorf("unknown database in topo_server.yaml: %s", conf.Global_Config.Topo.GraphDB)
-		global.ERManager.ErrorTransmit("error", err, true, true)
+		global.ERManager.ErrorTransmit("db", "error", err, true, true)
 	}
 
 	if graphmanager.Global_GraphDB != nil {
@@ -83,7 +83,7 @@ func initInflux() {
 func ClearGraphData(retention int64) {
 	if graphmanager.Global_GraphDB == nil {
 		err := errors.New("global_graphdb is nil")
-		global.ERManager.ErrorTransmit("error", err, true, true)
+		global.ERManager.ErrorTransmit("db", "error", err, true, true)
 		return
 	}
 

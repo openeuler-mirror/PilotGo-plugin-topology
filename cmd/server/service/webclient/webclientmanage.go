@@ -124,7 +124,7 @@ func (wcm *WebClientsManagement) UpdateClientTopoDataBuffer(_token string, _cust
 						err := wcm.Get(_token).Nodes.Remove(global_node)
 						if err != nil {
 							err = errors.Wrap(err, "->")
-							global.ERManager.ErrorTransmit("error", err, false, true)
+							global.ERManager.ErrorTransmit("webclient", "error", err, false, true)
 							continue
 						}
 						global_edge_id_slice_any, ok := wcm.Get(_token).Edges.Node_Edges_map.Load(global_node.ID)
@@ -140,7 +140,7 @@ func (wcm *WebClientsManagement) UpdateClientTopoDataBuffer(_token string, _cust
 							err := wcm.Get(_token).Edges.Remove(global_edge.ID)
 							if err != nil {
 								err = errors.Wrap(err, "->")
-								global.ERManager.ErrorTransmit("error", err, false, true)
+								global.ERManager.ErrorTransmit("webclient", "error", err, false, true)
 							}
 						}
 					}

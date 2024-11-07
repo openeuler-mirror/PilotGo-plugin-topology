@@ -6,7 +6,7 @@ import (
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/db"
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/db/mysqlmanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/global"
-	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/handler"
+	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/webserver"
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/logger"
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/pluginclient"
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/resourcemanage"
@@ -67,7 +67,7 @@ func main() {
 	/*
 		init web server
 	*/
-	handler.InitWebServer()
+	webserver.InitWebServer()
 
 	/*
 		init machine agent list

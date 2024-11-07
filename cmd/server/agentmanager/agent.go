@@ -60,14 +60,14 @@ func (am *AgentManager) GetAgent_P(uuid string) *Agent {
 func (am *AgentManager) DeleteAgent_P(uuid string) {
 	if _, ok := am.PAgentMap.LoadAndDelete(uuid); !ok {
 		err := errors.Errorf("delete unknown agent:%s", uuid)
-		global.ERManager.ErrorTransmit("error", err, false, true)
+		global.ERManager.ErrorTransmit("agentmanager", "error", err, false, true)
 	}
 }
 
 func (am *AgentManager) AddAgent_T(a *Agent) {
 	if a == nil {
 		err := errors.Errorf("failed to add agent_t: %+v", a)
-		global.ERManager.ErrorTransmit("error", err, false, true)
+		global.ERManager.ErrorTransmit("agentmanager", "error", err, false, true)
 		return
 	}
 	am.TAgentMap.Store(a.UUID, a)
@@ -89,6 +89,6 @@ func (am *AgentManager) GetAgent_T(uuid string) *Agent {
 func (am *AgentManager) DeleteAgent_T(uuid string) {
 	if _, ok := am.TAgentMap.LoadAndDelete(uuid); !ok {
 		err := errors.Errorf("delete unknown agent:%s", uuid)
-		global.ERManager.ErrorTransmit("error", err, false, true)
+		global.ERManager.ErrorTransmit("agentmanager", "error", err, false, true)
 	}
 }
