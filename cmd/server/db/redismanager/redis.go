@@ -233,7 +233,7 @@ func (r *RedisClient) UpdateTopoRunningAgentList(uuids []string, updateonce bool
 		time.Sleep(1 * time.Second)
 	}
 
-	logger.Info("running agent number: %d", running_agent_num)
+	global.ERManager.ErrorTransmit("db", "info", errors.Errorf("running agent number: %d", running_agent_num), false, false)
 	return int(running_agent_num)
 }
 
