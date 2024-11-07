@@ -103,7 +103,7 @@ func ProcessMatching(agent *agentmanager.Agent, exename, cmdline, component stri
 		containers, err := ContainerList(agent)
 		if err != nil {
 			err = errors.Wrap(err, " ")
-			global.ERManager.ErrorTransmit("error", err, false, true)
+			global.ERManager.ErrorTransmit("generator", "error", err, false, true)
 			break
 		}
 

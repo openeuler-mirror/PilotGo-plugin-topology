@@ -1,4 +1,4 @@
-package handler
+package handle
 
 import (
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/global"
@@ -53,18 +53,18 @@ func SingleHostTreeHandle(ctx *gin.Context) {
 		if exit {
 			err = errors.Wrap(err, " ")
 			response.Fail(ctx, nil, errors.Cause(err).Error())
-			global.ERManager.ErrorTransmit("error", err, true, true)
+			global.ERManager.ErrorTransmit("webserver", "error", err, true, true)
 			return
 		}
 		err = errors.Wrap(err, " ")
-		global.ERManager.ErrorTransmit("error", err, false, true)
+		global.ERManager.ErrorTransmit("webserver", "error", err, false, true)
 		response.Fail(ctx, nil, err.Error())
 		return
 	}
 
 	if nodes == nil {
 		err := errors.New("node tree is null")
-		global.ERManager.ErrorTransmit("error", err, false, true)
+		global.ERManager.ErrorTransmit("webserver", "error", err, false, true)
 
 		response.Fail(ctx, nil, err.Error())
 		return
@@ -95,18 +95,18 @@ func MultiHostHandle(ctx *gin.Context) {
 		if exit {
 			err = errors.Wrap(err, " ")
 			response.Fail(ctx, nil, errors.Cause(err).Error())
-			global.ERManager.ErrorTransmit("error", err, true, true)
+			global.ERManager.ErrorTransmit("webserver", "error", err, true, true)
 			return
 		}
 		err = errors.Wrap(err, " ")
-		global.ERManager.ErrorTransmit("error", err, false, true)
+		global.ERManager.ErrorTransmit("webserver", "error", err, false, true)
 		response.Fail(ctx, nil, err.Error())
 		return
 	}
 
 	if len(nodes) == 0 || len(edges) == 0 {
 		err := errors.New("nodes list is null or edges list is null")
-		global.ERManager.ErrorTransmit("error", err, false, true)
+		global.ERManager.ErrorTransmit("webserver", "error", err, false, true)
 
 		response.Fail(ctx, nil, err.Error())
 		return

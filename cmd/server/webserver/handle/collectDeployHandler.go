@@ -1,4 +1,4 @@
-package handler
+package handle
 
 import (
 	"fmt"
@@ -22,7 +22,7 @@ func DeployCollectEndpointHandle(ctx *gin.Context) {
 	}{}
 	if err := ctx.ShouldBind(uuids); err != nil {
 		err = errors.New(err.Error())
-		global.ERManager.ErrorTransmit("error", err, false, true)
+		global.ERManager.ErrorTransmit("webserver", "error", err, false, true)
 		response.Fail(ctx, nil, "parameter error")
 		return
 	}
@@ -30,7 +30,7 @@ func DeployCollectEndpointHandle(ctx *gin.Context) {
 	file, err := os.Open(strings.TrimSuffix(conf.Global_Config.Topo.Path, "/") + "/deploy-collect-endpoint.sh")
 	if err != nil {
 		err = errors.New(err.Error())
-		global.ERManager.ErrorTransmit("error", err, false, true)
+		global.ERManager.ErrorTransmit("webserver", "error", err, false, true)
 		response.Fail(ctx, nil, "open file error: "+errors.Cause(err).Error())
 		return
 	}
@@ -38,7 +38,7 @@ func DeployCollectEndpointHandle(ctx *gin.Context) {
 	script_bytes, err := io.ReadAll(file)
 	if err != nil {
 		err = errors.New(err.Error())
-		global.ERManager.ErrorTransmit("error", err, false, true)
+		global.ERManager.ErrorTransmit("webserver", "error", err, false, true)
 		response.Fail(ctx, nil, "read file error: "+errors.Cause(err).Error())
 		return
 	}
@@ -54,13 +54,13 @@ func DeployCollectEndpointHandle(ctx *gin.Context) {
 	})
 	if err != nil {
 		err = errors.New(err.Error())
-		global.ERManager.ErrorTransmit("error", err, false, true)
+		global.ERManager.ErrorTransmit("webserver", "error", err, false, true)
 		response.Fail(ctx, nil, errors.Cause(err).Error())
 		return
 	}
 	for _, res := range cmdresults {
 		err := errors.Errorf("collect endpoint deploy: [retcode:%d][uuid:%s][ip:%s][stdout:%s][stderr:%s]", res.RetCode, res.MachineUUID, res.MachineIP, res.Stdout, res.Stderr)
-		global.ERManager.ErrorTransmit("warn", err, false, false)
+		global.ERManager.ErrorTransmit("webserver", "warn", err, false, false)
 	}
 
 	response.Success(ctx, nil, "collect endpoint deploy")
@@ -73,7 +73,7 @@ func CollectEndpointHandle(ctx *gin.Context) {
 	}{}
 	if err := ctx.ShouldBind(uuids); err != nil {
 		err = errors.New(err.Error())
-		global.ERManager.ErrorTransmit("error", err, false, true)
+		global.ERManager.ErrorTransmit("webserver", "error", err, false, true)
 		response.Fail(ctx, nil, "parameter error")
 		return
 	}
@@ -81,7 +81,7 @@ func CollectEndpointHandle(ctx *gin.Context) {
 	file, err := os.Open(strings.TrimSuffix(conf.Global_Config.Topo.Path, "/") + "/collect-endpoint.sh")
 	if err != nil {
 		err = errors.New(err.Error())
-		global.ERManager.ErrorTransmit("error", err, false, true)
+		global.ERManager.ErrorTransmit("webserver", "error", err, false, true)
 		response.Fail(ctx, nil, "open file error: "+errors.Cause(err).Error())
 		return
 	}
@@ -89,7 +89,7 @@ func CollectEndpointHandle(ctx *gin.Context) {
 	script_bytes, err := io.ReadAll(file)
 	if err != nil {
 		err = errors.New(err.Error())
-		global.ERManager.ErrorTransmit("error", err, false, true)
+		global.ERManager.ErrorTransmit("webserver", "error", err, false, true)
 		response.Fail(ctx, nil, "read file error: "+errors.Cause(err).Error())
 		return
 	}
@@ -110,13 +110,13 @@ func CollectEndpointHandle(ctx *gin.Context) {
 	}
 	if err != nil {
 		err = errors.New(err.Error())
-		global.ERManager.ErrorTransmit("error", err, false, true)
+		global.ERManager.ErrorTransmit("webserver", "error", err, false, true)
 		response.Fail(ctx, nil, errors.Cause(err).Error())
 		return
 	}
 	for _, res := range cmdresults {
 		err := errors.Errorf("collect endpoint deploy: [retcode:%d][uuid:%s][ip:%s][stdout:%s][stderr:%s]", res.RetCode, res.MachineUUID, res.MachineIP, res.Stdout, res.Stderr)
-		global.ERManager.ErrorTransmit("warn", err, false, false)
+		global.ERManager.ErrorTransmit("webserver", "warn", err, false, false)
 	}
 
 	response.Success(ctx, nil, fmt.Sprintf("collect endpoint %s", action))

@@ -37,7 +37,7 @@ func Neo4jInit(url, user, pass, db string) *Neo4jClient {
 	})
 	if err != nil {
 		err := errors.Errorf("create neo4j driver failed: %s", err.Error())
-		global.ERManager.ErrorTransmit("error", err, true, true)
+		global.ERManager.ErrorTransmit("db", "error", err, true, true)
 	}
 
 	global.Global_neo4j_driver = driver
@@ -260,17 +260,17 @@ func (n *Neo4jClient) ClearExpiredData(retention int64) {
 	result, err := session.Run(cqlIN, params)
 	if err != nil {
 		err = errors.Errorf("ClearExpiredData failed: %s, %s", err.Error(), cqlIN)
-		global.ERManager.ErrorTransmit("warn", err, false, false)
+		global.ERManager.ErrorTransmit("db", "warn", err, false, false)
 		return
 	}
 
 	summary, err := result.Consume()
 	if err != nil {
 		err = errors.Errorf("failed to consume ClearExpiredData result: %s, %s", err.Error(), cqlIN)
-		global.ERManager.ErrorTransmit("warn", err, false, false)
+		global.ERManager.ErrorTransmit("db", "warn", err, false, false)
 		return
 	}
 
 	err = errors.Errorf("delete %d nodes", summary.Counters().NodesDeleted())
-	global.ERManager.ErrorTransmit("debug", err, false, false)
+	global.ERManager.ErrorTransmit("db", "debug", err, false, false)
 }

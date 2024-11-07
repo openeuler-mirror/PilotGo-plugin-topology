@@ -11,12 +11,17 @@ import (
 	"github.com/pkg/errors"
 )
 
-// var ERManager *ErrorReleaseManagement
+const (
+	green string = "\x1b[97;104m"
+	reset string = "\x1b[0m"
+)
 
 type ResourceReleaseFunction func()
 
 type FinalError struct {
 	Err error
+
+	Module string
 
 	Severity string
 
@@ -37,8 +42,8 @@ type ErrorReleaseManagement struct {
 	errEndChan chan struct{}
 
 	// cancelCtx: 控制 ERManager 本身资源释放的上下文，子上下文：errortransmit
-	cancelCtx    context.Context
-	cancelFunc   context.CancelFunc
+	cancelCtx  context.Context
+	cancelFunc context.CancelFunc
 
 	// GoCancelCtx: ERManager 用于控制项目指定goroutine优雅退出的上下文
 	GoCancelCtx  context.Context
@@ -83,38 +88,14 @@ func (erm *ErrorReleaseManagement) errorFactory() {
 
 			if _terror.Err != nil {
 				if !_terror.PrintStack && !_terror.ExitAfterPrint {
-					switch _terror.Severity {
-					case "debug":
-						logger.Debug(errors.Cause(_terror.Err).Error())
-					case "info":
-						logger.Info(errors.Cause(_terror.Err).Error())
-					case "warn":
-						logger.Warn(errors.Cause(_terror.Err).Error())
-					case "error":
-						logger.Error(errors.Cause(_terror.Err).Error())
-					default:
-						logger.Error("only support \"debug info warn error\" type: %s\n", errors.Cause(_terror.Err).Error())
-					}
+					erm.output(_terror)
 				} else if _terror.PrintStack && !_terror.ExitAfterPrint {
-					logger.ErrorStack("%+v", _terror.Err)
-					// errors.EORE(err)
+					logger.ErrorStack(erm.errorStackMsg(_terror.Module), _terror.Err)
 				} else if !_terror.PrintStack && _terror.ExitAfterPrint {
-					switch _terror.Severity {
-					case "debug":
-						logger.Debug(errors.Cause(_terror.Err).Error())
-					case "info":
-						logger.Info(errors.Cause(_terror.Err).Error())
-					case "warn":
-						logger.Warn(errors.Cause(_terror.Err).Error())
-					case "error":
-						logger.Error(errors.Cause(_terror.Err).Error())
-					default:
-						logger.Error("only support \"debug info warn error\" type: %s\n", errors.Cause(_terror.Err).Error())
-					}
+					erm.output(_terror)
 					_terror.Cancel()
 				} else if _terror.PrintStack && _terror.ExitAfterPrint {
-					logger.ErrorStack("%+v", _terror.Err)
-					// errors.EORE(err)
+					logger.ErrorStack(erm.errorStackMsg(_terror.Module), _terror.Err)
 					_terror.Cancel()
 				}
 			}
@@ -144,12 +125,13 @@ func (erm *ErrorReleaseManagement) ResourceRelease() {
 
 @print_stack: 是否打印异常日志错误链，打印错误链时默认severity为error
 */
-func (erm *ErrorReleaseManagement) ErrorTransmit(_severity string, _err error, _exit_after_print, _print_stack bool) {
+func (erm *ErrorReleaseManagement) ErrorTransmit(_module, _severity string, _err error, _exit_after_print, _print_stack bool) {
 	if _exit_after_print {
 		ctx, cancel := context.WithCancel(erm.cancelCtx)
 		erm.ErrChan <- &FinalError{
 			Err:            _err,
 			Cancel:         cancel,
+			Module:         _module,
 			Severity:       _severity,
 			PrintStack:     _print_stack,
 			ExitAfterPrint: _exit_after_print,
@@ -162,8 +144,40 @@ func (erm *ErrorReleaseManagement) ErrorTransmit(_severity string, _err error, _
 	erm.ErrChan <- &FinalError{
 		Err:            _err,
 		Cancel:         nil,
+		Module:         _module,
 		Severity:       _severity,
 		PrintStack:     _print_stack,
 		ExitAfterPrint: _exit_after_print,
+	}
+}
+
+func (erm *ErrorReleaseManagement) logFormat(_err error, _module string) string {
+	log := fmt.Sprintf("%v %s %s %s %+v",
+		time.Now().Format("2006-01-02 15:04:05"),
+		green, _module, reset,
+		_err.Error(),
+	)
+	return log
+}
+
+func (erm *ErrorReleaseManagement) errorStackMsg(_module string) string {
+	return fmt.Sprintf("%v %s %s %s",
+		time.Now().Format("2006-01-02 15:04:05"),
+		green, _module, reset,
+	)
+}
+
+func (erm *ErrorReleaseManagement) output(_err *FinalError) {
+	switch _err.Severity {
+	case "debug":
+		logger.Debug(erm.logFormat(errors.Cause(_err.Err), _err.Module))
+	case "info":
+		logger.Info(erm.logFormat(errors.Cause(_err.Err), _err.Module))
+	case "warn":
+		logger.Warn(erm.logFormat(errors.Cause(_err.Err), _err.Module))
+	case "error":
+		logger.Error(erm.logFormat(errors.Cause(_err.Err), _err.Module))
+	default:
+		logger.Error(erm.logFormat(errors.Cause(_err.Err), _err.Module))
 	}
 }

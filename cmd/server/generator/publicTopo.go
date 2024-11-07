@@ -85,7 +85,7 @@ func (p *PublicTopo) CreateNodeEntities(agent *agentmanager.Agent, nodes *graph.
 			nodes.Add(net_node)
 		} else {
 			err := errors.Errorf("syntax error: %s", net.Laddr)
-			global.ERManager.ErrorTransmit("error", err, false, true)
+			global.ERManager.ErrorTransmit("generator", "error", err, false, true)
 		}
 	}
 

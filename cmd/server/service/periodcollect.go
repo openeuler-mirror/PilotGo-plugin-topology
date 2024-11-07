@@ -22,7 +22,7 @@ import (
 func InitPeriodCollectWorking(batch []string, noderules [][]mysqlmanager.Filter_rule) {
 	if graphmanager.Global_GraphDB == nil {
 		err := errors.New("global_graphdb is nil")
-		global.ERManager.ErrorTransmit("debug", err, false, false)
+		global.ERManager.ErrorTransmit("service", "info", err, false, false)
 		return
 	}
 
@@ -30,13 +30,13 @@ func InitPeriodCollectWorking(batch []string, noderules [][]mysqlmanager.Filter_
 
 	if agentmanager.Global_AgentManager == nil {
 		err := errors.New("Global_AgentManager is nil")
-		global.ERManager.ErrorTransmit("error", err, true, true)
+		global.ERManager.ErrorTransmit("service", "error", err, true, true)
 		return
 	}
 
 	if redismanager.Global_Redis == nil {
 		err := errors.New("Global_Redis is nil")
-		global.ERManager.ErrorTransmit("error", err, true, true)
+		global.ERManager.ErrorTransmit("service", "error", err, true, true)
 		return
 	}
 
@@ -72,7 +72,7 @@ func DataProcessWorking(unixtime int64, agentnum int, graphdb graphmanager.Graph
 	if len(collect_errlist) != 0 {
 		for i, cerr := range collect_errlist {
 			collect_errlist[i] = errors.Wrap(cerr, " ")
-			global.ERManager.ErrorTransmit("error", collect_errlist[i], false, true)
+			global.ERManager.ErrorTransmit("service", "error", collect_errlist[i], false, true)
 		}
 		collect_errlist_string := []string{}
 		for _, e := range collect_errlist {
@@ -83,7 +83,7 @@ func DataProcessWorking(unixtime int64, agentnum int, graphdb graphmanager.Graph
 	if len(process_errlist) != 0 {
 		for i, perr := range process_errlist {
 			process_errlist[i] = errors.Wrap(perr, " ")
-			global.ERManager.ErrorTransmit("error", process_errlist[i], false, true)
+			global.ERManager.ErrorTransmit("service", "error", process_errlist[i], false, true)
 		}
 		process_errlist_string := []string{}
 		for _, e := range process_errlist {
@@ -93,13 +93,13 @@ func DataProcessWorking(unixtime int64, agentnum int, graphdb graphmanager.Graph
 	}
 	if nodes == nil || edges == nil {
 		err := errors.New("nodes or edges is nil")
-		global.ERManager.ErrorTransmit("error", err, false, true)
+		global.ERManager.ErrorTransmit("service", "error", err, false, true)
 		return nil, nil, nil, err
 	}
 
 	if graphmanager.Global_GraphDB == nil {
 		err := errors.New("Global_GraphDB is nil")
-		global.ERManager.ErrorTransmit("error", err, true, true)
+		global.ERManager.ErrorTransmit("service", "error", err, true, true)
 		return nil, nil, nil, err
 	}
 
@@ -136,7 +136,7 @@ func DataProcessWorking(unixtime int64, agentnum int, graphdb graphmanager.Graph
 							err := graphmanager.Global_GraphDB.Node_create(_unixtime, _node)
 							if err != nil {
 								err = errors.Wrapf(err, "create neo4j node failed; %s", cqlIN)
-								global.ERManager.ErrorTransmit("error", err, false, true)
+								global.ERManager.ErrorTransmit("service", "error", err, false, true)
 							}
 						}
 					}(__nodes)
@@ -159,7 +159,7 @@ func DataProcessWorking(unixtime int64, agentnum int, graphdb graphmanager.Graph
 					err := graphmanager.Global_GraphDB.Edge_create(_unixtime, _edge)
 					if err != nil {
 						err = errors.Wrapf(err, "create neo4j edge failed")
-						global.ERManager.ErrorTransmit("error", err, false, true)
+						global.ERManager.ErrorTransmit("service", "error", err, false, true)
 					}
 				}
 			}(__edges)

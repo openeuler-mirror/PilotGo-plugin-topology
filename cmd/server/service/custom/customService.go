@@ -68,7 +68,7 @@ func RunCustomTopoService(tcid uint) (*graph.Nodes, *graph.Edges, []map[string]s
 	if len(collect_errlist) != 0 {
 		for i, cerr := range collect_errlist {
 			collect_errlist[i] = errors.Wrap(cerr, " ")
-			global.ERManager.ErrorTransmit("error", collect_errlist[i], false, true)
+			global.ERManager.ErrorTransmit("service", "error", collect_errlist[i], false, true)
 		}
 		collect_errlist_string := []string{}
 		for _, e := range collect_errlist {
@@ -79,7 +79,7 @@ func RunCustomTopoService(tcid uint) (*graph.Nodes, *graph.Edges, []map[string]s
 	if len(process_errlist) != 0 {
 		for i, perr := range process_errlist {
 			process_errlist[i] = errors.Wrap(perr, " ")
-			global.ERManager.ErrorTransmit("error", process_errlist[i], false, true)
+			global.ERManager.ErrorTransmit("service", "error", process_errlist[i], false, true)
 		}
 		process_errlist_string := []string{}
 		for _, e := range process_errlist {
@@ -89,7 +89,7 @@ func RunCustomTopoService(tcid uint) (*graph.Nodes, *graph.Edges, []map[string]s
 	}
 	if nodes == nil || edges == nil {
 		err := errors.New("nodes or edges is nil")
-		global.ERManager.ErrorTransmit("error", err, false, true)
+		global.ERManager.ErrorTransmit("service", "error", err, false, true)
 		return nil, nil, nil, err, false
 	}
 
