@@ -24,7 +24,11 @@ func InitWebServer() {
 		return
 	}
 
-	engine := gin.Default()
+	engine := gin.New()
+	engine.Use(gin.Recovery(), gin.LoggerWithConfig(gin.LoggerConfig{
+		Output:    gin.DefaultWriter,
+		SkipPaths: []string{"/plugin/topology/api/heartbeat", "/plugin_manage/bind", "/"},
+	}))
 	gin.SetMode(gin.ReleaseMode)
 	pluginclient.Global_Client.RegisterHandlers(engine)
 	InitRouter(engine)
