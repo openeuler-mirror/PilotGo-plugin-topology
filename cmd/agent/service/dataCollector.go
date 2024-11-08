@@ -7,12 +7,11 @@ import (
 
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/agent/collector"
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/agent/conf"
-	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/agent/utils"
-	"gitee.com/openeuler/PilotGo/sdk/logger"
+	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/agent/global"
 	"github.com/pkg/errors"
 )
 
-func DataCollectorService() (utils.Data_collector, error) {
+func DataCollectorService() (global.Data_collector, error) {
 	datasource := conf.Config().Topo.Datasource
 	cost_time := []string{}
 	var wg sync.WaitGroup
@@ -27,7 +26,7 @@ func DataCollectorService() (utils.Data_collector, error) {
 		collector.Psutildata = collector.CreatePsutilCollector()
 		err := collector.Psutildata.Collect_host_data()
 		if err != nil {
-			err = errors.Wrap(err, "**2")
+			err = errors.Wrap(err, " ")
 			return nil, err
 		}
 
@@ -105,7 +104,7 @@ func DataCollectorService() (utils.Data_collector, error) {
 
 		for data := range ch {
 			if data.Err != nil {
-				err = errors.Wrap(err, "**2")
+				err = errors.Wrap(err, " ")
 				return nil, err
 			}
 			cost_time = append(cost_time, data.Time)
@@ -117,11 +116,10 @@ func DataCollectorService() (utils.Data_collector, error) {
 
 		wg.Wait()
 
-		logger.Debug("==========collect==========")
+		global.ERManager.ErrorTransmit("service", "debug", errors.New("==========collect=========="), false, false)
 		for _, t := range cost_time {
-			logger.Debug(t)
+			global.ERManager.ErrorTransmit("service", "debug", errors.New(t), false, false)
 		}
-		logger.Debug("============================")
 
 		return collector.Psutildata, nil
 	default:
