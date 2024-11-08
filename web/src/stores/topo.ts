@@ -19,7 +19,6 @@ export const useTopoStore = defineStore('topo', () => {
     node_click_info.value.node_id = '';
     node_click_info.value.process_name = '';
     node_click_info.value.target_ip = '';
-    console.log('置空节点信息',node_click_info.value.target_ip)
   }
   return {nodeData, node_log_id,node_click_info,topo_data, edgeData,$reset}
 })

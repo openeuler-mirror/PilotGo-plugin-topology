@@ -77,6 +77,7 @@ import { useConfigStore } from "@/stores/config";
 import router from "@/router";
 import socket from "@/utils/socket";
 import { formatDate } from "@/utils/dateFormat";
+import { useLogStore } from "@/stores/los";
 
 const graphMode = ref("default");
 const timeInterval = ref("关闭");
@@ -101,6 +102,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
   // 离开页面，清空点击事件缓存数据
   useTopoStore().$reset();
+  useLogStore().$reset();
 });
 
 // 点击画布关闭日志tab
@@ -436,6 +438,11 @@ watch(
   height: 100%;
   margin: 0 auto;
   position: relative;
+  // 设置文字双击不能选中
+  -webkit-user-select: none; /* Safari */
+  -moz-user-select: none;    /* Firefox */
+  -ms-user-select: none;     /* IE/Edge */
+  user-select: none;         /* 标准语法 */
 
   @keyframes bounce {
     0%,
