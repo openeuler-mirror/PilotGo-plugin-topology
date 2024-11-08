@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/conf"
+	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/global"
 	"gitee.com/openeuler/PilotGo/sdk/common"
-	"gitee.com/openeuler/PilotGo/sdk/logger"
 	"gitee.com/openeuler/PilotGo/sdk/plugin/client"
 	"github.com/pkg/errors"
 )
@@ -20,8 +20,7 @@ func InitPluginClient() {
 	} else if conf.Global_Config != nil && !conf.Global_Config.Topo.Https_enabled {
 		PluginInfo.Url = fmt.Sprintf("http://%s", conf.Global_Config.Topo.Addr_target)
 	} else {
-		err := errors.New("Global_Config is nil")
-		logger.Fatal("%+v", err)
+		global.ERManager.ErrorTransmit("pluginclient", "error", errors.New("Global_Config is nil"), true, false)
 	}
 
 	Global_Client = client.DefaultClient(PluginInfo)
@@ -43,7 +42,7 @@ func uploadResource() {
 
 	files, err := os.ReadDir(dirPath)
 	if err != nil {
-		logger.Error("fail to read files: %s", err.Error())
+		global.ERManager.ErrorTransmit("pluginclient", "error", errors.Errorf("fail to read files: %s", err.Error()), false, false)
 		return
 	}
 	for _, file := range files {
@@ -56,7 +55,7 @@ func uploadResource() {
 	for _, filename := range filename_list {
 		err := Global_Client.FileUpload(dirPath, filename)
 		if err != nil {
-			logger.Error("fail to upload file: %s", err.Error())
+			global.ERManager.ErrorTransmit("pluginclient", "error", errors.Errorf("fail to upload file: %s", err.Error()), false, false)
 		}
 	}
 }

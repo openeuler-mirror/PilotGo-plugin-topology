@@ -11,7 +11,6 @@ import (
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/db/mysqlmanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/db/redismanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/global"
-	"gitee.com/openeuler/PilotGo/sdk/logger"
 )
 
 func InitDB() {
@@ -46,9 +45,9 @@ func initGraphDB() {
 	}
 
 	if graphmanager.Global_GraphDB != nil {
-		logger.Debug("graph database initialization successful")
+		global.ERManager.ErrorTransmit("db", "debug", errors.New("graph database initialization successful"), false, false)
 	} else {
-		logger.Error("graph database initialization failed")
+		global.ERManager.ErrorTransmit("db", "error", errors.New("graph database initialization failed"), false, false)
 	}
 }
 
@@ -56,27 +55,27 @@ func initGraphDB() {
 func initRedis() {
 	redismanager.Global_Redis = redismanager.RedisInit(conf.Global_Config.Redis.Addr, conf.Global_Config.Redis.Password, conf.Global_Config.Redis.DB, conf.Global_Config.Redis.DialTimeout)
 	if redismanager.Global_Redis != nil {
-		logger.Debug("redis database initialization successful")
+		global.ERManager.ErrorTransmit("db", "debug", errors.New("redis database initialization successful"), false, false)
 	} else {
-		logger.Error("redis database initialization failed")
+		global.ERManager.ErrorTransmit("db", "error", errors.New("redis database initialization failed"), false, false)
 	}
 }
 
 func initMysql() {
 	mysqlmanager.Global_Mysql = mysqlmanager.MysqldbInit(conf.Global_Config.Mysql)
 	if mysqlmanager.Global_Mysql != nil {
-		logger.Debug("mysql database initialization successful")
+		global.ERManager.ErrorTransmit("db", "debug", errors.New("mysql database initialization successful"), false, false)
 	} else {
-		logger.Error("mysql database initialization failed")
+		global.ERManager.ErrorTransmit("db", "error", errors.New("mysql database initialization failed"), false, false)
 	}
 }
 
 func initInflux() {
 	influxmanager.Global_Influx = influxmanager.InfluxdbInit(conf.Global_Config.Influx)
 	if influxmanager.Global_Influx != nil {
-		logger.Debug("influx database initialization successful")
+		global.ERManager.ErrorTransmit("db", "debug", errors.New("influx database initialization successful"), false, false)
 	} else {
-		logger.Error("influx database initialization failed")
+		global.ERManager.ErrorTransmit("db", "error", errors.New("influx database initialization failed"), false, false)
 	}
 }
 
@@ -100,7 +99,7 @@ func ClearGraphData(retention int64) {
 				current := time.Now()
 				clear, err := time.Parse("15:04:05", conf.Global_Config.Neo4j.Cleartime)
 				if err != nil {
-					logger.Error("ClearGraphData time parse error: %s, %s", err.Error(), conf.Global_Config.Neo4j.Cleartime)
+					global.ERManager.ErrorTransmit("db", "error", errors.Errorf("ClearGraphData time parse error: %s, %s", err.Error(), conf.Global_Config.Neo4j.Cleartime), false, false)
 				}
 
 				next := time.Date(current.Year(), current.Month(), current.Day()+1, clear.Hour(), clear.Minute(), clear.Second(), 0, current.Location())

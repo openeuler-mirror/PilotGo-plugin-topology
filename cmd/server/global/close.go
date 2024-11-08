@@ -1,9 +1,8 @@
 package global
 
 import (
+	"errors"
 	"fmt"
-
-	"gitee.com/openeuler/PilotGo/sdk/logger"
 )
 
 func Close() {
@@ -12,17 +11,17 @@ func Close() {
 		if Global_neo4j_driver != nil {
 			Global_neo4j_driver.Close()
 			fmt.Println()
-			logger.Info("close the connection to neo4j\n")
+			ERManager.ErrorTransmit("global", "info", errors.New("close the connection to neo4j"), false, false)
 		}
 	}
 
 	if Global_redis_client != nil {
 		Global_redis_client.Close()
-		logger.Info("close the connection to redis\n")
+		ERManager.ErrorTransmit("global", "info", errors.New("close the connection to redis"), false, false)
 	}
 
 	if Global_influx_client != nil {
 		Global_influx_client.Close()
-		logger.Info("close the connection to influx\n")
+		ERManager.ErrorTransmit("global", "info", errors.New("close the connection to influx"), false, false)
 	}
 }
