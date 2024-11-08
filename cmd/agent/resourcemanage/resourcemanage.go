@@ -80,6 +80,9 @@ func (erm *ErrorReleaseManagement) errorFactory() {
 			logger.Info("error management stopped")
 			return
 		case _error := <-erm.ErrChan:
+			if _error == nil {
+				continue
+			}
 			_terror, ok := _error.(*FinalError)
 			if !ok {
 				logger.Error("plain error: %s", _error.Error())

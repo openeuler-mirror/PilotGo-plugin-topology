@@ -8,12 +8,17 @@ import (
 
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/agent/conf"
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/agent/global"
+	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/agent/webserver/middleware"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 )
 
 func InitWebServer() {
-	engine := gin.Default()
+	engine := gin.New()
+	engine.Use(gin.Recovery(), middleware.Logger([]string{
+		"/plugin/topology/api/health",
+		"/",
+	}))
 	gin.SetMode(gin.ReleaseMode)
 	InitRouter(engine)
 
