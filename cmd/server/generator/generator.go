@@ -124,7 +124,6 @@ func (t *TopoGenerator) ProcessingData(agentnum int) (*graph.Nodes, *graph.Edges
 	atomic.StoreInt32(t.Factory.Return_Agent_node_count(), int32(0))
 
 	elapse := time.Since(start)
-	// logger.Info("topo server 采集数据处理时间[0m: %v\n", elapse)
 	global.ERManager.ErrorTransmit("generator", "info", errors.Errorf("采集数据处理时间: %v\n", elapse), false, false)
 
 	return nodes, edges, collect_errorlist, process_errorlist
@@ -161,7 +160,6 @@ func (t *TopoGenerator) collectInstantData() []error {
 				agentmanager.Global_AgentManager.AddAgent_T(agent)
 
 				temp_elapse := time.Since(temp_start)
-				// logger.Info("\033[32mtopo server 采集数据获取时间\033[0m: %s, %v, total\n", agent.UUID, temp_elapse)
 				global.ERManager.ErrorTransmit("generator", "info", errors.Errorf("采集数据获取时间: %s, %v, total\n", agent.UUID, temp_elapse), false, false)
 			}()
 
@@ -172,7 +170,6 @@ func (t *TopoGenerator) collectInstantData() []error {
 	wg.Wait()
 
 	elapse := time.Since(start)
-	// logger.Info("\033[32mtopo server 采集数据获取时间\033[0m: %v\n", elapse)
 	global.ERManager.ErrorTransmit("generator", "info", errors.Errorf("采集数据获取时间: %v\n", elapse), false, false)
 
 	if len(errorlist) != 0 {
@@ -195,7 +192,6 @@ func (t *TopoGenerator) getCollectDataFromTopoAgent(agent *agentmanager.Agent) e
 	reader := bytes.NewReader(resp.Body)
 	io.Copy(tmpfile, reader)
 	fileInfo, _ := tmpfile.Stat()
-	// logger.Info("\033[32mtopo server 采集数据大小\033[0m: %s, %d kb\n", agent.UUID, fileInfo.Size()/1024)
 	global.ERManager.ErrorTransmit("generator", "info", errors.Errorf("采集数据大小: %s, %d kb\n", agent.UUID, fileInfo.Size()/1024), false, false)
 
 	if statuscode := resp.StatusCode; statuscode != 200 {

@@ -14,7 +14,6 @@ import (
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/webserver/frontendResource"
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/webserver/handle"
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/webserver/middleware"
-	"gitee.com/openeuler/PilotGo/sdk/logger"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 )
@@ -28,8 +27,8 @@ func InitWebServer() {
 
 	engine := gin.New()
 	engine.Use(gin.Recovery(), middleware.Logger([]string{
-		"/plugin/topology/api/heartbeat", 
-		"/plugin_manage/bind", 
+		"/plugin/topology/api/heartbeat",
+		"/plugin_manage/bind",
 		"/",
 	}))
 	gin.SetMode(gin.ReleaseMode)
@@ -37,7 +36,7 @@ func InitWebServer() {
 	InitRouter(engine)
 	frontendResource.StaticRouter(engine)
 
-	webserver := &http.Server{
+	web := &http.Server{
 		Addr:    conf.Global_Config.Topo.Addr,
 		Handler: engine,
 	}
@@ -45,7 +44,7 @@ func InitWebServer() {
 	global.ERManager.Wg.Add(1)
 	go func() {
 		if conf.Global_Config.Topo.Https_enabled {
-			if err := webserver.ListenAndServeTLS(conf.Global_Config.Topo.Public_certificate, conf.Global_Config.Topo.Private_key); err != nil {
+			if err := web.ListenAndServeTLS(conf.Global_Config.Topo.Public_certificate, conf.Global_Config.Topo.Private_key); err != nil {
 				if strings.Contains(err.Error(), "Server closed") {
 					err = errors.New(err.Error())
 					global.ERManager.ErrorTransmit("webserver", "info", err, false, false)
@@ -55,7 +54,7 @@ func InitWebServer() {
 				global.ERManager.ErrorTransmit("webserver", "error", err, true, true)
 			}
 		}
-		if err := webserver.ListenAndServe(); err != nil {
+		if err := web.ListenAndServe(); err != nil {
 			if strings.Contains(err.Error(), "Server closed") {
 				err = errors.New(err.Error())
 				global.ERManager.ErrorTransmit("webserver", "info", err, false, false)
@@ -70,14 +69,16 @@ func InitWebServer() {
 		defer global.ERManager.Wg.Done()
 
 		<-global.ERManager.GoCancelCtx.Done()
-		logger.Info("shutting down web server...")
+
+		global.ERManager.ErrorTransmit("webserver", "info", errors.New("shutting down web server..."), false, false)
+
 		ctx, cancel := context.WithTimeout(global.RootContext, 1*time.Second)
 		defer cancel()
 
-		if err := webserver.Shutdown(ctx); err != nil {
-			logger.Error("web server shutdown error: %s", err.Error())
+		if err := web.Shutdown(ctx); err != nil {
+			global.ERManager.ErrorTransmit("webserver", "error", errors.Errorf("web server shutdown error: %s", err.Error()), false, false)
 		} else {
-			logger.Info("web server stopped")
+			global.ERManager.ErrorTransmit("webserver", "info", errors.New("web server stopped"), false, false)
 		}
 	}()
 }

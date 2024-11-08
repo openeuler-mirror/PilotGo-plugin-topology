@@ -15,7 +15,6 @@ import (
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/generator"
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/global"
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/graph"
-	"gitee.com/openeuler/PilotGo/sdk/logger"
 	"github.com/pkg/errors"
 )
 
@@ -48,7 +47,7 @@ func InitPeriodCollectWorking(batch []string, noderules [][]mysqlmanager.Filter_
 		for {
 			select {
 			case <-global.ERManager.GoCancelCtx.Done():
-				logger.Info("cancelCtx is done, exit period collect goroutine")
+				global.ERManager.ErrorTransmit("service", "info", errors.New("cancelCtx is done, exit period collect goroutine"), false, false)
 				return
 			default:
 				redismanager.Global_Redis.ActiveHeartbeatDetection(batch)
@@ -168,9 +167,7 @@ func DataProcessWorking(unixtime int64, agentnum int, graphdb graphmanager.Graph
 	}
 
 	elapse := time.Since(start)
-	// fmt.Fprintf(agentmanager.Topo.Out, "\033[32mtopo server 数据库写入时间\033[0m: %v\n\n", elapse)
-	logger.Info("\033[32mtopo server 数据库写入时间\033[0m: %v\n\n", elapse)
-
+	global.ERManager.ErrorTransmit("service", "info", errors.Errorf("图数据库写入时间: %v\n\n", elapse), false, false)
 	return nil, nil, nil, nil
 }
 

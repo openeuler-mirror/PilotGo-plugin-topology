@@ -5,7 +5,6 @@ import (
 	"sync"
 
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/global"
-	"gitee.com/openeuler/PilotGo/sdk/logger"
 	"github.com/pkg/errors"
 )
 
@@ -35,7 +34,7 @@ func (e *Edges) Add(edge *Edge) {
 	if edge.Type == global.EDGE_TCP || edge.Type == global.EDGE_UDP {
 		id_slice := strings.Split(edge.ID, global.EDGE_CONNECTOR)
 		if len(id_slice) != 3 {
-			logger.Error("can not generate mirror id of edge: %s, failed to add edge.", edge.ID)
+			global.ERManager.ErrorTransmit("graph", "error", errors.Errorf("can not generate mirror id of edge: %s, failed to add edge.", edge.ID), false, false)
 			return
 		}
 

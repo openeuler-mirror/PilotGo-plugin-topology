@@ -80,6 +80,10 @@ func (erm *ErrorReleaseManagement) errorFactory() {
 			logger.Info("error management stopped")
 			return
 		case _error := <-erm.ErrChan:
+			if _error == nil {
+				continue
+			}
+
 			_terror, ok := _error.(*FinalError)
 			if !ok {
 				logger.Error("plain error: %s", _error.Error())
@@ -152,7 +156,10 @@ func (erm *ErrorReleaseManagement) ErrorTransmit(_module, _severity string, _err
 }
 
 func (erm *ErrorReleaseManagement) logFormat(_err error, _module string) string {
-	log := fmt.Sprintf("%v %s %s %s %+v",
+	if len(_module) > 10 {
+		_module = _module[:10]
+	}
+	log := fmt.Sprintf("%v %s %-10s %s %+v",
 		time.Now().Format("2006-01-02 15:04:05"),
 		green, _module, reset,
 		_err.Error(),
@@ -161,7 +168,10 @@ func (erm *ErrorReleaseManagement) logFormat(_err error, _module string) string 
 }
 
 func (erm *ErrorReleaseManagement) errorStackMsg(_module string) string {
-	return fmt.Sprintf("%v %s %s %s",
+	if len(_module) > 10 {
+		_module = _module[:10]
+	}
+	return fmt.Sprintf("%v %s %-10s %s",
 		time.Now().Format("2006-01-02 15:04:05"),
 		green, _module, reset,
 	)

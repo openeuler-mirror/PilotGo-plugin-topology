@@ -12,7 +12,6 @@ import (
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/agentmanager"
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/conf"
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/global"
-	"gitee.com/openeuler/PilotGo/sdk/logger"
 	"gitee.com/openeuler/PilotGo/sdk/utils/httputils"
 	"github.com/go-redis/redis/v8"
 	"github.com/pkg/errors"
@@ -215,15 +214,14 @@ func (r *RedisClient) UpdateTopoRunningAgentList(uuids []string, updateonce bool
 		}
 
 		once.Do(func() {
-			logger.Warn("no running agent......")
+			global.ERManager.ErrorTransmit("db", "warn", errors.New("no running agent......"), false, false)
 		})
 
 		if len(abort_reason) != 0 {
-			logger.Warn("========agent status========")
+			global.ERManager.ErrorTransmit("db", "warn", errors.New("========agent status========"), false, false)
 			for _, r := range abort_reason {
-				logger.Warn(r)
+				global.ERManager.ErrorTransmit("db", "warn", errors.New(r), false, false)
 			}
-			logger.Warn("============================")
 		}
 
 		if updateonce {

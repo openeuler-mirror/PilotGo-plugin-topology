@@ -16,6 +16,7 @@ func SignalMonitoring() {
 	for s := range ch {
 		switch s {
 		case syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT:
+			global.ERManager.ErrorTransmit("signal", "info", errors.New("signal interrupt"), false, false)
 			global.ERManager.ResourceRelease()
 			os.Exit(1)
 		default:
