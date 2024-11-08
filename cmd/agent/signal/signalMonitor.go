@@ -5,7 +5,8 @@ import (
 	"os/signal"
 	"syscall"
 
-	"gitee.com/openeuler/PilotGo/sdk/logger"
+	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/agent/global"
+	"github.com/pkg/errors"
 )
 
 func SignalMonitoring() {
@@ -15,10 +16,10 @@ func SignalMonitoring() {
 	for s := range ch {
 		switch s {
 		case syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT:
-			// actions before exit
+			global.ERManager.ResourceRelease()
 			os.Exit(1)
 		default:
-			logger.Warn("unknown signal-> %s\n", s.String())
+			global.ERManager.ErrorTransmit("signal", "warn", errors.Errorf("unknown signal-> %s\n", s.String()), false, false)
 		}
 	}
 }

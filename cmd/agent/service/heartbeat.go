@@ -7,8 +7,7 @@ import (
 	"time"
 
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/agent/conf"
-	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/agent/utils"
-	"gitee.com/openeuler/PilotGo/sdk/logger"
+	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/agent/global"
 	"gitee.com/openeuler/PilotGo/sdk/utils/httputils"
 	"github.com/pkg/errors"
 )
@@ -21,7 +20,7 @@ func SendHeartbeat() {
 			err := sendHeartbeat(agent_addr)
 			if err != nil {
 				err = errors.Wrap(err, " ")
-				logger.Error(err.Error())
+				global.ERManager.ErrorTransmit("service", "error", err, false, false)
 			}
 			time.Sleep(time.Duration(conf.Config().Topo.Heartbeat) * time.Second)
 		}
@@ -29,10 +28,9 @@ func SendHeartbeat() {
 }
 
 func sendHeartbeat(addr string) error {
-	m_u_bytes, err := utils.FileReadBytes(utils.Agentuuid_filepath)
+	m_u_bytes, err := global.FileReadBytes(global.Agentuuid_filepath)
 	if err != nil {
-		// err = errors.New(err.Error())
-		logger.Error(err.Error())
+		err = errors.Wrap(err, " ")
 		return err
 	}
 	type machineuuid struct {

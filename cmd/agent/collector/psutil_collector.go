@@ -5,8 +5,9 @@ import (
 	"strconv"
 	"sync"
 
-	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/agent/utils"
-	"gitee.com/openeuler/PilotGo/sdk/logger"
+	"github.com/pkg/errors"
+
+	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/agent/global"
 	"github.com/shirou/gopsutil/cpu"
 	"github.com/shirou/gopsutil/disk"
 	"github.com/shirou/gopsutil/process"
@@ -17,13 +18,13 @@ import (
 var Psutildata *PsutilCollector
 
 type PsutilCollector struct {
-	Host_1             *utils.Host
-	Processes_1        []*utils.Process
-	Netconnections_1   []*utils.Netconnection
-	NetIOcounters_1    []*utils.NetIOcounter
+	Host_1             *global.Host
+	Processes_1        []*global.Process
+	Netconnections_1   []*global.Netconnection
+	NetIOcounters_1    []*global.NetIOcounter
 	AddrInterfaceMap_1 map[string][]string
-	Disks_1            []*utils.Disk
-	Cpus_1             []*utils.Cpu
+	Disks_1            []*global.Disk
+	Cpus_1             []*global.Cpu
 }
 
 func CreatePsutilCollector() *PsutilCollector {
@@ -33,16 +34,12 @@ func CreatePsutilCollector() *PsutilCollector {
 func (pc *PsutilCollector) Collect_host_data() error {
 	hostinit, err := host.Info()
 	if err != nil {
-		// err = errors.New(err.Error())
-		logger.Error(err.Error())
-		return err
+		return errors.New(err.Error())
 	}
 
-	m_u_bytes, err := utils.FileReadBytes(utils.Agentuuid_filepath)
+	m_u_bytes, err := global.FileReadBytes(global.Agentuuid_filepath)
 	if err != nil {
-		// err = errors.New(err.Error())
-		logger.Error(err.Error())
-		return err
+		return errors.Wrap(err, " ")
 	}
 	type machineuuid struct {
 		Agentuuid string `json:"agent_uuid"`
@@ -50,7 +47,7 @@ func (pc *PsutilCollector) Collect_host_data() error {
 	m_u_struct := &machineuuid{}
 	json.Unmarshal(m_u_bytes, m_u_struct)
 
-	pc.Host_1 = &utils.Host{
+	pc.Host_1 = &global.Host{
 		Hostname:             hostinit.Hostname,
 		Uptime:               hostinit.Uptime,
 		BootTime:             hostinit.BootTime,
@@ -65,7 +62,6 @@ func (pc *PsutilCollector) Collect_host_data() error {
 		VirtualizationRole:   hostinit.VirtualizationRole,
 		MachineUUID:          m_u_struct.Agentuuid,
 	}
-
 	return nil
 }
 
@@ -86,16 +82,14 @@ func (pc *PsutilCollector) Collect_process_instant_data() error {
 
 	processes_0, err := process.Processes()
 	if err != nil {
-		// err = errors.Errorf("failed to get processes: %s", err)
-		logger.Error("failed to get processes: %s", err)
-		return err
+		return errors.Errorf("failed to get processes: %s", err)
 	}
 
 	for _, p0 := range processes_0 {
 		wg.Add(1)
 		go func(_p0 *process.Process, _lock *sync.Mutex) {
 			defer wg.Done()
-			p1 := &utils.Process{}
+			p1 := &global.Process{}
 
 			p1.Pid = _p0.Pid
 
@@ -118,7 +112,7 @@ func (pc *PsutilCollector) Collect_process_instant_data() error {
 
 				for k, v := range thread {
 					p1.Tids = append(p1.Tids, k)
-					t := &utils.Thread{
+					t := &global.Thread{
 						Tid:       k,
 						Tgid:      tgid,
 						CPU:       v.CPU,
@@ -172,7 +166,7 @@ func (pc *PsutilCollector) Collect_process_instant_data() error {
 
 			connections, err := _p0.Connections()
 			Echo_process_err("connections", err, _p0.Pid)
-			p1.Connections = utils.GopsutilNetMeta2TopoNetMeta(connections)
+			p1.Connections = global.GopsutilNetMeta2TopoNetMeta(connections)
 
 			p1.NetIOCounters, err = _p0.NetIOCounters(true)
 			Echo_process_err("netiocounters", err, _p0.Pid)
@@ -228,13 +222,11 @@ func (pc *PsutilCollector) Collect_process_instant_data() error {
 func (pc *PsutilCollector) Collect_netconnection_all_data() error {
 	connections, err := net.Connections("all")
 	if err != nil {
-		// err = errors.Errorf("failed to run net.connections: %s", err)
-		logger.Error("failed to run net.connections: %s", err)
-		return err
+		return errors.Errorf("failed to run net.connections: %s", err)
 	}
 
 	for _, c := range connections {
-		c1 := &utils.Netconnection{}
+		c1 := &global.Netconnection{}
 		// if c.Status == "NONE" {
 		// 	continue
 		// }
@@ -257,16 +249,13 @@ func (pc *PsutilCollector) Collect_netconnection_all_data() error {
 		c1.Pid = c.Pid
 		pc.Netconnections_1 = append(pc.Netconnections_1, c1)
 	}
-
 	return nil
 }
 
 func (pc *PsutilCollector) Collect_addrInterfaceMap_data() error {
 	interfaces, err := net.Interfaces()
 	if err != nil {
-		// err = errors.Errorf("failed to run net.interfaces: %s", err)
-		logger.Error("failed to run net.interfaces: %s", err)
-		return err
+		return errors.Errorf("failed to run net.interfaces: %s", err)
 	}
 
 	addrinterfacemap := map[string][]string{}
@@ -277,20 +266,17 @@ func (pc *PsutilCollector) Collect_addrInterfaceMap_data() error {
 	}
 
 	pc.AddrInterfaceMap_1 = addrinterfacemap
-
 	return nil
 }
 
 func (pc *PsutilCollector) Collect_interfaces_io_data() error {
 	iocounters, err := net.IOCounters(true)
 	if err != nil {
-		// err = errors.Errorf("failed to collect interfaces io: %s", err.Error())
-		logger.Error("failed to collect interfaces io: %s", err.Error())
-		return err
+		return errors.Errorf("failed to collect interfaces io: %s", err.Error())
 	}
 
 	for _, iocounter := range iocounters {
-		interfaceIO := &utils.NetIOcounter{}
+		interfaceIO := &global.NetIOcounter{}
 
 		interfaceIO.Name = iocounter.Name
 		interfaceIO.BytesRecv = iocounter.BytesRecv
@@ -306,68 +292,55 @@ func (pc *PsutilCollector) Collect_interfaces_io_data() error {
 
 		pc.NetIOcounters_1 = append(pc.NetIOcounters_1, interfaceIO)
 	}
-
 	return nil
 }
 
 func (pc *PsutilCollector) Collect_disk_data() error {
 	partitions, err := disk.Partitions(false)
 	if err != nil {
-		// err = errors.Errorf("failed to collect disk partitions: %s", err.Error())
-		logger.Error("failed to collect disk partitions: %s", err.Error())
-		return err
+		return errors.Errorf("failed to collect disk partitions: %s", err.Error())
 	}
 
 	for _, partition := range partitions {
-		disk_entity := &utils.Disk{}
+		disk_entity := &global.Disk{}
 		disk_entity.Partition = partition
 
 		iocounter, err := disk.IOCounters([]string{disk_entity.Partition.Device}...)
 		if err != nil {
-			// err = errors.Errorf("failed to collect disk io: %s", err.Error())
-			logger.Error("failed to collect disk io: %s", err.Error())
-			return err
+			return errors.Errorf("failed to collect disk io: %s", err.Error())
 		}
 
 		disk_entity.IOcounter = iocounter[partition.Device]
 
 		usage, err := disk.Usage(partition.Mountpoint)
 		if err != nil {
-			// err = errors.Errorf("failed to collect disk usage: %s", err.Error())
-			logger.Error("failed to collect disk usage: %s", err.Error())
-			return err
+			return errors.Errorf("failed to collect disk usage: %s", err.Error())
 		}
 
 		disk_entity.Usage = *usage
 
 		pc.Disks_1 = append(pc.Disks_1, disk_entity)
 	}
-
 	return nil
 }
 
 func (pc *PsutilCollector) Collect_cpu_data() error {
 	cputimes, err := cpu.Times(true)
 	if err != nil {
-		// err = errors.Errorf("failed to collect cpu times: %s", err.Error())
-		logger.Error("failed to collect cpu times: %s", err.Error())
-		return err
+		return errors.Errorf("failed to collect cpu times: %s", err.Error())
 	}
 
 	for i, cputime := range cputimes {
-		cpu_entity := &utils.Cpu{}
+		cpu_entity := &global.Cpu{}
 		cpu_entity.Time = cputime
 
 		cpuinfos, err := cpu.Info()
 		if err != nil {
-			// err = errors.Errorf("failed to collect cpu info: %s", err.Error())
-			logger.Error("failed to collect cpu info: %s", err.Error())
-			return err
+			return errors.Errorf("failed to collect cpu info: %s", err.Error())
 		}
 		cpu_entity.Info = cpuinfos[i]
 
 		pc.Cpus_1 = append(pc.Cpus_1, cpu_entity)
 	}
-
 	return nil
 }
