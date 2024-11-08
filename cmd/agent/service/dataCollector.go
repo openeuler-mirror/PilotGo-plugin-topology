@@ -23,8 +23,8 @@ func DataCollectorService() (global.Data_collector, error) {
 
 	switch datasource {
 	case "gopsutil":
-		collector.Psutildata = collector.CreatePsutilCollector()
-		err := collector.Psutildata.Collect_host_data()
+		psutildata := collector.CreatePsutilCollector()
+		err := psutildata.Collect_host_data()
 		if err != nil {
 			err = errors.Wrap(err, " ")
 			return nil, err
@@ -34,7 +34,7 @@ func DataCollectorService() (global.Data_collector, error) {
 		go func() {
 			defer wg.Done()
 			time_start := time.Now()
-			err := collector.Psutildata.Collect_process_instant_data()
+			err := psutildata.Collect_process_instant_data()
 			time_elapse := time.Since(time_start)
 			ch <- &err_and_time{
 				Err:  err,
@@ -46,7 +46,7 @@ func DataCollectorService() (global.Data_collector, error) {
 		go func() {
 			defer wg.Done()
 			time_start := time.Now()
-			err := collector.Psutildata.Collect_netconnection_all_data()
+			err := psutildata.Collect_netconnection_all_data()
 			time_elapse := time.Since(time_start)
 			ch <- &err_and_time{
 				Err:  err,
@@ -58,7 +58,7 @@ func DataCollectorService() (global.Data_collector, error) {
 		go func() {
 			defer wg.Done()
 			time_start := time.Now()
-			err = collector.Psutildata.Collect_interfaces_io_data()
+			err = psutildata.Collect_interfaces_io_data()
 			time_elapse := time.Since(time_start)
 			ch <- &err_and_time{
 				Err:  err,
@@ -70,7 +70,7 @@ func DataCollectorService() (global.Data_collector, error) {
 		go func() {
 			defer wg.Done()
 			time_start := time.Now()
-			err = collector.Psutildata.Collect_addrInterfaceMap_data()
+			err = psutildata.Collect_addrInterfaceMap_data()
 			time_elapse := time.Since(time_start)
 			ch <- &err_and_time{
 				Err:  err,
@@ -82,7 +82,7 @@ func DataCollectorService() (global.Data_collector, error) {
 		go func() {
 			defer wg.Done()
 			time_start := time.Now()
-			err = collector.Psutildata.Collect_disk_data()
+			err = psutildata.Collect_disk_data()
 			time_elapse := time.Since(time_start)
 			ch <- &err_and_time{
 				Err:  err,
@@ -94,7 +94,7 @@ func DataCollectorService() (global.Data_collector, error) {
 		go func() {
 			defer wg.Done()
 			time_start := time.Now()
-			err = collector.Psutildata.Collect_cpu_data()
+			err = psutildata.Collect_cpu_data()
 			time_elapse := time.Since(time_start)
 			ch <- &err_and_time{
 				Err:  err,
@@ -121,7 +121,7 @@ func DataCollectorService() (global.Data_collector, error) {
 			global.ERManager.ErrorTransmit("service", "debug", errors.New(t), false, false)
 		}
 
-		return collector.Psutildata, nil
+		return psutildata, nil
 	default:
 		return nil, errors.New("wrong data source")
 	}

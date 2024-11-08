@@ -15,8 +15,6 @@ import (
 	"github.com/shirou/gopsutil/v3/net"
 )
 
-var Psutildata *PsutilCollector
-
 type PsutilCollector struct {
 	Host_1             *global.Host
 	Processes_1        []*global.Process
