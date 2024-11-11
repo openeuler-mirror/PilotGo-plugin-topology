@@ -1,3 +1,4 @@
+import { useLogStore } from '@/stores/log'
 import { ElMessage } from 'element-plus'
 interface socket {
   websocket: any
@@ -18,10 +19,9 @@ interface socket {
   close: () => void
   reconnect: () => void
 }
-
 const socket: socket = {
   websocket: null,
-  connectURL: `wss://10.41.107.29:8888/plugin/ws/logs?clientId=${parseInt(Math.random() * 1000 + '')}`, 
+  connectURL: `wss://10.41.107.29:8888/plugin/ws/logs`, 
   // 开启标识
   socket_open: false,
   // 心跳timer
@@ -50,8 +50,8 @@ const socket: socket = {
     /* if (socket.websocket) {
       return socket.websocket
     } */
-
-    socket.websocket = new WebSocket(socket.connectURL)
+      let random = parseInt(Math.random() * 100000+'');
+    socket.websocket = new WebSocket(socket.connectURL+`?clientId=${random}`)
     socket.websocket.onmessage = (e: any) => {
       if (receiveMessage) {
         receiveMessage(e)
@@ -60,6 +60,7 @@ const socket: socket = {
 
     socket.websocket.onclose = (e: any) => {
       console.log('检测到关闭',e)
+      useLogStore().ws_isOpen = false;
       clearInterval(socket.hearbeat_interval)
       socket.socket_open = false
 
@@ -84,6 +85,7 @@ const socket: socket = {
     // 连接成功
     socket.websocket.onopen = function () {
       console.log('ws连接成功')
+      useLogStore().ws_isOpen = true;
       socket.socket_open = true
       socket.is_reonnect = false
       // 开启心跳
@@ -93,6 +95,7 @@ const socket: socket = {
     // 连接发生错误
     socket.websocket.onerror = function (e:any) {
       console.log('连接发生错误',e)
+      useLogStore().ws_isOpen = false;
     }
   },
 
@@ -141,7 +144,6 @@ const socket: socket = {
   },
 
   close: () => {
-    console.log('关闭ws')
     clearInterval(socket.hearbeat_interval)
     socket.is_reonnect = false
     socket.websocket.close()

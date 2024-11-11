@@ -39,7 +39,7 @@
     <el-dialog
       v-model="dialog"
       :title="title"
-      width="80%"
+      width="86%"
       @close="closeDialog"
       destroy-on-close
     >
@@ -77,7 +77,7 @@ import { useConfigStore } from "@/stores/config";
 import router from "@/router";
 import socket from "@/utils/socket";
 import { formatDate } from "@/utils/dateFormat";
-import { useLogStore } from "@/stores/los";
+import { useLogStore } from "@/stores/log";
 
 const graphMode = ref("default");
 const timeInterval = ref("关闭");
@@ -305,18 +305,16 @@ interface logItem {
 const serviceList = ref([] as any);
 const pluginlog_stream = ref([] as logItem[]);
 const pluginlog_total = ref(0);
-const getPluginLogStream = () => {
-  socket.init(receiveMessage, "");
-  setTimeout(() => {
-    if (socket.socket_open) {
-      socket.send({
-        type: 1,
-        joptions: null,
-        data: useTopoStore().node_click_info.target_ip + ":9995",
-      });
-    }
-  }, 500);
-};
+
+watch(()=>useLogStore().ws_isOpen,newV => {
+  if(newV) {
+    socket.send({
+      type: 1,
+      joptions: null,
+      data: useTopoStore().node_click_info.target_ip + ":9995",
+    });
+  }
+},{immediate:true})
 
 const receiveMessage = (message: any) => {
   let result = JSON.parse(message.data);
@@ -380,6 +378,7 @@ const getWsLogs = (params: any) => {
     from: params.from,
     size: params.size ? params.size : null,
   } as any;
+  if(!serviceList.value) return;
   let selected_service = serviceList.value.find((group: any) =>
     group.options.some((option: any) => option.label == params.service)
   );
@@ -404,6 +403,7 @@ const closeDialog = () => {
   socket.close();
   pluginlog_stream.value = [];
   pluginlog_total.value = 0;
+  serviceList.value = [];
 };
 
 /*
@@ -413,7 +413,6 @@ const closeDialog = () => {
 watch(
   () => useTopoStore().node_click_info,
   (node_click_info) => {
-    console.log("监听到新节点：", node_click_info);
     if (node_click_info.node_id) {
       dialog.value = true;
       if (log_type.value === "elk") {
@@ -424,7 +423,7 @@ watch(
         };
         handleShowLog(query_params);
       } else {
-        getPluginLogStream();
+        socket.init(receiveMessage, "");
       }
     }
   },
