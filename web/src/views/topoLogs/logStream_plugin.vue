@@ -35,7 +35,7 @@
         选择服务：<el-select
           v-model="service_key"
           placeholder="请选择主机服务"
-          style="width: 130px"
+          style="width: 140px"
           @change="searchService"
         >
           <el-option-group
@@ -57,13 +57,13 @@
         日志模式：<el-select
           v-model="realTime"
           placeholder="请选择日志模式"
-          style="width: 100px"
+          style="width: 120px"
           @change="isResetLog = true"
         >
           <el-option label="实时" :value="true"/>
           <el-option label="非实时" :value="false"/>
         </el-select>
-      </div>&emsp;
+      </div>&emsp;&emsp;
       <el-button type="primary" @click="handleSearch()">查询</el-button>
     </div>
     <div class="log_list">
@@ -111,9 +111,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watchEffect, watch, computed, onMounted } from "vue";
+import { ref, watchEffect, watch, onMounted,nextTick, reactive } from "vue";
 import { levels } from "./utils";
 import { formatDate } from "@/utils/dateFormat";
+import { useLogStore } from "@/stores/log";
+import { useTopoStore } from'@/stores/topo';
 
 const realTime = ref(false); // 是否实时监听日志变化
 const isResetLog = ref(false); // 是否清空日志重新查询
@@ -127,6 +129,7 @@ interface logItem {
   level: string;
   targetName: string;
 }
+
 let props = defineProps({
   log_data: {
     type: Array as () => logItem[],
@@ -144,16 +147,7 @@ let props = defineProps({
     required: false,
   },
 });
-watch(
-  () => props.service_list,
-  (new_list) => {
-    if (new_list.length > 0) {
-      service_options.value = props.service_list;
-      service_key.value = props.service_list[0].options[0].value;
-      handleSearch();
-    }
-  }
-);
+
 watchEffect(() => {
   if (props.log_data.length > 0) {
     log_stream.value = props.log_data;
@@ -166,21 +160,41 @@ watchEffect(() => {
     isloading.value = false;
   }
 });
-interface TimeRange {
-  start: Date;
-  end: Date;
+interface LogSearchObj {
+    timeRange:[Date,Date];
+    level:string;
+    service:{label:string,value:string;}
+    realTime:boolean;
 }
+let logSearchItem = {} as LogSearchObj;
+watch([()=> useTopoStore().node_click_info.target_ip,()=> props.service_list],(newVal,oldVal) => {
+  if(newVal[0] && newVal[1].length>0) {
+    nextTick(() => {
+      service_options.value = props.service_list;
+      let ip_index = useLogStore().search_list.findIndex(item => item.ip === newVal[0]);
+      if(ip_index !== -1) {
+        level_key.value = useLogStore().search_list[ip_index].level;
+        log_time.value = useLogStore().search_list[ip_index].timeRange;
+        service_key.value = useLogStore().search_list[ip_index].service.value;
+        realTime.value = useLogStore().search_list[ip_index].realTime;
+      } else {
+        service_key.value = props.service_list[0].options[0].value;
+      }
+      handleSearch();
+    })
+  }
+},{immediate:true})
+
 let emit = defineEmits<{
-  getMore: [value: number];
-  getTimeRangeLog: [time_range: TimeRange];
   getWsLogs: [params: {}];
 }>();
 
 // 等级搜索功能
-const level_key = ref("6");
+const level_key = ref('6');
 let level_options = levels;
 const searchLevel = (level: string) => {
   isResetLog.value = true;
+  logSearchItem.level = level;
 };
 
 // 服务搜索功能
@@ -193,11 +207,14 @@ interface SelectGroupItem {
     }
   ];
 }
-const service_key = ref("");
+const service_key = ref('');
 let service_options = ref<SelectGroupItem[]>();
 const searchService = (service: string) => {
-  // console.log(service)
   isResetLog.value = true;
+  logSearchItem.service = {
+    label:service,
+    value:service
+  }
 };
 
 // 时间筛选功能
@@ -210,11 +227,18 @@ const ChangeTimeRange = (value: any) => {
     isResetLog.value = true;
     log_time.value[0] = value[0];
     log_time.value[1] = value[1];
+    logSearchItem.timeRange = value;
   }
 };
 
 // 查询方法
 const handleSearch = () => {
+  is_continue.value = true;
+  logSearchItem.level = level_key.value;
+  logSearchItem.service = {label:service_key.value,value:service_key.value};
+  logSearchItem.timeRange = log_time.value;
+  logSearchItem.realTime = realTime.value;
+  useLogStore().updateLogList({ip:useTopoStore().node_click_info.target_ip,...logSearchItem})
   emit("getWsLogs", {
     severity: level_key.value,
     service: service_key.value,
