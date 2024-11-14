@@ -22,7 +22,7 @@ func StaticRouter(router *gin.Engine) {
 	sf, err := fs.Sub(StaticFiles, "assets")
 	if err != nil {
 		err = errors.New(err.Error())
-		global.ERManager.ErrorTransmit("error", err, false, true)
+		global.ERManager.ErrorTransmit("webserver", "error", err, false, true)
 		return
 	}
 
