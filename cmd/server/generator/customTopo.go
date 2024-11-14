@@ -18,7 +18,7 @@ type CustomTopo struct {
 	Tagrules  []mysqlmanager.Tag_rule
 	Noderules [][]mysqlmanager.Filter_rule
 
-	Agent_node_count *int32
+	agent_node_count *int32
 }
 
 func (c *CustomTopo) CreateNodeEntities(agent *agentmanager.Agent, nodes *graph.Nodes) error {
@@ -40,7 +40,7 @@ func (c *CustomTopo) CreateNodeEntities(agent *agentmanager.Agent, nodes *graph.
 
 	host_node.Tags = append(host_node.Tags, host_node.UUID, host_node.Type)
 	if err := utils.TagInjection(host_node, c.Tagrules); err != nil {
-		atomic.AddInt32(c.Agent_node_count, int32(1))
+		atomic.AddInt32(c.agent_node_count, int32(1))
 		return errors.Wrap(err, " ")
 	}
 
@@ -51,7 +51,7 @@ func (c *CustomTopo) CreateNodeEntities(agent *agentmanager.Agent, nodes *graph.
 		for _, condition := range rules {
 			if condition.Rule_type == mysqlmanager.FILTER_TYPE_HOST {
 				if _uuid, ok := condition.Rule_condition["uuid"]; !ok {
-					atomic.AddInt32(c.Agent_node_count, int32(1))
+					atomic.AddInt32(c.agent_node_count, int32(1))
 					return errors.Errorf("there is no uuid field in node host rule_condition: %+v", condition.Rule_condition)
 				} else {
 					uuid = _uuid.(string)
@@ -70,7 +70,7 @@ func (c *CustomTopo) CreateNodeEntities(agent *agentmanager.Agent, nodes *graph.
 			case mysqlmanager.FILTER_TYPE_PROCESS:
 				for _, process := range agent.Processes_2 {
 					if _name, ok := condition.Rule_condition["name"]; !ok {
-						atomic.AddInt32(c.Agent_node_count, int32(1))
+						atomic.AddInt32(c.agent_node_count, int32(1))
 						return errors.Errorf("there is no name field in node rule_condition: %+v", condition.Rule_condition)
 					} else if utils.ProcessMatching(agent, process.ExeName, process.Cmdline, _name.(string)) {
 						metrics_map := *graph.ProcessToMap(process)
@@ -87,7 +87,7 @@ func (c *CustomTopo) CreateNodeEntities(agent *agentmanager.Agent, nodes *graph.
 
 						proc_node.Tags = append(proc_node.Tags, proc_node.UUID, proc_node.Type)
 						if err := utils.TagInjection(proc_node, c.Tagrules); err != nil {
-							atomic.AddInt32(c.Agent_node_count, int32(1))
+							atomic.AddInt32(c.agent_node_count, int32(1))
 							return errors.Wrap(err, " ")
 						}
 
@@ -99,7 +99,7 @@ func (c *CustomTopo) CreateNodeEntities(agent *agentmanager.Agent, nodes *graph.
 			case mysqlmanager.FILTER_TYPE_TAG:
 				for _, process := range agent.Processes_2 {
 					if _tag, ok := condition.Rule_condition["tag_name"]; !ok {
-						atomic.AddInt32(c.Agent_node_count, int32(1))
+						atomic.AddInt32(c.agent_node_count, int32(1))
 						return errors.Errorf("there is no tag_name field in node rule_condition: %+v", condition.Rule_condition)
 					} else if utils.ProcessMatching(agent, process.ExeName, process.Cmdline, _tag.(string)) {
 						metrics_map := *graph.ProcessToMap(process)
@@ -116,7 +116,7 @@ func (c *CustomTopo) CreateNodeEntities(agent *agentmanager.Agent, nodes *graph.
 
 						proc_node.Tags = append(proc_node.Tags, proc_node.UUID, proc_node.Type)
 						if err := utils.TagInjection(proc_node, c.Tagrules); err != nil {
-							atomic.AddInt32(c.Agent_node_count, int32(1))
+							atomic.AddInt32(c.agent_node_count, int32(1))
 							return errors.Wrap(err, " ")
 						}
 
@@ -139,7 +139,7 @@ func (c *CustomTopo) CreateNodeEntities(agent *agentmanager.Agent, nodes *graph.
 
 					disk_node.Tags = append(disk_node.Tags, disk_node.UUID, disk_node.Type)
 					if err := utils.TagInjection(disk_node, c.Tagrules); err != nil {
-						atomic.AddInt32(c.Agent_node_count, int32(1))
+						atomic.AddInt32(c.agent_node_count, int32(1))
 						return errors.Wrap(err, "")
 					}
 
@@ -159,7 +159,7 @@ func (c *CustomTopo) CreateNodeEntities(agent *agentmanager.Agent, nodes *graph.
 
 					cpu_node.Tags = append(cpu_node.Tags, cpu_node.UUID, cpu_node.Type)
 					if err := utils.TagInjection(cpu_node, c.Tagrules); err != nil {
-						atomic.AddInt32(c.Agent_node_count, int32(1))
+						atomic.AddInt32(c.agent_node_count, int32(1))
 						return errors.Wrap(err, " ")
 					}
 
@@ -179,7 +179,7 @@ func (c *CustomTopo) CreateNodeEntities(agent *agentmanager.Agent, nodes *graph.
 
 					iface_node.Tags = append(iface_node.Tags, iface_node.UUID, iface_node.Type)
 					if err := utils.TagInjection(iface_node, c.Tagrules); err != nil {
-						atomic.AddInt32(c.Agent_node_count, int32(1))
+						atomic.AddInt32(c.agent_node_count, int32(1))
 						return errors.Wrap(err, " ")
 					}
 
@@ -190,7 +190,7 @@ func (c *CustomTopo) CreateNodeEntities(agent *agentmanager.Agent, nodes *graph.
 
 	}
 
-	atomic.AddInt32(c.Agent_node_count, int32(1))
+	atomic.AddInt32(c.agent_node_count, int32(1))
 
 	return nil
 }
@@ -354,5 +354,5 @@ func (c *CustomTopo) CreateEdgeEntities(agent *agentmanager.Agent, edges *graph.
 }
 
 func (c *CustomTopo) Return_Agent_node_count() *int32 {
-	return c.Agent_node_count
+	return c.agent_node_count
 }

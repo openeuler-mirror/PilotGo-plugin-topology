@@ -31,7 +31,7 @@ func CreateTopoGenerator(trules []mysqlmanager.Tag_rule, nrules [][]mysqlmanager
 		_topogenerator.Factory = &CustomTopo{
 			Tagrules:         trules,
 			Noderules:        nrules,
-			Agent_node_count: new(int32),
+			agent_node_count: new(int32),
 		}
 		return _topogenerator
 	}
