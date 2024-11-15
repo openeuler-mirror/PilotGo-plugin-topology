@@ -69,12 +69,10 @@ func InitWebServer() {
 		defer global.ERManager.Wg.Done()
 
 		<-global.ERManager.GoCancelCtx.Done()
-
 		global.ERManager.ErrorTransmit("webserver", "info", errors.New("shutting down web server..."), false, false)
 
 		ctx, cancel := context.WithTimeout(global.RootContext, 1*time.Second)
 		defer cancel()
-
 		if err := web.Shutdown(ctx); err != nil {
 			global.ERManager.ErrorTransmit("webserver", "error", errors.Errorf("web server shutdown error: %s", err.Error()), false, false)
 		} else {

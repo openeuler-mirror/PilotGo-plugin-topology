@@ -27,12 +27,12 @@ type WebClientsManagement struct {
 }
 
 // 更新前端client图数据缓存
-func (wcm *WebClientsManagement) UpdateClientTopoDataBuffer(_token string, _custom_topodata *graph.TopoDataBuffer) {
-	if wcm.Get(_token) == nil || wcm.Get(_token).TopoConfId != _custom_topodata.TopoConfId {
-		wcm.Add(_token, _custom_topodata)
+func (wcm *WebClientsManagement) UpdateClientTopoDataBuffer(_id string, _custom_topodata *graph.TopoDataBuffer) {
+	if wcm.Get(_id) == nil || wcm.Get(_id).TopoConfId != _custom_topodata.TopoConfId {
+		wcm.Add(_id, _custom_topodata)
 	} else {
 		var wg sync.WaitGroup
-		for uuid, global_node_slice := range wcm.Get(_token).Nodes.LookupByUUID {
+		for uuid, global_node_slice := range wcm.Get(_id).Nodes.LookupByUUID {
 			wg.Add(1)
 			go func(_uuid string, _global_node_slice []*graph.Node) {
 				defer wg.Done()
@@ -69,12 +69,12 @@ func (wcm *WebClientsManagement) UpdateClientTopoDataBuffer(_token string, _cust
 									}
 									custom_edge := custom_edge_any.(*graph.Edge)
 
-									global_edge_id_slice, ok := wcm.Get(_token).Edges.Node_Edges_map.Load(global_node.ID)
+									global_edge_id_slice, ok := wcm.Get(_id).Edges.Node_Edges_map.Load(global_node.ID)
 									if !ok {
 										continue
 									}
 									for _, global_edge_id := range global_edge_id_slice.([]string) {
-										global_edge_any, ok := wcm.Get(_token).Edges.Lookup.Load(global_edge_id)
+										global_edge_any, ok := wcm.Get(_id).Edges.Lookup.Load(global_edge_id)
 										if !ok {
 											continue
 										}
@@ -103,7 +103,7 @@ func (wcm *WebClientsManagement) UpdateClientTopoDataBuffer(_token string, _cust
 				// 将新图数据中的新增节点及边添加到缓存图数据中
 				for _, custom_node := range _custom_topodata.Nodes.LookupByUUID[_uuid] {
 					if !custom_node_matched_state_map[custom_node.ID] {
-						wcm.Get(_token).Nodes.Add(custom_node)
+						wcm.Get(_id).Nodes.Add(custom_node)
 						custom_edge_id_slice_any, ok := _custom_topodata.Edges.Node_Edges_map.Load(custom_node.ID)
 						if !ok {
 							continue
@@ -114,30 +114,30 @@ func (wcm *WebClientsManagement) UpdateClientTopoDataBuffer(_token string, _cust
 								continue
 							}
 							custom_edge := custom_edge_any.(*graph.Edge)
-							wcm.Get(_token).Edges.Add(custom_edge)
+							wcm.Get(_id).Edges.Add(custom_edge)
 						}
 					}
 				}
 				// 删减缓存图数据中过期的节点及边
 				for _, global_node := range _global_node_slice {
 					if !global_node_matched_state_map[global_node.ID] {
-						err := wcm.Get(_token).Nodes.Remove(global_node)
+						err := wcm.Get(_id).Nodes.Remove(global_node)
 						if err != nil {
 							err = errors.Wrap(err, "->")
 							global.ERManager.ErrorTransmit("webclient", "error", err, false, true)
 							continue
 						}
-						global_edge_id_slice_any, ok := wcm.Get(_token).Edges.Node_Edges_map.Load(global_node.ID)
+						global_edge_id_slice_any, ok := wcm.Get(_id).Edges.Node_Edges_map.Load(global_node.ID)
 						if !ok {
 							continue
 						}
 						for _, global_edge_id := range global_edge_id_slice_any.([]string) {
-							global_edge_any, ok := wcm.Get(_token).Edges.Lookup.Load(global_edge_id)
+							global_edge_any, ok := wcm.Get(_id).Edges.Lookup.Load(global_edge_id)
 							if !ok {
 								continue
 							}
 							global_edge := global_edge_any.(*graph.Edge)
-							err := wcm.Get(_token).Edges.Remove(global_edge.ID)
+							err := wcm.Get(_id).Edges.Remove(global_edge.ID)
 							if err != nil {
 								err = errors.Wrap(err, "->")
 								global.ERManager.ErrorTransmit("webclient", "error", err, false, true)
@@ -188,20 +188,28 @@ func (wcm *WebClientsManagement) isSamePstreeBranch(old_node, new_node *graph.No
 	return (old_node.Metrics["Ppid"] == new_node.Metrics["Ppid"] || wcm.searchTargetPid(new_process_map, small_pid, big_pid))
 }
 
-func (wcm *WebClientsManagement) Add(_token string, _topodata *graph.TopoDataBuffer) {
-	wcm.webClients[_token] = _topodata
+func (wcm *WebClientsManagement) Add(_id string, _topodata *graph.TopoDataBuffer) {
+	wcm.webClients[_id] = _topodata
 }
 
-func (wcm *WebClientsManagement) Delete(_token string) {
-	delete(wcm.webClients, _token)
+func (wcm *WebClientsManagement) Delete(_id string) {
+	delete(wcm.webClients, _id)
 }
 
-func (wcm *WebClientsManagement) Get(_token string) *graph.TopoDataBuffer {
-	value, ok := wcm.webClients[_token]
+func (wcm *WebClientsManagement) Get(_id string) *graph.TopoDataBuffer {
+	value, ok := wcm.webClients[_id]
 	if !ok {
 		return nil
 	}
 	return value
+}
+
+func (wcm *WebClientsManagement) ReturnWebClients() map[string]graph.TopoDataBuffer {
+	temp_webclients := make(map[string]graph.TopoDataBuffer)
+	for k, v := range wcm.webClients {
+		temp_webclients[k] = *v
+	}
+	return temp_webclients
 }
 
 // TODO:

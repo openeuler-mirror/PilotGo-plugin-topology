@@ -8,7 +8,10 @@ import (
 
 type Nodes struct {
 	Lock         sync.Mutex
+
+	// key: node.id
 	Lookup       map[string]*Node
+	
 	LookupByType map[string][]*Node
 	LookupByUUID map[string][]*Node
 	Nodes        []*Node

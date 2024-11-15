@@ -42,7 +42,7 @@ func Logger(_skipPaths []string) gin.HandlerFunc {
 				latency = latency.Truncate(time.Second)
 			}
 
-			global.ERManager.ErrorTransmit("gin", "debug", errors.Errorf("|%3d| %-13v | %-15s |%-7s %#v\n%s",
+			global.ERManager.ErrorTransmit("gin", "debug", errors.Errorf("|%3d|%-13v|%-15s|%-7s %#v\n%s",
 				statusCode,
 				latency,
 				clientIP,
