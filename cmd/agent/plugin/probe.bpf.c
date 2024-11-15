@@ -141,7 +141,7 @@ int handle_tcp_state(struct trace_event_raw_inet_sock_set_state *ctx)
     return __handle_tcp_state(ctx);
 }
 
-// protocol  recieve
+// protocol  receive
 SEC("kprobe/tcp_sendmsg")
 int BPF_KPROBE(kp_tcp_sendmsg, struct sock *sk, struct msghdr *msg, size_t size)
 {
