@@ -1,3 +1,4 @@
+import { useLogStore } from '@/stores/log';
 import request from './request';
 let baseURL = '/plugin/topology';
 // 请求批次信息
@@ -59,7 +60,7 @@ export function getCustomTopo(data: { id: number }) {
   return request({
     url: baseURL+'/api/run_custom_topo',
     method: 'get',
-    params: {...data,'clientId':`${parseInt(Math.random() * 1000 + '')}`}
+    params: {...data,'clientId':useLogStore().clientId}
   })
 }
 
