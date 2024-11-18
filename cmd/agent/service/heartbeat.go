@@ -15,14 +15,21 @@ import (
 func SendHeartbeat() {
 	agent_addr := conf.Config().Topo.Agent_addr
 
+	global.ERManager.Wg.Add(1)
 	go func() {
+		global.ERManager.Wg.Done()
 		for {
-			err := sendHeartbeat(agent_addr)
-			if err != nil {
-				err = errors.Wrap(err, " ")
-				global.ERManager.ErrorTransmit("service", "error", err, false, false)
+			select {
+			case <-global.ERManager.GoCancelCtx.Done():
+				return
+			default:
+				err := sendHeartbeat(agent_addr)
+				if err != nil {
+					err = errors.Wrap(err, " ")
+					global.ERManager.ErrorTransmit("service", "error", err, false, false)
+				}
+				time.Sleep(time.Duration(conf.Config().Topo.Heartbeat) * time.Second)
 			}
-			time.Sleep(time.Duration(conf.Config().Topo.Heartbeat) * time.Second)
 		}
 	}()
 }
@@ -30,8 +37,7 @@ func SendHeartbeat() {
 func sendHeartbeat(addr string) error {
 	m_u_bytes, err := global.FileReadBytes(global.Agentuuid_filepath)
 	if err != nil {
-		err = errors.Wrap(err, " ")
-		return err
+		return errors.Wrap(err, " ")
 	}
 	type machineuuid struct {
 		Agentuuid string `json:"agent_uuid"`
@@ -54,26 +60,37 @@ func sendHeartbeat(addr string) error {
 	params := &httputils.Params{
 		Body: body,
 	}
+
 	resp, err := httputils.Post(url, params)
 	if err != nil {
-		err = errors.Errorf("failed to send heartbeat: %s", err.Error())
-		return err
+		return errors.Errorf("failed to send heartbeat: %s", err.Error())
 	}
+
+	// ttcode
+	// url := fmt.Sprintf("http://%s/plugin/topology/api/heartbeat?uuid=%s&addr=%s&interval=%d", conf.Config().Topo.Server_addr, m_u_struct.Agentuuid, addr, conf.Config().Topo.Heartbeat)
+	// resp, err := httputils.Get(url, nil)
+	// if err != nil {
+	// 	err = errors.Errorf("failed to send heartbeat: %s", err.Error())
+	// 	return err
+	// }
 
 	resp_body := &struct {
 		Code  int         `json:"code"`
 		Error string      `json:"error"`
 		Data  interface{} `json:"data"`
 	}{}
+
+	if len(resp.Body) == 0 {
+		return errors.New("heartbeat resp.body is nil")
+	}
+
 	err = json.Unmarshal(resp.Body, resp_body)
 	if err != nil {
-		err = errors.Errorf("failed to unmarshal json data: %s", err.Error())
-		return err
+		return errors.Errorf("failed to unmarshal json data: %s", err.Error())
 	}
 
 	if resp.StatusCode != http.StatusOK || resp_body.Code != 0 {
-		err = errors.Errorf("failed to send heartbeat: url => %s, statuscode => %d, code => %d", url, resp.StatusCode, resp_body.Code)
-		return err
+		return errors.Errorf("failed to send heartbeat: url => %s, statuscode => %d, code => %d", url, resp.StatusCode, resp_body.Code)
 	}
 
 	return nil

@@ -18,9 +18,11 @@ import (
 func HeartbeatHandle(ctx *gin.Context) {
 	// agent发送的心跳参数为uuid、ip:port、HeartbeatInterval、time，
 	// 写入redis的数据为 (heartbeat-<uuid>: {"UUID": "f7504bef-76e9-446c-95ee-196878b398a1", "Addr": "10.44.55.66:9992", "HeartbeatInterval": 60, "Time": "2023-12-22T17:09:23+08:00"})
+
 	value := redismanager.AgentHeartbeat{}
+
 	if err := ctx.ShouldBindJSON(&value); err != nil {
-		err := errors.New("bind json failed")
+		err := errors.Errorf("bind json failed: %s", err.Error())
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"code":  -1,
 			"error": err.Error(),
@@ -28,6 +30,13 @@ func HeartbeatHandle(ctx *gin.Context) {
 		})
 		global.ERManager.ErrorTransmit("webserver", "error", err, true, true)
 	}
+	ctx.Request.Body.Close()
+
+	// ttcode
+	// value.UUID = ctx.Query("uuid")
+	// value.Addr = ctx.Query("addr")
+	// value.HeartbeatInterval, _ = strconv.Atoi(ctx.Query("interval"))
+
 	key := "heartbeat-topoagent-" + value.UUID
 	value.Time = time.Now()
 
@@ -43,7 +52,7 @@ func HeartbeatHandle(ctx *gin.Context) {
 	}
 
 	if agentmanager.Global_AgentManager.GetAgent_P(value.UUID) == nil {
-		err := errors.Errorf("unknown agent's heartbeat: %s, %s", value.UUID, value.Addr)
+		err := errors.Errorf("unknown agent's heartbeat: %s, %s, %+v", value.UUID, value.Addr, value)
 		global.ERManager.ErrorTransmit("webserver", "warn", err, false, false)
 		ctx.JSON(http.StatusUnauthorized, gin.H{
 			"code":  -1,

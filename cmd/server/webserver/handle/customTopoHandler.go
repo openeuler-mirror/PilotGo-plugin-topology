@@ -160,7 +160,7 @@ func RunCustomTopoHandle(ctx *gin.Context) {
 				return
 			}
 			err = errors.Wrap(err, " ")
-			global.ERManager.ErrorTransmit("webserver", "error", err, false, true)
+			global.ERManager.ErrorTransmit("webserver", "error", err, false, false)
 			doneChan <- custom_topodata
 			response.Fail(ctx, nil, errors.Cause(err).Error())
 			return
