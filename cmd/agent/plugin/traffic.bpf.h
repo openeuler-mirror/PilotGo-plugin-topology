@@ -215,7 +215,7 @@ static __always_inline int __tcp_sendmsg(struct sock *sk, struct msghdr *msg, si
     return 0;
 }
 
-// recieve
+// receive
 static __always_inline int __tcp_cleanup_rbuf(struct sock *sk, int copied)
 {
     int pid = get_current_tgid();

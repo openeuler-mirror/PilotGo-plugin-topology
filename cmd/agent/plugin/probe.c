@@ -37,7 +37,7 @@ static const struct argp_option opts[] = {
     {"port_distribution", 'P', 0, 0, "statistical use of top10 destination ports"},
     {"drop_info", 'i', 0, 0, "trace the iptables drop"},
     {"drop_skb", 'd', 0, 0, "trace the all skb drop"},
-    {"packet_count", 'c', 0, 0, "trace the packet include SYN、SYN-ACK、FIN"},
+    {"packet_count", 'c', 0, 0, "trace the packet including SYN、SYN-ACK、FIN"},
     {"tcpconn", 'T', 0, 0, "trace the tcp connect"},
     {},
 };
