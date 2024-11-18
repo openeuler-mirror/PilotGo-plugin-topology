@@ -9,6 +9,7 @@ import App from './App.vue'
 import router from './router'
 import VueGridLayout from 'vue-grid-layout'
 import pinia from '@/stores/persist'
+import { useLogStore } from './stores/log'
 
 const app = createApp(App)
 
@@ -22,3 +23,8 @@ for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
 }
 
 router.isReady().then(() => app.mount('#app'))
+
+// 监听应用卸载生命周期
+window.addEventListener('unmount',() => {
+  useLogStore().clientId = 0;
+})

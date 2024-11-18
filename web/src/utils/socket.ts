@@ -19,9 +19,10 @@ interface socket {
   close: () => void
   reconnect: () => void
 }
+
 const socket: socket = {
   websocket: null,
-  connectURL: `wss://10.41.107.29:8888/plugin/ws/logs`, 
+  connectURL: `wss://10.41.161.101:8888/plugin/ws/logs`, 
   // 开启标识
   socket_open: false,
   // 心跳timer
@@ -50,8 +51,8 @@ const socket: socket = {
     /* if (socket.websocket) {
       return socket.websocket
     } */
-      let random = parseInt(Math.random() * 100000+'');
-    socket.websocket = new WebSocket(socket.connectURL+`?clientId=${random}`)
+
+    socket.websocket = new WebSocket(socket.connectURL+`?clientId=${useLogStore().clientId}`)
     socket.websocket.onmessage = (e: any) => {
       if (receiveMessage) {
         receiveMessage(e)
