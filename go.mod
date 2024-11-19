@@ -2,8 +2,6 @@ module gitee.com/openeuler/PilotGo-plugin-topology
 
 go 1.21
 
-toolchain go1.22.7
-
 require (
 	gitee.com/openeuler/PilotGo/sdk v0.0.0-20240711084602-e34bc1158484
 	github.com/fsouza/go-dockerclient v1.11.0
