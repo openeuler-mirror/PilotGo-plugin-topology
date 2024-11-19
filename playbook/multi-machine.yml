@@ -1,0 +1,16 @@
+---
+- name: install mysql for PilotGo platform
+  hosts: mysql
+  become: yes
+  become_user: root
+
+  roles: 
+    - mysql
+  tasks: 
+  - name: Ensure a user can connect from a specific host  
+    mysql_user:  
+      name: root  
+      host: '%'  
+      password: '{{ mysql_password }}'  
+      priv: '*.*:ALL,GRANT'  
+      state: present
