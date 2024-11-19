@@ -49,14 +49,13 @@ func config_file() string {
 var global_config ServerConfig
 
 func init() {
-	flag.StringVar(&Config_dir, "conf", "/opt/PilotGo/plugin/topology/agent", "topo-agent configuration directory")
+	flag.StringVar(&Config_dir, "conf", "./", "topo-agent configuration directory")
 	flag.Parse()
 
 	err := readConfig(config_file(), &global_config)
 	if err != nil {
 		err = errors.Wrap(err, "")
-		fmt.Printf("%s\n", errors.Cause(err).Error()) // err top
-		// errors.EORE(err)
+		fmt.Printf("%s\n", errors.Cause(err).Error())
 		os.Exit(-1)
 	}
 }

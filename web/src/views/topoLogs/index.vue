@@ -170,14 +170,18 @@ const getLogData = (_params?: any) => {
       } else {
         // 初始，请求集群信息
         getELKLogData(handleParams()).then(res => {
-          if (res.data.code === 200) {
-            if (res.data.data.length > 0) {
-              logs.value = res.data.data;
-            } else {
-              ElMessage.info('无数据，请稍后重试')
-            }
+          if (typeof res === "undefined") {
+            ElMessage.error("elk plugin unreachable")
           } else {
-            ElMessage.error(res.data.msg)
+            if (res.data.code === 200) {
+              if (res.data.data.length > 0) {
+                logs.value = res.data.data;
+              } else {
+                ElMessage.info('无数据，请稍后重试')
+              }
+            } else {
+              ElMessage.error(res.data.msg)
+            }
           }
         })
       }

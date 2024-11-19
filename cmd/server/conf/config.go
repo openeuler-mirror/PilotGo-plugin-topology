@@ -36,9 +36,9 @@ func ConfigFile() string {
 }
 
 func InitConfig() {
-	flag.StringVar(&config_dir, "conf", "/opt/PilotGo/plugin/topology/server", "topo-server configuration directory")
+	flag.StringVar(&config_dir, "conf", "./", "topo-server configuration directory")
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "Usage: %s -conf /PATH/TO/TOPO_SERVER.YAML(default:/opt/PilotGo/plugin/topology/server) \n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "Usage: %s -conf /PATH/TO/TOPO_SERVER.YAML(default: ./) \n", os.Args[0])
 	}
 	flag.Parse()
 
