@@ -14,3 +14,21 @@
       password: '{{ mysql_password }}'  
       priv: '*.*:ALL,GRANT'  
       state: present
+- name: install redis for PilotGo platform
+  hosts: reids
+  become: yes
+  become_user: root
+
+  roles: 
+    - redis
+  tasks: 
+  - name: change protected mode
+    lineinfile: 
+      path: /etc/redis/redis.conf
+      regexp: '^#?protected-mode'
+      line: 'protected-mode no'
+      backrefs: yes
+  - name: restart redis service
+    service: 
+      name: redis
+      state: restarted
