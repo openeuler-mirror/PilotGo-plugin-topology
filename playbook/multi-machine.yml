@@ -32,3 +32,10 @@
     service: 
       name: redis
       state: restarted
+- name: install pserver PilotGo platform
+  hosts: pilotgo
+  become: yes
+  become_user: root
+
+  roles: 
+    - pilotgo
