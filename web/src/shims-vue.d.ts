@@ -1,3 +1,10 @@
+/* 
+ * Copyright (c) KylinSoft  Co., Ltd. 2024.All rights reserved.
+ * PilotGo-plugin-topology licensed under the Mulan Permissive Software License, Version 2. 
+ * See LICENSE file for more details.
+ * Author: Wangjunqi123 <wangjunqi@kylinos.cn>
+ * Date: Wed Nov 15 17:28:46 2023 +0800
+ */
 /* eslint-disable */
 declare module '*.vue' {
   import type { DefineComponent } from 'vue'

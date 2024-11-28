@@ -1,3 +1,10 @@
+/* 
+ * Copyright (c) KylinSoft  Co., Ltd. 2024.All rights reserved.
+ * PilotGo-plugin-topology licensed under the Mulan Permissive Software License, Version 2. 
+ * See LICENSE file for more details.
+ * Author: fairy <zhaozhenfang@kylinos.cn>
+ * Date: Mon Nov 11 13:43:31 2024 +0800
+ */
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 interface LogSearchList {

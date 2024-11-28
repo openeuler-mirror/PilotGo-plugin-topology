@@ -1,4 +1,11 @@
 /* 
+ * Copyright (c) KylinSoft  Co., Ltd. 2024.All rights reserved.
+ * PilotGo-plugin-topology licensed under the Mulan Permissive Software License, Version 2. 
+ * See LICENSE file for more details.
+ * Author: Wangjunqi123 <wangjunqi@kylinos.cn>
+ * Date: Tue Nov 14 17:31:18 2023 +0800
+ */
+/* 
 * 1.formatDate(new Date(1533686888 * 1000), "YYYY-MM-DD HH:ii:ss");// 2019-07-09 19:44:01
 * 2.formatDate(new Date(1562672641 * 1000), "YYYY-MM-DD 周W");//2019-07-09 周二 
 */

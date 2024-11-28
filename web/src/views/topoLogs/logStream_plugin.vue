@@ -1,3 +1,10 @@
+<!--
+ * Copyright (c) KylinSoft  Co., Ltd. 2024.All rights reserved.
+ * PilotGo-plugin-topology licensed under the Mulan Permissive Software License, Version 2. 
+ * See LICENSE file for more details.
+ * Author: fairy <zhaozhenfang@kylinos.cn>
+ * Date: Tue Nov 5 17:23:54 2024 +0800
+-->
 <template>
   <div style="width: 100%" v-loading="isloading">
     <div class="search">

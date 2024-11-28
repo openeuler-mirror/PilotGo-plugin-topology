@@ -1,3 +1,10 @@
+/* 
+ * Copyright (c) KylinSoft  Co., Ltd. 2024.All rights reserved.
+ * PilotGo-plugin-topology licensed under the Mulan Permissive Software License, Version 2. 
+ * See LICENSE file for more details.
+ * Author: Wangjunqi123 <wangjunqi@kylinos.cn>
+ * Date: Tue Nov 14 17:46:29 2023 +0800
+ */
 export let pickerOptions = [
   {
     text: '前1分钟',
