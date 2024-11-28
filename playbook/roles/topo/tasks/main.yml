@@ -1,0 +1,13 @@
+---
+- name: install pilotgo-topo-server
+  dnf: 
+    name: PilotGo-plugin-topology-server
+    state: present
+  register: pilotgo_topo_info
+  ignore_errors: yes
+- name: exit when pilotgo-topo-server fail install
+  fail:  
+    msg: 'dnf install PilotGo-server failed'
+  when: pilotgo_topo_info.rc != 0
+- name: change PilotGo topo server config
+  template: src=templates/topo/topo_server.yaml.j2 dest={{ pilotgo_topo_config }}
