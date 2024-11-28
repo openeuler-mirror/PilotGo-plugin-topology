@@ -1,0 +1,14 @@
+topo:
+  https_enabled: false
+  cert_file: ""
+  key_file: ""
+  agent_addr: "{{ ansible_default_ipv4['address'] }}:9992"
+  server_addr: "{{ groups['topo'][0] }}:9991"
+  datasource: "gopsutil"
+  heartbeat: 60
+log:
+  level: debug
+  driver: file # 可选stdout和file。stdout：输出到终端控制台；file：输出到path下的指定文件。
+  path: /opt/PilotGo/plugin/topology/agent/log/topoagent.log
+  max_file: 1
+  max_size: 10485760

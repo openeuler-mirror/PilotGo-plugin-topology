@@ -39,3 +39,24 @@
 
   roles: 
     - pilotgo
+- name: install agent for PilotGo platform
+  hosts: pilotgo-agent
+  become: yes
+  become_user: root
+
+  roles: 
+    - pilotgo-agent
+- name: install plugin topology for PilotGo platform
+  hosts: topo
+  become: yes
+  become_user: root
+
+  roles: 
+    - topo
+- name: install topology agent for PilotGo platform
+  hosts: topo-agent
+  become: yes
+  become_user: root
+
+  roles: 
+    - topo-agent

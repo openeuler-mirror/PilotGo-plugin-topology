@@ -7,7 +7,7 @@
   ignore_errors: yes
 - name: exit when pilotgo-server fail install
   fail:  
-    msg: 'dnf install PilotGo-server failed'
+    msg: 'dnf install PilotGo-agent failed'
   when: pilotgo_info.rc != 0
 - name: change PilotGo agent config
   template: src=templates/pilotgo-agent/config_agent.yaml.j2 dest={{ pilotgo_agent_config }}
