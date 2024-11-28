@@ -1,3 +1,10 @@
+<!--
+ * Copyright (c) KylinSoft  Co., Ltd. 2024.All rights reserved.
+ * PilotGo-plugin-topology licensed under the Mulan Permissive Software License, Version 2. 
+ * See LICENSE file for more details.
+ * Author: zhaozhenfang <zhaozhenfang@kylinos.cn>
+ * Date: Wed Jul 17 16:38:05 2024 +0800
+-->
 <template>
   <div class="cont">
     <div v-show="isChart" class='echart' ref="chartDom"></div>

@@ -1,3 +1,10 @@
+/* 
+ * Copyright (c) KylinSoft  Co., Ltd. 2024.All rights reserved.
+ * PilotGo-plugin-topology licensed under the Mulan Permissive Software License, Version 2. 
+ * See LICENSE file for more details.
+ * Author: Wangjunqi123 <wangjunqi@kylinos.cn>
+ * Date: Mon Nov 13 18:00:47 2023 +0800
+ */
 import { defineStore } from 'pinia';
 export let startTime = (new Date() as any) / 1000 - 60 * 60 * 2;
 export let endTime = (new Date() as any) / 1000;

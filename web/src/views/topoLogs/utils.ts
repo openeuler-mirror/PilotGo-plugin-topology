@@ -1,3 +1,10 @@
+/* 
+ * Copyright (c) KylinSoft  Co., Ltd. 2024.All rights reserved.
+ * PilotGo-plugin-topology licensed under the Mulan Permissive Software License, Version 2. 
+ * See LICENSE file for more details.
+ * Author: zhaozhenfang <zhaozhenfang@kylinos.cn>
+ * Date: Thu Jun 27 10:44:47 2024 +0800
+ */
 // 动态计算时间间隔
 export const calculate_interval = (start: Date, end: Date) => {
   let time_interval: number;
