@@ -28,4 +28,4 @@ log/
 *.gz
 *.rpm
 
-go.work*
+dump.rdb
