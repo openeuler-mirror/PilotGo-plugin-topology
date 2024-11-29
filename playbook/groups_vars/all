@@ -6,3 +6,4 @@ neo4j_username: neo4j
 neo4j_password: PilotGo13579!
 pilotgo_agent_config: /opt/PilotGo/agent/config_agent.yaml
 pilotgo_topo_config: /opt/PilotGo/plugin/topology/server/topo_server.yaml
+pilotgo_topo_agent_config: /opt/PilotGo/plugin/topology/agent/topo_agent.yaml

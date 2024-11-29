@@ -1,0 +1,13 @@
+---
+- name: install pilotgo-topo-agent
+  dnf: 
+    name: PilotGo-plugin-topology-agent
+    state: present
+  register: pilotgo_topo_agent_info
+  ignore_errors: yes
+- name: exit when pilotgo-topo-agent fail install
+  fail:  
+    msg: 'dnf install PilotGo-plugin-topology-agent failed'
+  when: pilotgo_topo_agent_info.rc != 0
+- name: change PilotGo topo agent config
+  template: src=templates/topo-agent/topo_agent.yaml.j2 dest={{ pilotgo_topo_agent_config }}
