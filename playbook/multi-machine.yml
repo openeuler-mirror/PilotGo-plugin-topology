@@ -32,6 +32,12 @@
     service: 
       name: redis
       state: restarted
+- name: install neo4j
+  hosts: neo4j
+  remote_user: root
+
+  roles: 
+    - neo4j
 - name: install pserver PilotGo platform
   hosts: pilotgo
   become: yes

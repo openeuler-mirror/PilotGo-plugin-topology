@@ -1,0 +1,19 @@
+---
+- name: install java-11-openjdk-devel for elasticsearch
+  dnf: 
+    name: java-11-openjdk-devel*
+    state: present
+- name: mkdir neo4j-community-4.4.26
+  shell: mkdir -p /opt/neo4j-community-4.4.26
+- name: get neo4j tar file
+  shell: wget https://dist.neo4j.org/neo4j-community-4.4.26-unix.tar.gz --no-check-certificate
+  args: 
+    chdir: /root/
+- name: unzip tar.gz
+  shell: tar -xzvf neo4j-community-4.4.26-unix.tar.gz -C /opt/neo4j-community-4.4.26 --strip-components=1
+  args: 
+    chdir: /root/
+- name: change conf file
+  template: src=templates/neo4j/neo4j.conf.j2 dest=/opt/neo4j-community-4.4.26/conf/neo4j.conf
+- name: start neo4j
+  shell: nohup /opt/neo4j-community-4.4.26/bin/neo4j start &
