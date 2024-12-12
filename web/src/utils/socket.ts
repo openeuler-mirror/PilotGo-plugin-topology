@@ -1,3 +1,4 @@
+
 /* 
  * Copyright (c) KylinSoft  Co., Ltd. 2024.All rights reserved.
  * PilotGo-plugin-topology licensed under the Mulan Permissive Software License, Version 2. 
@@ -29,7 +30,7 @@ interface socket {
 
 const socket: socket = {
   websocket: null,
-  connectURL: `wss://10.41.161.101:8888/plugin/ws/logs`, 
+  connectURL: "wss://"+window.location.host+":8888/plugin/ws/logs", 
   // 开启标识
   socket_open: false,
   // 心跳timer
@@ -171,4 +172,3 @@ const socket: socket = {
 }
 
 export default socket
-

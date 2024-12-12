@@ -332,6 +332,7 @@ const receiveMessage = (message: any) => {
       break;
 
     default:
+      if(!result.data.data) return;
       if (result.data.type === 0) {
         // 返回消息属于日志条目
         if (noTail.value) {
