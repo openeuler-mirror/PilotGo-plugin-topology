@@ -30,7 +30,7 @@ interface socket {
 
 const socket: socket = {
   websocket: null,
-  connectURL: "wss://"+window.location.host+":8888/plugin/ws/logs", 
+  connectURL: "wss://"+window.location.host+"/plugin/ws/logs", 
   // 开启标识
   socket_open: false,
   // 心跳timer
