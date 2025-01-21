@@ -1,5 +1,5 @@
-gitee.com/openeuler/PilotGo/sdk v0.0.0-20240711084602-e34bc1158484 h1:cb21Q6oVVLH5mCQ7Tb9lWpmpp3ZGYLtX4Y4DvkvgMtw=
-gitee.com/openeuler/PilotGo/sdk v0.0.0-20240711084602-e34bc1158484/go.mod h1:87giU5v2IkUx78GRfezNBHhDGqzlwhNICOVY+hUYSJM=
+gitee.com/openeuler/PilotGo/sdk v0.0.0-20241227025309-05f048f9c7d8 h1:J6BKrPKKpdkjBwthualuZUTra5qdYR2O62WHWlZBD3k=
+gitee.com/openeuler/PilotGo/sdk v0.0.0-20241227025309-05f048f9c7d8/go.mod h1:Et2wSYAR8hj9jMnSqwtyi8fA79q63tLvPcHwySiRG+g=
 github.com/AdaLogics/go-fuzz-headers v0.0.0-20210715213245-6c3934b029d8 h1:V8krnnfGj4pV65YLUm3C0/8bl7V5Nry2Pwvy3ru/wLc=
 github.com/AdaLogics/go-fuzz-headers v0.0.0-20210715213245-6c3934b029d8/go.mod h1:CzsSbkDixRphAF5hS6wbMKq0eI6ccJRb7/A0M6JBnwg=
 github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 h1:UQHMgLO+TxOElx5B5HZ4hJQsoJ/PvUvKRhJHDQXO8P8=
@@ -45,8 +45,8 @@ github.com/docker/go-units v0.5.0/go.mod h1:fgPhTUdO+D/Jk86RDLlptpiXQzgHJF7gydDD
 github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=
 github.com/fsnotify/fsnotify v1.4.9/go.mod h1:znqG4EE+3YCdAaPaxE2ZRY/06pZUdp0tY4IgpuI1SZQ=
 github.com/fsnotify/fsnotify v1.5.1/go.mod h1:T3375wBYaZdLLcVNkcVbzGHY7f1l/uK5T5Ai1i3InKU=
-github.com/fsnotify/fsnotify v1.6.0 h1:n+5WquG0fcWoWp6xPWfHdbskMCQaFnG6PfBrh1Ky4HY=
-github.com/fsnotify/fsnotify v1.6.0/go.mod h1:sl3t1tCWJFWoRz9R8WJCbQihKKwmorjAbSClcnxKAGw=
+github.com/fsnotify/fsnotify v1.7.0 h1:8JEhPFa5W2WU7YfeZzPNqzMP6Lwt7L2715Ggo0nosvA=
+github.com/fsnotify/fsnotify v1.7.0/go.mod h1:40Bi/Hjc2AVfZrqy+aj+yEI+/bRxZnMJyTJwOpGvigM=
 github.com/fsouza/go-dockerclient v1.11.0 h1:4ZAk6W7rPAtPXm7198EFqA5S68rwnNQORxlOA5OurCA=
 github.com/fsouza/go-dockerclient v1.11.0/go.mod h1:0I3TQCRseuPTzqlY4Y3ajfsg2VAdMQoazrkxJTiJg8s=
 github.com/gabriel-vasile/mimetype v1.4.3 h1:in2uUcidCuFcDKtdcBxlR0rJ1+fsokWf+uqxgUFjbI0=

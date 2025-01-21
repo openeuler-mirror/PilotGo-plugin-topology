@@ -3,7 +3,7 @@ module gitee.com/openeuler/PilotGo-plugin-topology
 go 1.21
 
 require (
-	gitee.com/openeuler/PilotGo/sdk v0.0.0-20240711084602-e34bc1158484
+	gitee.com/openeuler/PilotGo/sdk v0.0.0-20241227025309-05f048f9c7d8
 	github.com/fsouza/go-dockerclient v1.11.0
 	github.com/gin-contrib/timeout v0.0.3
 	github.com/gin-gonic/gin v1.9.1

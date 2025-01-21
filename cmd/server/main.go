@@ -46,7 +46,7 @@ func main() {
 	*/
 	ermanager, err := resourcemanage.CreateErrorReleaseManager(global.RootContext, global.Close)
 	if err != nil {
-		sdklogger.Fatal(err.Error())
+		sdklogger.Fatal("%s", err.Error())
 	}
 	global.ERManager = ermanager
 
