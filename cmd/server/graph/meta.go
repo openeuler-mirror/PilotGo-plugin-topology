@@ -1,6 +1,6 @@
 /*
  * Copyright (c) KylinSoft  Co., Ltd. 2024.All rights reserved.
- * PilotGo-plugin-topology licensed under the Mulan Permissive Software License, Version 2. 
+ * PilotGo-plugin-topology licensed under the Mulan Permissive Software License, Version 2.
  * See LICENSE file for more details.
  * Author: Wangjunqi123 <wangjunqi@kylinos.cn>
  * Date: Mon Nov 4 14:30:13 2024 +0800
@@ -12,10 +12,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/shirou/gopsutil/cpu"
-	"github.com/shirou/gopsutil/disk"
-	"github.com/shirou/gopsutil/net"
-	"github.com/shirou/gopsutil/process"
+	"github.com/shirou/gopsutil/v4/cpu"
+	"github.com/shirou/gopsutil/v4/disk"
+	"github.com/shirou/gopsutil/v4/net"
+	"github.com/shirou/gopsutil/v4/process"
 )
 
 type TopoDataBuffer struct {
@@ -47,16 +47,16 @@ type Process struct {
 	Cpid    []int32  `json:"cpid"`
 	Tids    []int32  `json:"tid"`
 	Threads []Thread `json:"threads"`
-	Uids    []int32  `json:"uids"`
-	Gids    []int32  `json:"gids"`
+	Uids    []uint32  `json:"uids"`
+	Gids    []uint32  `json:"gids"`
 
-	Username   string `json:"username"`
-	Status     string `json:"status"`
-	CreateTime int64  `json:"createtime"`
-	ExePath    string `json:"exepath"`
-	ExeName    string `json:"exename"`
-	Cmdline    string `json:"cmdline"`
-	Cwd        string `json:"cwd"`
+	Username   string   `json:"username"`
+	Status     []string `json:"status"`
+	CreateTime int64    `json:"createtime"`
+	ExePath    string   `json:"exepath"`
+	ExeName    string   `json:"exename"`
+	Cmdline    string   `json:"cmdline"`
+	Cwd        string   `json:"cwd"`
 
 	Nice   int32 `json:"nice"`
 	IOnice int32 `json:"ionice"`
@@ -203,7 +203,7 @@ func ProcessToMap(process *Process) *map[string]string {
 		"Cpid":                        strings.Join(cpid_string, " "),
 		"Uids":                        strings.Join(uids_string, " "),
 		"Gids":                        strings.Join(gids_string, " "),
-		"Status":                      process.Status,
+		"Status":                      strings.Join(process.Status, " "),
 		"CreateTime":                  strconv.Itoa(int(process.CreateTime)),
 		"Cwd":                         process.Cwd,
 		"ExePath":                     process.ExePath,

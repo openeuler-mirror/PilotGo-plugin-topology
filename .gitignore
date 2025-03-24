@@ -19,6 +19,7 @@ PilotGo-plugin-topology-server
 # static files
 cmd/server/webserver/frontendResource/assets/
 cmd/server/webserver/frontendResource/index.html
+cmd/server/webserver/frontendResource/favicon.ico
 web/node_modules
 web/dist/
 web/src/assets/*.json
@@ -27,5 +28,6 @@ log/
 *.jsonc
 *.gz
 *.rpm
+graphdata/
 
 dump.rdb

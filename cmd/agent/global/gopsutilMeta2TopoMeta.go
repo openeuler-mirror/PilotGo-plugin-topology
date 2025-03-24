@@ -10,7 +10,7 @@ package global
 import (
 	"strconv"
 
-	"github.com/shirou/gopsutil/net"
+	"github.com/shirou/gopsutil/v4/net"
 )
 
 func GopsutilNetMeta2TopoNetMeta(gopsnets []net.ConnectionStat) []Netconnection {
