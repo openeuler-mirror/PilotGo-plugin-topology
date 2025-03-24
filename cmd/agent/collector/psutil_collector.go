@@ -15,11 +15,11 @@ import (
 	"github.com/pkg/errors"
 
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/agent/global"
-	"github.com/shirou/gopsutil/cpu"
-	"github.com/shirou/gopsutil/disk"
-	"github.com/shirou/gopsutil/process"
-	"github.com/shirou/gopsutil/v3/host"
-	"github.com/shirou/gopsutil/v3/net"
+	"github.com/shirou/gopsutil/v4/cpu"
+	"github.com/shirou/gopsutil/v4/disk"
+	"github.com/shirou/gopsutil/v4/process"
+	"github.com/shirou/gopsutil/v4/host"
+	"github.com/shirou/gopsutil/v4/net"
 )
 
 type PsutilCollector struct {
@@ -31,6 +31,8 @@ type PsutilCollector struct {
 	Disks_1            []*global.Disk
 	Cpus_1             []*global.Cpu
 }
+
+var _ global.Data_collector = &PsutilCollector{}
 
 func CreatePsutilCollector() *PsutilCollector {
 	return &PsutilCollector{}
@@ -71,6 +73,7 @@ func (pc *PsutilCollector) Collect_host_data() error {
 }
 
 func (pc *PsutilCollector) Collect_process_instant_data() error {
+	// TODO
 	Echo_process_err := func(method string, err error, processid int32) {
 		if err != nil {
 			// _, filepath, line, _ := runtime.Caller(1)
@@ -172,9 +175,6 @@ func (pc *PsutilCollector) Collect_process_instant_data() error {
 			connections, err := _p0.Connections()
 			Echo_process_err("connections", err, _p0.Pid)
 			p1.Connections = global.GopsutilNetMeta2TopoNetMeta(connections)
-
-			p1.NetIOCounters, err = _p0.NetIOCounters(true)
-			Echo_process_err("netiocounters", err, _p0.Pid)
 
 			iocounters, err := _p0.IOCounters()
 			Echo_process_err("iocounters", err, _p0.Pid)

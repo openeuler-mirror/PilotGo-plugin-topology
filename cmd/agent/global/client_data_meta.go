@@ -1,6 +1,6 @@
 /*
  * Copyright (c) KylinSoft  Co., Ltd. 2024.All rights reserved.
- * PilotGo-plugin-topology licensed under the Mulan Permissive Software License, Version 2. 
+ * PilotGo-plugin-topology licensed under the Mulan Permissive Software License, Version 2.
  * See LICENSE file for more details.
  * Author: Wangjunqi123 <wangjunqi@kylinos.cn>
  * Date: Fri Nov 8 09:13:05 2024 +0800
@@ -8,10 +8,10 @@
 package global
 
 import (
-	"github.com/shirou/gopsutil/cpu"
-	"github.com/shirou/gopsutil/disk"
-	"github.com/shirou/gopsutil/net"
-	"github.com/shirou/gopsutil/process"
+	"github.com/shirou/gopsutil/v4/cpu"
+	"github.com/shirou/gopsutil/v4/disk"
+	"github.com/shirou/gopsutil/v4/net"
+	"github.com/shirou/gopsutil/v4/process"
 )
 
 type Data_collector interface {
@@ -43,21 +43,21 @@ type Process struct {
 	Cpid    []int32  `json:"cpid"`
 	Tids    []int32  `json:"tid"`
 	Threads []Thread `json:"threads"`
-	Uids    []int32  `json:"uids"`
-	Gids    []int32  `json:"gids"`
+	Uids    []uint32 `json:"uids"`
+	Gids    []uint32 `json:"gids"`
 
-	Username   string `json:"username"`
-	Status     string `json:"status"`
-	CreateTime int64  `json:"createtime"`
-	ExePath    string `json:"exepath"`
-	ExeName    string `json:"exename"`
-	Cmdline    string `json:"cmdline"`
-	Cwd        string `json:"cwd"`
+	Username   string   `json:"username"`
+	Status     []string `json:"status"`
+	CreateTime int64    `json:"createtime"`
+	ExePath    string   `json:"exepath"`
+	ExeName    string   `json:"exename"`
+	Cmdline    string   `json:"cmdline"`
+	Cwd        string   `json:"cwd"`
 
 	Nice   int32 `json:"nice"`
 	IOnice int32 `json:"ionice"`
 
-	Connections   []Netconnection `json:"connections"`
+	Connections   []Netconnection      `json:"connections"`
 	NetIOCounters []net.IOCountersStat `json:"netiocounters"`
 
 	IOCounters process.IOCountersStat `json:"iocounters"`
@@ -100,17 +100,17 @@ type Netconnection struct {
 }
 
 type NetIOcounter struct {
-	Name        string `json:"name"`        
-	BytesSent   uint64 `json:"bytesSent"` 
-	BytesRecv   uint64 `json:"bytesRecv"`   
-	PacketsSent uint64 `json:"packetsSent"` 
-	PacketsRecv uint64 `json:"packetsRecv"` 
-	Errin       uint64 `json:"errin"`      
-	Errout      uint64 `json:"errout"`   
-	Dropin      uint64 `json:"dropin"`   
-	Dropout     uint64 `json:"dropout"`   
-	Fifoin      uint64 `json:"fifoin"`     
-	Fifoout     uint64 `json:"fifoout"`  
+	Name        string `json:"name"`
+	BytesSent   uint64 `json:"bytesSent"`
+	BytesRecv   uint64 `json:"bytesRecv"`
+	PacketsSent uint64 `json:"packetsSent"`
+	PacketsRecv uint64 `json:"packetsRecv"`
+	Errin       uint64 `json:"errin"`
+	Errout      uint64 `json:"errout"`
+	Dropin      uint64 `json:"dropin"`
+	Dropout     uint64 `json:"dropout"`
+	Fifoin      uint64 `json:"fifoin"`
+	Fifoout     uint64 `json:"fifoout"`
 }
 
 type Disk struct {
