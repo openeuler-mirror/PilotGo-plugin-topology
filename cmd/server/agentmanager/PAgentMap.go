@@ -86,7 +86,7 @@ func (am *AgentManager) InitMachineList() {
 func (am *AgentManager) UpdateMachineList() {
 	machine_list, err := pluginclient.Global_Client.MachineList()
 	if err != nil {
-		err = errors.Errorf(err.Error())
+		err = errors.Errorf("%s", err.Error())
 		global.ERManager.ErrorTransmit("agentmanager", "error", err, true, true)
 	}
 

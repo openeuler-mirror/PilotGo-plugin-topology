@@ -1,6 +1,6 @@
 /*
  * Copyright (c) KylinSoft  Co., Ltd. 2024.All rights reserved.
- * PilotGo-plugin-topology licensed under the Mulan Permissive Software License, Version 2. 
+ * PilotGo-plugin-topology licensed under the Mulan Permissive Software License, Version 2.
  * See LICENSE file for more details.
  * Author: Wangjunqi123 <wangjunqi@kylinos.cn>
  * Date: Mon Nov 4 14:30:13 2024 +0800
@@ -200,9 +200,7 @@ func (r *RedisClient) UpdateTopoRunningAgentList(uuids []string, updateonce bool
 						return
 					}
 
-					if ok, err := global.IsIPandPORTValid(agentp.IP, agentmanager.Global_AgentManager.AgentPort); !ok {
-						err := errors.Errorf("%s:%s is unreachable (%s) %s", agentp.IP, agentmanager.Global_AgentManager.AgentPort, err.Error(), agentp.UUID)
-						global.ERManager.ErrorTransmit("db", "warn", err, false, false)
+					if ok := global.IsIPandPORTValid(agentp.IP, agentmanager.Global_AgentManager.AgentPort); !ok {
 						abort_reason = append(abort_reason, fmt.Sprintf("%s:ip||port不可达", agentvalue.UUID))
 						return
 					}
@@ -296,9 +294,7 @@ func (r *RedisClient) ActiveHeartbeatDetection(uuids []string) {
 			go func(a *agentmanager.Agent) {
 				defer wg.Done()
 
-				if ok, _ := global.IsIPandPORTValid(a.IP, agentmanager.Global_AgentManager.AgentPort); !ok {
-					// err := errors.Errorf("%s:%s is unreachable (%s) %s", a.IP, agentmanager.Topo.AgentPort, err.Error(), a.UUID)
-					// resourcemanage.ErrorTransmit("db", "warn", err, false, false)
+				if ok := global.IsIPandPORTValid(a.IP, agentmanager.Global_AgentManager.AgentPort); !ok {
 					return
 				}
 
@@ -322,9 +318,7 @@ func (r *RedisClient) ActiveHeartbeatDetection(uuids []string) {
 				return
 			}
 
-			if ok, _ := global.IsIPandPORTValid(agent.IP, agentmanager.Global_AgentManager.AgentPort); !ok {
-				// err := errors.Errorf("%s:%s is unreachable (%s) %s", agent.IP, agentmanager.Topo.AgentPort, err.Error(), agent.UUID)
-				// resourcemanage.ErrorTransmit("db", "warn", err, false, false)
+			if ok := global.IsIPandPORTValid(agent.IP, agentmanager.Global_AgentManager.AgentPort); !ok {
 				return
 			}
 
