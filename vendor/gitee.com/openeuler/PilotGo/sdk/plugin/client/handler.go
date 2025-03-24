@@ -1,3 +1,10 @@
+/*
+ * Copyright (c) KylinSoft  Co., Ltd. 2024.All rights reserved.
+ * PilotGo licensed under the Mulan Permissive Software License, Version 2.
+ * See LICENSE file for more details.
+ * Author: zhanghan2021 <zhanghan@kylinos.cn>
+ * Date: Wed Sep 27 17:35:12 2023 +0800
+ */
 package client
 
 import (
@@ -83,30 +90,6 @@ func bindHandler(c *gin.Context) {
 
 	client.sendHeartBeat()
 	response.Success(c, nil, "bind server success")
-}
-
-func eventHandler(c *gin.Context) {
-	j, err := io.ReadAll(c.Request.Body) // 接收数据
-	if err != nil {
-		logger.Error("没获取到：%s", err.Error())
-		return
-	}
-	var msg common.EventMessage
-	if err := json.Unmarshal(j, &msg); err != nil {
-		logger.Error("反序列化结果失败%s", err.Error())
-		return
-	}
-
-	v, ok := c.Get("__internal__client_instance")
-	if !ok {
-		return
-	}
-	client, ok := v.(*Client)
-	if !ok {
-		return
-	}
-
-	client.ProcessEvent(&msg)
 }
 
 func commandResultHandler(c *gin.Context) {
