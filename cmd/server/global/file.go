@@ -1,6 +1,6 @@
 /*
  * Copyright (c) KylinSoft  Co., Ltd. 2024.All rights reserved.
- * PilotGo-plugin-topology licensed under the Mulan Permissive Software License, Version 2. 
+ * PilotGo-plugin-topology licensed under the Mulan Permissive Software License, Version 2.
  * See LICENSE file for more details.
  * Author: Wangjunqi123 <wangjunqi@kylinos.cn>
  * Date: Mon Nov 4 14:30:13 2024 +0800
@@ -8,6 +8,7 @@
 package global
 
 import (
+	"bytes"
 	"io"
 	"os"
 
@@ -47,4 +48,13 @@ func FileReadBytes(filePath string) ([]byte, error) {
 	}
 
 	return content, nil
+}
+
+func BytesSize_kb(_bytes []byte) int64 {
+	tmpfile, _ := os.CreateTemp("", "response")
+	defer os.Remove(tmpfile.Name())
+	reader := bytes.NewReader(_bytes)
+	io.Copy(tmpfile, reader)
+	fileInfo, _ := tmpfile.Stat()
+	return fileInfo.Size() / 1024
 }
