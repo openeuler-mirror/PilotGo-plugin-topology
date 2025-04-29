@@ -28,7 +28,7 @@ export default defineConfig({
   server:{
     proxy:{
       "/plugin/topology/api": {
-        target: 'http://127.0.0.1:9991',
+        target: 'http://10.41.161.101:9991',
         // target: 'http://10.44.55.72:9991',
         changeOrigin:true,
         secure: false,

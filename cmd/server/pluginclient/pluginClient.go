@@ -1,6 +1,6 @@
 /*
  * Copyright (c) KylinSoft  Co., Ltd. 2024.All rights reserved.
- * PilotGo-plugin-topology licensed under the Mulan Permissive Software License, Version 2. 
+ * PilotGo-plugin-topology licensed under the Mulan Permissive Software License, Version 2.
  * See LICENSE file for more details.
  * Author: Wangjunqi123 <wangjunqi@kylinos.cn>
  * Date: Mon Nov 4 14:30:13 2024 +0800
@@ -10,6 +10,7 @@ package pluginclient
 import (
 	"fmt"
 	"os"
+	"sync"
 	"time"
 
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/server/conf"
@@ -32,9 +33,11 @@ func InitPluginClient() {
 
 	Global_Client = client.DefaultClient(PluginInfo)
 
-	GetExtentions()
+	getExtentions()
 
-	GetTags()
+	getTags()
+
+	getPermissions()
 
 	go uploadResource()
 }
@@ -68,7 +71,7 @@ func uploadResource() {
 }
 
 // 注册插件扩展点
-func GetExtentions() {
+func getExtentions() {
 	var ex []common.Extention
 	pe1 := &common.PageExtention{
 		Type:       common.ExtentionPage,
@@ -84,19 +87,19 @@ func GetExtentions() {
 	}
 	me1 := &common.MachineExtention{
 		Type:       common.ExtentionMachine,
-		Name:       "部署topo-collect",
+		Name:       "安装拓扑agent",
 		URL:        "/plugin/topology/api/deploy_collect_endpoint",
 		Permission: "plugin.topology.agent/install",
 	}
 	me2 := &common.MachineExtention{
 		Type:       common.ExtentionMachine,
-		Name:       "停用topo-collect",
+		Name:       "停用拓扑agent",
 		URL:        "/plugin/topology/api/collect_endpoint?action=stop",
 		Permission: "plugin.topology.agent/stop",
 	}
 	me3 := &common.MachineExtention{
 		Type:       common.ExtentionMachine,
-		Name:       "卸载topo-collect",
+		Name:       "卸载拓扑agent",
 		URL:        "/plugin/topology/api/collect_endpoint?action=remove",
 		Permission: "plugin.topology.agent/remove",
 	}
@@ -104,18 +107,59 @@ func GetExtentions() {
 	Global_Client.RegisterExtention(ex)
 }
 
-func GetTags() {
+func getTags() {
 	tag_cb := func(uuids []string) []common.Tag {
-		var tags []common.Tag
-		for _, uuid := range uuids {
-			tag := common.Tag{
-				UUID: uuid,
-				Type: common.TypeOk,
-				Data: "topo-collect",
-			}
-			tags = append(tags, tag)
+		machines, err := Global_Client.MachineList()
+		if err != nil {
+			return nil
 		}
+
+		var mu sync.Mutex
+		var wg sync.WaitGroup
+		var tags []common.Tag
+		for _, m := range machines {
+			wg.Add(1)
+			go func(_m *common.MachineNode) {
+				if global.IsIPandPORTValid(_m.IP, "9992") {
+					tag := common.Tag{
+						UUID: _m.UUID,
+						Type: common.TypeOk,
+						Data: "拓扑",
+					}
+					mu.Lock()
+					tags = append(tags, tag)
+					mu.Unlock()
+				} else {
+					tag := common.Tag{
+						UUID: _m.UUID,
+						Type: common.TypeError,
+						Data: "",
+					}
+					mu.Lock()
+					tags = append(tags, tag)
+					mu.Unlock()
+				}
+				wg.Done()
+			}(m)
+		}
+		wg.Wait()
 		return tags
 	}
 	Global_Client.OnGetTags(tag_cb)
+}
+
+func getPermissions() {
+	var pe []common.Permission
+	p1 := common.Permission{
+		Resource: "topology",
+		Operate:  "menu",
+	}
+
+	p2 := common.Permission{
+		Resource: "topology_operate",
+		Operate:  "button",
+	}
+
+	p := append(pe, p1, p2)
+	Global_Client.RegisterPermission(p)
 }

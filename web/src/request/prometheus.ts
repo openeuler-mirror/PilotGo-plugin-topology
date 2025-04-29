@@ -9,7 +9,7 @@ import request from './request'
 // 获取指标列表
 export function getPromRules() {
   return request({
-    url: '/plugin/prometheus/api/v1/targets',
+    url: '/plugin/prometheus/api/targets',
     method: 'get',
   })
 }
@@ -17,7 +17,7 @@ export function getPromRules() {
 // 获取prome某一时间点的数据
 export function getPromeCurrent(data: object) {
   return request({
-    url: '/plugin/prometheus/api/v1/query',
+    url: '/plugin/prometheus/api/query',
     method: 'get',
     params: data
   })
@@ -26,7 +26,7 @@ export function getPromeCurrent(data: object) {
 // 获取prome某一时间段的数据
 export function getPromeRange(data: object) {
   return request({
-    url: '/plugin/prometheus/api/v1/query_range',
+    url: '/plugin/prometheus/api/query_range',
     method: 'get',
     params: data
   })

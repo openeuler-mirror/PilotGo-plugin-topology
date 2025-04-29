@@ -100,7 +100,7 @@ func (t *TopoGenerator) ProcessingData(agentnum int) (*graph.Nodes, *graph.Edges
 			go func(ctx context.Context, _agent *agentmanager.Agent, _nodes *graph.Nodes, _edges *graph.Edges) {
 				defer wg.Done()
 
-				if _agent.Host_2 != nil && _agent.Processes_2 != nil && _agent.Netconnections_2 != nil {
+				if _agent.Host_2 != nil && _agent.Processes_2 != nil {
 					err := t.Factory.CreateNodeEntities(_agent, _nodes)
 					if err != nil {
 						process_errorlist_rwlock.Lock()
