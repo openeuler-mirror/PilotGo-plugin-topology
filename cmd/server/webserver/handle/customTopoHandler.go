@@ -1,6 +1,6 @@
 /*
  * Copyright (c) KylinSoft  Co., Ltd. 2024.All rights reserved.
- * PilotGo-plugin-topology licensed under the Mulan Permissive Software License, Version 2. 
+ * PilotGo-plugin-topology licensed under the Mulan Permissive Software License, Version 2.
  * See LICENSE file for more details.
  * Author: Wangjunqi123 <wangjunqi@kylinos.cn>
  * Date: Thu Nov 7 15:34:16 2024 +0800
@@ -172,8 +172,8 @@ func RunCustomTopoHandle(ctx *gin.Context) {
 			response.Fail(ctx, nil, errors.Cause(err).Error())
 			return
 		}
-		if len(custom_topodata.Nodes.Nodes) == 0 || len(custom_topodata.Edges.Edges) == 0 {
-			err := errors.New("nodes list is null or edges list is null")
+		if len(custom_topodata.Nodes.Nodes) == 0 {
+			err := errors.New("nodes is null")
 			global.ERManager.ErrorTransmit("webserver", "error", err, false, true)
 			doneChan <- custom_topodata
 			response.Fail(ctx, nil, errors.Cause(err).Error())
@@ -182,7 +182,7 @@ func RunCustomTopoHandle(ctx *gin.Context) {
 
 		webclient.WebClientsManager.UpdateClientTopoDataBuffer(webclient_id, custom_topodata)
 
-		doneChan <- webclient.WebClientsManager.Get(webclient_id)
+		doneChan <- webclient.WebClientsManager.Get(webclient_id, custom_topodata.TopoConfId)
 	}()
 
 	select {

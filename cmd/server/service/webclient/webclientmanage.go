@@ -1,6 +1,6 @@
 /*
  * Copyright (c) KylinSoft  Co., Ltd. 2024.All rights reserved.
- * PilotGo-plugin-topology licensed under the Mulan Permissive Software License, Version 2. 
+ * PilotGo-plugin-topology licensed under the Mulan Permissive Software License, Version 2.
  * See LICENSE file for more details.
  * Author: Wangjunqi123 <wangjunqi@kylinos.cn>
  * Date: Wed Nov 6 09:16:53 2024 +0800
@@ -10,6 +10,7 @@ package webclient
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -21,25 +22,25 @@ import (
 
 var WebClientsManager *WebClientsManagement
 
+type WebClientsManagement struct {
+	webClients map[string][]*graph.TopoDataBuffer
+}
+
 func InitWebClientsManager() {
 	WebClientsManager = &WebClientsManagement{
-		webClients: make(map[string]*graph.TopoDataBuffer),
+		webClients: make(map[string][]*graph.TopoDataBuffer),
 	}
 
 	// go WebClientsManager.HeartbeatDetect()
 }
 
-type WebClientsManagement struct {
-	webClients map[string]*graph.TopoDataBuffer
-}
-
 // 更新前端client图数据缓存
 func (wcm *WebClientsManagement) UpdateClientTopoDataBuffer(_id string, _custom_topodata *graph.TopoDataBuffer) {
-	if wcm.Get(_id) == nil || wcm.Get(_id).TopoConfId != _custom_topodata.TopoConfId {
+	if wcm.Get(_id, _custom_topodata.TopoConfId) == nil {
 		wcm.Add(_id, _custom_topodata)
 	} else {
 		var wg sync.WaitGroup
-		for uuid, global_node_slice := range wcm.Get(_id).Nodes.LookupByUUID {
+		for uuid, global_node_slice := range wcm.Get(_id, _custom_topodata.TopoConfId).Nodes.LookupByUUID {
 			wg.Add(1)
 			go func(_uuid string, _global_node_slice []*graph.Node) {
 				defer wg.Done()
@@ -76,12 +77,12 @@ func (wcm *WebClientsManagement) UpdateClientTopoDataBuffer(_id string, _custom_
 									}
 									custom_edge := custom_edge_any.(*graph.Edge)
 
-									global_edge_id_slice, ok := wcm.Get(_id).Edges.Node_Edges_map.Load(global_node.ID)
+									global_edge_id_slice, ok := wcm.Get(_id, _custom_topodata.TopoConfId).Edges.Node_Edges_map.Load(global_node.ID)
 									if !ok {
 										continue
 									}
 									for _, global_edge_id := range global_edge_id_slice.([]string) {
-										global_edge_any, ok := wcm.Get(_id).Edges.Lookup.Load(global_edge_id)
+										global_edge_any, ok := wcm.Get(_id, _custom_topodata.TopoConfId).Edges.Lookup.Load(global_edge_id)
 										if !ok {
 											continue
 										}
@@ -110,7 +111,7 @@ func (wcm *WebClientsManagement) UpdateClientTopoDataBuffer(_id string, _custom_
 				// 将新图数据中的新增节点及边添加到缓存图数据中
 				for _, custom_node := range _custom_topodata.Nodes.LookupByUUID[_uuid] {
 					if !custom_node_matched_state_map[custom_node.ID] {
-						wcm.Get(_id).Nodes.Add(custom_node)
+						wcm.Get(_id, _custom_topodata.TopoConfId).Nodes.Add(custom_node)
 						custom_edge_id_slice_any, ok := _custom_topodata.Edges.Node_Edges_map.Load(custom_node.ID)
 						if !ok {
 							continue
@@ -121,30 +122,30 @@ func (wcm *WebClientsManagement) UpdateClientTopoDataBuffer(_id string, _custom_
 								continue
 							}
 							custom_edge := custom_edge_any.(*graph.Edge)
-							wcm.Get(_id).Edges.Add(custom_edge)
+							wcm.Get(_id, _custom_topodata.TopoConfId).Edges.Add(custom_edge)
 						}
 					}
 				}
 				// 删减缓存图数据中过期的节点及边
 				for _, global_node := range _global_node_slice {
 					if !global_node_matched_state_map[global_node.ID] {
-						err := wcm.Get(_id).Nodes.Remove(global_node)
+						err := wcm.Get(_id, _custom_topodata.TopoConfId).Nodes.Remove(global_node)
 						if err != nil {
 							err = errors.Wrap(err, "->")
 							global.ERManager.ErrorTransmit("webclient", "error", err, false, true)
 							continue
 						}
-						global_edge_id_slice_any, ok := wcm.Get(_id).Edges.Node_Edges_map.Load(global_node.ID)
+						global_edge_id_slice_any, ok := wcm.Get(_id, _custom_topodata.TopoConfId).Edges.Node_Edges_map.Load(global_node.ID)
 						if !ok {
 							continue
 						}
 						for _, global_edge_id := range global_edge_id_slice_any.([]string) {
-							global_edge_any, ok := wcm.Get(_id).Edges.Lookup.Load(global_edge_id)
+							global_edge_any, ok := wcm.Get(_id, _custom_topodata.TopoConfId).Edges.Lookup.Load(global_edge_id)
 							if !ok {
 								continue
 							}
 							global_edge := global_edge_any.(*graph.Edge)
-							err := wcm.Get(_id).Edges.Remove(global_edge.ID)
+							err := wcm.Get(_id, _custom_topodata.TopoConfId).Edges.Remove(global_edge.ID)
 							if err != nil {
 								err = errors.Wrap(err, "->")
 								global.ERManager.ErrorTransmit("webclient", "error", err, false, true)
@@ -196,25 +197,33 @@ func (wcm *WebClientsManagement) isSamePstreeBranch(old_node, new_node *graph.No
 }
 
 func (wcm *WebClientsManagement) Add(_id string, _topodata *graph.TopoDataBuffer) {
-	wcm.webClients[_id] = _topodata
+	wcm.webClients[_id] = append(wcm.webClients[_id], _topodata)
 }
 
 func (wcm *WebClientsManagement) Delete(_id string) {
 	delete(wcm.webClients, _id)
 }
 
-func (wcm *WebClientsManagement) Get(_id string) *graph.TopoDataBuffer {
-	value, ok := wcm.webClients[_id]
+func (wcm *WebClientsManagement) Get(_id, _conf_id string) *graph.TopoDataBuffer {
+	all_buffer, ok := wcm.webClients[_id]
 	if !ok {
 		return nil
 	}
-	return value
+	for _, value := range all_buffer {
+		if value.TopoConfId == _conf_id {
+			return value
+		}
+	}
+	return nil
 }
 
-func (wcm *WebClientsManagement) ReturnWebClients() map[string]graph.TopoDataBuffer {
-	temp_webclients := make(map[string]graph.TopoDataBuffer)
-	for k, v := range wcm.webClients {
-		temp_webclients[k] = *v
+func (wcm *WebClientsManagement) ReturnWebClients() map[string][]graph.TopoDataBuffer {
+	temp_webclients := make(map[string][]graph.TopoDataBuffer)
+	for k, vs := range wcm.webClients {
+		for _, v := range vs {
+			temp_webclients[k] = append(temp_webclients[k], *v)
+		}
+
 	}
 	return temp_webclients
 }
@@ -228,8 +237,13 @@ func (wcm *WebClientsManagement) HeartbeatDetect() {
 		case <-global.ERManager.GoCancelCtx.Done():
 			return
 		case <-time.After(1 * time.Second):
-			for k, v := range wcm.webClients {
-				fmt.Printf(">>>clientId: %s, topoConfId: %s\n", k, v.TopoConfId)
+			for k, vs := range wcm.webClients {
+				confid_arr := []string{}
+				for _, v := range vs {
+					confid_arr = append(confid_arr, v.TopoConfId)
+				}
+				confid := strings.Join(confid_arr, ", ")
+				fmt.Printf(">>>clientId: %s, topoConfId: %s\n", k, confid)
 			}
 		}
 	}

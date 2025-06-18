@@ -298,9 +298,9 @@ func (c *CustomTopo) CreateEdgeEntities(agent *agentmanager.Agent, edges *graph.
 					break
 				}
 			}
-			// 全局连接remote端，跨网段，本机进程为client端
+			// TODO: 全局连接remote端，跨网段，本机进程为client端
 
-			// 全局连接remote端，跨网段，本机进程为server端
+			// TODO: 全局连接remote端，跨网段，本机进程为server端
 
 			if peernode1 != nil && peernode2 != nil {
 				break
@@ -309,6 +309,7 @@ func (c *CustomTopo) CreateEdgeEntities(agent *agentmanager.Agent, edges *graph.
 
 		if peernode1 != nil && peernode2 != nil && net1 != nil && net2 != nil {
 			var edgetype string
+			// TODO: type为socket的type， 1 SOCK_STREAM 2 SOCK_DGRAM
 			switch global_net.Type {
 			case 1:
 				edgetype = global.EDGE_TCP

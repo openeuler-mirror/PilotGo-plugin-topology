@@ -29,13 +29,13 @@ func HeartbeatHandle(ctx *gin.Context) {
 	value := redismanager.AgentHeartbeat{}
 
 	if err := ctx.ShouldBindJSON(&value); err != nil {
-		err := errors.Errorf("bind json failed: %s", err.Error())
+		err := errors.Errorf("bind json failed(%s): %s", ctx.Request.RemoteAddr, err.Error())
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"code":  -1,
 			"error": err.Error(),
 			"data":  nil,
 		})
-		global.ERManager.ErrorTransmit("webserver", "error", err, true, true)
+		global.ERManager.ErrorTransmit("webserver", "error", err, false, true)
 	}
 	ctx.Request.Body.Close()
 

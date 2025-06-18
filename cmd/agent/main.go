@@ -1,6 +1,6 @@
 /*
  * Copyright (c) KylinSoft  Co., Ltd. 2024.All rights reserved.
- * PilotGo-plugin-topology licensed under the Mulan Permissive Software License, Version 2. 
+ * PilotGo-plugin-topology licensed under the Mulan Permissive Software License, Version 2.
  * See LICENSE file for more details.
  * Author: Wangjunqi123 <wangjunqi@kylinos.cn>
  * Date: Mon Nov 4 14:30:13 2024 +0800
@@ -13,11 +13,10 @@ import (
 	"runtime"
 
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/agent/conf"
+	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/agent/global"
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/agent/resourcemanage"
-	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/agent/service"
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/agent/signal"
 	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/agent/webserver"
-	"gitee.com/openeuler/PilotGo-plugin-topology/cmd/agent/global"
 	"gitee.com/openeuler/PilotGo/sdk/logger"
 )
 
@@ -38,7 +37,8 @@ func main() {
 
 	webserver.InitWebServer()
 
-	service.SendHeartbeat()
+	// ttcode
+	// service.SendHeartbeat()
 
 	signal.SignalMonitoring()
 }

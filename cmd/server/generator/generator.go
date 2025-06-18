@@ -1,6 +1,6 @@
 /*
  * Copyright (c) KylinSoft  Co., Ltd. 2024.All rights reserved.
- * PilotGo-plugin-topology licensed under the Mulan Permissive Software License, Version 2. 
+ * PilotGo-plugin-topology licensed under the Mulan Permissive Software License, Version 2.
  * See LICENSE file for more details.
  * Author: Wangjunqi123 <wangjunqi@kylinos.cn>
  * Date: Mon Nov 4 14:30:13 2024 +0800
@@ -8,11 +8,8 @@
 package generator
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
-	"io"
-	"os"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -103,7 +100,7 @@ func (t *TopoGenerator) ProcessingData(agentnum int) (*graph.Nodes, *graph.Edges
 			go func(ctx context.Context, _agent *agentmanager.Agent, _nodes *graph.Nodes, _edges *graph.Edges) {
 				defer wg.Done()
 
-				if _agent.Host_2 != nil && _agent.Processes_2 != nil && _agent.Netconnections_2 != nil {
+				if _agent.Host_2 != nil && _agent.Processes_2 != nil {
 					err := t.Factory.CreateNodeEntities(_agent, _nodes)
 					if err != nil {
 						process_errorlist_rwlock.Lock()
@@ -149,7 +146,7 @@ func (t *TopoGenerator) collectInstantData() []error {
 	}
 
 	agentmanager.Global_AgentManager.TAgentMap.Range(
-		func(key, value interface{}) bool {
+		func(key, value any) bool {
 			wg.Add(1)
 
 			go func() {
@@ -193,13 +190,7 @@ func (t *TopoGenerator) getCollectDataFromTopoAgent(agent *agentmanager.Agent) e
 		return errors.Errorf("%s, %s", url, err.Error())
 	}
 
-	// ttcode
-	tmpfile, _ := os.CreateTemp("", "response")
-	defer os.Remove(tmpfile.Name())
-	reader := bytes.NewReader(resp.Body)
-	io.Copy(tmpfile, reader)
-	fileInfo, _ := tmpfile.Stat()
-	global.ERManager.ErrorTransmit("generator", "info", errors.Errorf("采集数据大小: %s, %d kb\n", agent.UUID, fileInfo.Size()/1024), false, false)
+	global.ERManager.ErrorTransmit("generator", "info", errors.Errorf("采集数据大小: %s, %d kb\n", agent.UUID, global.BytesSize_kb(resp.Body)), false, false)
 
 	if statuscode := resp.StatusCode; statuscode != 200 {
 		return errors.Errorf("%v, %s", resp.StatusCode, url)
