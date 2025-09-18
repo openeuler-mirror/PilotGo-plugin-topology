@@ -1,0 +1,113 @@
+/*
+ * Copyright (c) KylinSoft  Co., Ltd. 2025.All rights reserved.
+ * PilotGo-plugin-topology licensed under the Mulan Permissive Software License, Version 2.
+ * See LICENSE file for more details.
+ * Author: waneng <wanfeng@kylinos.cn>
+ */
+package config
+
+import (
+	"bufio"
+	"bytes"
+	"io"
+	"strconv"
+	"strings"
+
+	"github.com/casbin/casbin/log"
+	"github.com/casbin/casbin/model"
+	"github.com/casbin/casbin/persist"
+	etcd "go.etcd.io/etcd/client/v2"
+
+	"github.com/skydive-project/skydive/graffiti/logging"
+	"github.com/skydive-project/skydive/graffiti/rbac"
+	"github.com/skydive-project/skydive/statics"
+)
+
+type logger struct {
+	enabled bool
+}
+
+func (l *logger) EnableLog(state bool) {
+	l.enabled = state
+}
+
+func (l *logger) IsEnabled() bool {
+	return l.enabled
+}
+
+func (l *logger) Print(args ...interface{}) {
+	logging.GetLogger().Debug(args...)
+}
+
+func (l *logger) Printf(fmt string, args ...interface{}) {
+	logging.GetLogger().Debugf(fmt, args...)
+}
+
+func loadSection(model model.Model, key string, sec string) {
+	getKey := func(i int) string {
+		if i == 0 {
+			return sec
+		}
+		return sec + strconv.Itoa(i)
+	}
+
+	entries := GetStringSlice("rbac.model." + key)
+	for i, entry := range entries {
+		model.AddDef(sec, getKey(i), entry)
+	}
+}
+
+func loadConfigPolicy(model model.Model) {
+	policies := GetStringSlice("rbac.policy")
+	for _, line := range policies {
+		persist.LoadPolicyLine(line, model)
+	}
+}
+
+func loadPolicy(content []byte, model model.Model) error {
+	buf := bufio.NewReader(bytes.NewReader([]byte(content)))
+	for {
+		line, err := buf.ReadString('\n')
+		line = strings.TrimSpace(line)
+		persist.LoadPolicyLine(line, model)
+		if err != nil {
+			if err == io.EOF {
+				return nil
+			}
+			return err
+		}
+	}
+}
+
+func loadStaticPolicy(model model.Model) error {
+	content, err := statics.Asset("rbac/policy.csv")
+	if err != nil {
+		return err
+	}
+
+	return loadPolicy(content, model)
+}
+
+// InitRBAC inits the RBAC mechanism. It load
+// - the model from the configuration
+// - a policy on etcd
+// - a policy bundled in the executable
+// - additional policy rules from the configuration
+func InitRBAC(kapi etcd.KeysAPI) error {
+	log.SetLogger(&logger{enabled: true})
+
+	m := model.Model{}
+	loadSection(m, "request_definition", "r")
+	loadSection(m, "policy_definition", "p")
+	loadSection(m, "policy_effect", "e")
+	loadSection(m, "matchers", "m")
+	loadSection(m, "role_definition", "g")
+
+	return rbac.Init(m, kapi, func(m model.Model) error {
+		if err := loadStaticPolicy(m); err != nil {
+			return err
+		}
+		loadConfigPolicy(m)
+		return nil
+	})
+}
