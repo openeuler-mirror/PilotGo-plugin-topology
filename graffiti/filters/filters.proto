@@ -1,0 +1,112 @@
+syntax = "proto3";
+
+package filters;
+
+option go_package = "github.com/skydive-project/skydive/graffiti/filters";
+
+enum BoolFilterOp {
+  OR = 0;
+  AND = 1;
+  NOT = 2;
+}
+
+enum SortOrder {
+  NoOrder = 0;
+  Ascending = 1;
+  Descending = 2;
+}
+
+message TermStringFilter {
+  string Key = 1;
+  string Value = 2;
+}
+
+message TermInt64Filter {
+  string Key = 1;
+  int64 Value = 2;
+}
+
+message TermBoolFilter {
+  string Key = 1;
+  bool Value = 2;
+}
+
+message NeStringFilter {
+  string Key = 1;
+  string Value = 2;
+}
+
+message NeInt64Filter {
+  string Key = 1;
+  int64 Value = 2;
+}
+
+message GtInt64Filter {
+  string Key = 1;
+  int64 Value = 2;
+}
+
+message LtInt64Filter {
+  string Key = 1;
+  int64 Value = 2;
+}
+
+message GteInt64Filter {
+  string Key = 1;
+  int64 Value = 2;
+}
+
+message LteInt64Filter {
+  string Key = 1;
+  int64 Value = 2;
+}
+
+message RegexFilter {
+  string Key = 1;
+  string Value = 2;
+}
+
+message NullFilter {
+  string Key = 1;
+}
+
+message IPV4RangeFilter {
+  string Key = 1;
+  string Value = 2;
+}
+
+message Filter {
+  TermStringFilter TermStringFilter = 1;
+  TermInt64Filter TermInt64Filter = 2;
+  TermBoolFilter TermBoolFilter = 3;
+
+  GtInt64Filter GtInt64Filter = 4;
+  LtInt64Filter LtInt64Filter = 5;
+  GteInt64Filter GteInt64Filter = 6;
+  LteInt64Filter LteInt64Filter = 7;
+
+  BoolFilter BoolFilter = 8;
+  RegexFilter RegexFilter = 9;
+  NullFilter NullFilter = 10;
+  IPV4RangeFilter IPV4RangeFilter = 11;
+}
+
+message BoolFilter {
+  BoolFilterOp Op = 1;
+  repeated Filter Filters = 2;
+}
+
+message Range {
+  int64 From = 1;
+  int64 To = 2;
+}
+
+message SearchQuery {
+  Filter Filter = 1;
+  Range PaginationRange = 2;
+  bool Sort = 3;
+  bool Dedup = 4;
+  string DedupBy = 5;
+  string SortBy = 6;
+  SortOrder SortOrder = 7;
+}
