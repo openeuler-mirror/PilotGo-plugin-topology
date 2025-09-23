@@ -2,6 +2,7 @@ package filters
 
 import (
 	"regexp"
+	"time"
 
 	"github.com/pmylund/go-cache"
 
@@ -84,4 +85,139 @@ func (b *BoolFilter) Eval(g getter.Getter) bool {
 		}
 	}
 	return b.Op == BoolFilterOp_AND || len(b.Filters) == 0
+}
+
+// NewRegexFilter returns a new regular expression based filter
+func NewRegexFilter(key string, pattern string) (*RegexFilter, error) {
+	re, err := regexp.Compile(pattern)
+	if err != nil {
+		return nil, err
+	}
+	regexpCache.Set(pattern, re, cache.DefaultExpiration)
+
+	return &RegexFilter{Key: key, Value: pattern}, nil
+}
+
+// NewIPV4RangeFilter creates a regex based filter corresponding to the ip range
+func NewIPV4RangeFilter(key, cidr string) (*IPV4RangeFilter, error) {
+	regex, err := IPV4CIDRToRegex(cidr)
+	if err != nil {
+		return nil, err
+	}
+	re, err := regexp.Compile(regex)
+	if err != nil {
+		return nil, err
+	}
+	regexpCache.Set(cidr, re, cache.DefaultExpiration)
+
+	return &IPV4RangeFilter{Key: key, Value: cidr}, nil
+}
+
+// NewBoolFilter creates a new boolean filter
+func NewBoolFilter(op BoolFilterOp, filters ...*Filter) *Filter {
+	boolFilter := &BoolFilter{
+		Op:      op,
+		Filters: []*Filter{},
+	}
+
+	for _, filter := range filters {
+		if filter != nil {
+			boolFilter.Filters = append(boolFilter.Filters, filter)
+		}
+	}
+
+	return &Filter{BoolFilter: boolFilter}
+}
+
+// NewAndFilter creates a new boolean And filter
+func NewAndFilter(filters ...*Filter) *Filter {
+	return NewBoolFilter(BoolFilterOp_AND, filters...)
+}
+
+// NewOrFilter creates a new boolean Or filter
+func NewOrFilter(filters ...*Filter) *Filter {
+	return NewBoolFilter(BoolFilterOp_OR, filters...)
+}
+
+// NewNotFilter creates a new boolean Not filter
+func NewNotFilter(filter *Filter) *Filter {
+	return NewBoolFilter(BoolFilterOp_NOT, filter)
+}
+
+// NewGtInt64Filter creates a new > filter
+func NewGtInt64Filter(key string, value int64) *Filter {
+	return &Filter{GtInt64Filter: &GtInt64Filter{Key: key, Value: value}}
+}
+
+// NewGteInt64Filter creates a new >= filter
+func NewGteInt64Filter(key string, value int64) *Filter {
+	return &Filter{GteInt64Filter: &GteInt64Filter{Key: key, Value: value}}
+}
+
+// NewLtInt64Filter creates a new < filter
+func NewLtInt64Filter(key string, value int64) *Filter {
+	return &Filter{LtInt64Filter: &LtInt64Filter{Key: key, Value: value}}
+}
+
+// NewLteInt64Filter creates a new <= filter
+func NewLteInt64Filter(key string, value int64) *Filter {
+	return &Filter{LteInt64Filter: &LteInt64Filter{Key: key, Value: value}}
+}
+
+// NewTermInt64Filter creates a new string iny64 filter
+func NewTermInt64Filter(key string, value int64) *Filter {
+	return &Filter{TermInt64Filter: &TermInt64Filter{Key: key, Value: value}}
+}
+
+// NewTermStringFilter creates a new string filter
+func NewTermStringFilter(key string, value string) *Filter {
+	return &Filter{TermStringFilter: &TermStringFilter{Key: key, Value: value}}
+}
+
+// NewTermBoolFilter creates a new bool filter
+func NewTermBoolFilter(key string, value bool) *Filter {
+	return &Filter{TermBoolFilter: &TermBoolFilter{Key: key, Value: value}}
+}
+
+// NewNullFilter creates a new null filter
+func NewNullFilter(key string) *Filter {
+	return &Filter{NullFilter: &NullFilter{Key: key}}
+}
+
+// NewOrTermStringFilter creates a new "or" filter based on values and attributes
+func NewOrTermStringFilter(values []string, attrs ...string) *Filter {
+	terms := make([]*Filter, len(values)*len(attrs))
+	for i, value := range values {
+		for j, attr := range attrs {
+			terms[i*len(attrs)+j] = NewTermStringFilter(attr, value)
+		}
+	}
+	return NewOrFilter(terms...)
+}
+
+// NewFilterActiveIn returns a filter that returns elements that were active
+// in the given time range.
+func NewFilterActiveIn(fr Range, prefix string) *Filter {
+	return NewAndFilter(
+		NewLteInt64Filter(prefix+"Start", fr.To),
+		NewGteInt64Filter(prefix+"Last", fr.From),
+	)
+}
+
+// NewFilterIncludedIn returns a filter that returns elements that include in
+// the time range.
+func NewFilterIncludedIn(fr Range, prefix string) *Filter {
+	return NewAndFilter(
+		NewGteInt64Filter(prefix+"Start", fr.From),
+		NewLteInt64Filter(prefix+"Last", fr.To),
+	)
+}
+
+// NewNotNullFilter returns a filter that returns elements with a field set.
+func NewNotNullFilter(key string) *Filter {
+	return NewNotFilter(NewNullFilter(key))
+}
+
+func init() {
+	regexpCache = cache.New(5*time.Minute, 10*time.Minute)
 }
