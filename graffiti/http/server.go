@@ -110,6 +110,84 @@ func (s *Server) Serve() {
 	s.logger.Errorf("Failed to serve on %s:%d: %s", s.Addr, s.Port, err)
 }
 
+// Unauthorized returns a 401 response
+func Unauthorized(w http.ResponseWriter, r *http.Request, err error) {
+	w.WriteHeader(http.StatusUnauthorized)
+	w.Write([]byte(err.Error()))
+}
+
+// Start listening and serving HTTP requests
+func (s *Server) Start() error {
+	if err := s.Listen(); err != nil {
+		return err
+	}
+
+	go func() {
+		defer s.wg.Done()
+		s.wg.Add(1)
+
+		s.Serve()
+	}()
+
+	return nil
+}
+
+// Stop the server
+func (s *Server) Stop() {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if err := s.Server.Shutdown(ctx); err != nil {
+		s.logger.Error("Shutdown error :", err)
+	}
+	if s.listener != nil {
+		s.listener.Close()
+	}
+	s.wg.Wait()
+}
+
+func postAuthHandler(f auth.AuthenticatedHandlerFunc, authBackend AuthenticationBackend) func(w http.ResponseWriter, r *auth.AuthenticatedRequest) {
+	return func(w http.ResponseWriter, r *auth.AuthenticatedRequest) {
+		// re-add user to its group
+		roles, err := rbac.GetUserRoles(r.Username)
+		if err != nil {
+			return
+		}
+
+		if len(roles) == 0 {
+			rbac.AddRoleForUser(r.Username, authBackend.DefaultUserRole(r.Username))
+		}
+
+		permissions, err := rbac.GetPermissionsForUser(r.Username)
+		if err != nil {
+			return
+		}
+		setPermissionsCookie(w, permissions)
+
+		// re-add auth cookie
+		if token := tokenFromRequest(&r.Request); token != "" {
+			http.SetCookie(w, AuthCookie(token, "/"))
+		}
+
+		f(w, r)
+	}
+}
+
+// HandleFunc specifies the handler function and the authentication backend used for a given path
+func (s *Server) HandleFunc(path string, f auth.AuthenticatedHandlerFunc, authBackend AuthenticationBackend) {
+	if authBackend == nil {
+		authBackend = NewNoAuthenticationBackend()
+	}
+
+	preAuthHandler := authBackend.Wrap(postAuthHandler(f, authBackend))
+
+	s.Router.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		// set tls headers first
+		SetTLSHeader(w, r)
+
+		preAuthHandler(w, r)
+	})
+}
+
 // NewServer returns a new HTTP service for a service
 func NewServer(host string, serviceType service.Type, addr string, port int, tlsConfig *tls.Config, logger logging.Logger) *Server {
 	if logger == nil {
