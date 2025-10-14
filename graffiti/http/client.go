@@ -113,3 +113,112 @@ func (c *RestClient) Request(method, path string, body io.Reader, header http.He
 
 	return resp, nil
 }
+
+// NewCrudClient returns a new REST client that is able to issue CRUD requests
+func NewCrudClient(restClient *RestClient) *CrudClient {
+	return &CrudClient{RestClient: restClient}
+}
+
+// List returns all the resources for a type
+func (c *CrudClient) List(resource string, values interface{}) error {
+	resp, err := c.Request("GET", resource, nil, nil)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("Failed to list %s, %s: %s", resource, resp.Status, readBody(resp))
+	}
+
+	decoder := json.NewDecoder(resp.Body)
+	return decoder.Decode(values)
+}
+
+// Get fills the passed value with the resource with the specified ID
+func (c *CrudClient) Get(resource string, id string, value interface{}) error {
+	resp, err := c.Request("GET", resource+"/"+id, nil, nil)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("Failed to get %s, %s: %s", resource, resp.Status, readBody(resp))
+	}
+
+	decoder := json.NewDecoder(resp.Body)
+	return decoder.Decode(value)
+}
+
+// Create does a POST request to create a new resource
+func (c *CrudClient) Create(resource string, value interface{}, opts *CreateOptions) error {
+	s, err := json.Marshal(value)
+	if err != nil {
+		return err
+	}
+
+	var header http.Header
+	if opts != nil {
+		header = map[string][]string{"X-Resource-TTL": {opts.TTL.String()}}
+	}
+
+	contentReader := bytes.NewReader(s)
+	resp, err := c.Request("POST", resource, contentReader, header)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= http.StatusBadRequest {
+		return fmt.Errorf("Failed to create %s, %s: %s", resource, resp.Status, readBody(resp))
+	}
+
+	decoder := json.NewDecoder(resp.Body)
+	return decoder.Decode(value)
+}
+
+// Update modify a resource using a PUT call to the API
+// Server JSON response is unmarshalled into "ret"
+func (c *CrudClient) Update(resource string, id string, value interface{}, result interface{}) (bool, error) {
+	s, err := json.Marshal(value)
+	if err != nil {
+		return false, fmt.Errorf("marshaling value: %v", err)
+	}
+
+	contentReader := bytes.NewReader(s)
+	resp, err := c.Request("PATCH", resource+"/"+id, contentReader, nil)
+	if err != nil {
+		return false, fmt.Errorf("request: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= http.StatusBadRequest {
+		return false, fmt.Errorf("Failed to update %s, %s: %s", resource, resp.Status, readBody(resp))
+	}
+
+	if resp.ContentLength != 0 {
+		decoder := json.NewDecoder(resp.Body)
+		err = decoder.Decode(result)
+		if err != nil {
+			return false, fmt.Errorf("parsing response body: %v", err)
+		}
+	}
+
+	return resp.StatusCode == http.StatusOK, err
+}
+
+// Delete removes a resource using a DELETE call to the API
+func (c *CrudClient) Delete(resource string, id string) error {
+	resp, err := c.Request("DELETE", resource+"/"+id, nil, nil)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("Failed to delete %s, %s: %s", resource, resp.Status, readBody(resp))
+	}
+
+	return nil
+}
