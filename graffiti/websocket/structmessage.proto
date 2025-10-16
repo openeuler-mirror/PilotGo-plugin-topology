@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package websocket;
+
+import "gogoproto/gogo.proto";
+
+option go_package = "github.com/skydive-project/skydive/graffiti/websocket";
+option (gogoproto.protosizer_all) = true;
+option (gogoproto.sizer_all) = false;
+
+enum Format {
+  Json = 0;
+  Protobuf = 1;
+}
+
+// StructMessage is a Protobuf based message on top of Message.
+// It implements Message interface and can be sent with via a Speaker.
+message StructMessage {
+  string Namespace = 1;
+  string Type = 2;
+  string UUID = 3;
+  int64 Status = 4;
+  Format Format = 5;
+  bytes Obj = 6;
+}
