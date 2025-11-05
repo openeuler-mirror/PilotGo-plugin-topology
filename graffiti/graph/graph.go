@@ -242,3 +242,96 @@ type EdgePartiallyUpdated struct {
 	Edge *Edge
 	Ops  []PartiallyUpdatedOp
 }
+
+func (g *EventHandler) notifyListeners(ge graphEvent) {
+	// notify only once per listener as if more than once we are in a recursion
+	// and we wont to notify a listener which generated a graph element
+	g.RLock()
+	defer g.RUnlock()
+	for _, g.currentEventListener = range g.eventListeners {
+		// do not notify the listener which generated the event
+		if g.currentEventListener == ge.listener {
+			continue
+		}
+
+		switch ge.kind {
+		case NodeAdded:
+			g.currentEventListener.OnNodeAdded(ge.element.(*Node))
+		case NodeUpdated:
+			g.currentEventListener.OnNodeUpdated(ge.element.(*Node), ge.ops)
+		case NodeDeleted:
+			g.currentEventListener.OnNodeDeleted(ge.element.(*Node))
+		case EdgeAdded:
+			g.currentEventListener.OnEdgeAdded(ge.element.(*Edge))
+		case EdgeUpdated:
+			g.currentEventListener.OnEdgeUpdated(ge.element.(*Edge), ge.ops)
+		case EdgeDeleted:
+			g.currentEventListener.OnEdgeDeleted(ge.element.(*Edge))
+		}
+	}
+}
+
+// NotifyEvent notifies all the listeners of an event. NotifyEvent
+// makes sure that we don't enter a notify endless loop.
+func (g *EventHandler) NotifyEvent(kind graphEventType, element interface{}, ops ...PartiallyUpdatedOp) {
+	// push event to chan so that nested notification will be sent in the
+	// right order. Associate the event with the current event listener so
+	// we can avoid loop by not triggering event for the current listener.
+	ge := graphEvent{kind: kind, element: element, ops: ops}
+	ge.listener = g.currentEventListener
+	select {
+	case g.eventChan <- ge:
+	default:
+		logging.GetLogger().Errorf("maxEvents reached. Ignoring event '%+v' for element '%+v'", kind, element)
+	}
+
+	// already a consumer no need to run another consumer
+	if g.eventConsumed {
+		return
+	}
+	g.eventConsumed = true
+
+	for len(g.eventChan) > 0 {
+		ge = <-g.eventChan
+		g.notifyListeners(ge)
+	}
+	g.currentEventListener = nil
+	g.eventConsumed = false
+}
+
+// AddEventListener subscribe a new graph listener
+func (g *EventHandler) AddEventListener(l EventListener) {
+	g.Lock()
+	defer g.Unlock()
+
+	g.eventListeners = append(g.eventListeners, l)
+}
+
+// RemoveEventListener unsubscribe a graph listener
+func (g *EventHandler) RemoveEventListener(l EventListener) {
+	g.Lock()
+	defer g.Unlock()
+
+	for i, el := range g.eventListeners {
+		if l == el {
+			g.eventListeners = append(g.eventListeners[:i], g.eventListeners[i+1:]...)
+			break
+		}
+	}
+}
+
+// NewEventHandler instantiate a new event handler
+func NewEventHandler(maxEvents int) *EventHandler {
+	return &EventHandler{
+		eventChan: make(chan graphEvent, maxEvents),
+	}
+}
+
+// GenID helper generate a node Identifier
+func GenID(s ...string) Identifier {
+	if len(s) > 0 {
+		return Identifier(uuid.NewV5(uuid.NamespaceOID, strings.Join(s, "/")).String())
+	}
+
+	return Identifier(uuid.NewV4().String())
+}
