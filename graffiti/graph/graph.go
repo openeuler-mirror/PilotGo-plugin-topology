@@ -558,3 +558,935 @@ func (e *graphElement) normalize(metadata map[string]json.RawMessage, decoders m
 
 	return nil
 }
+
+func (n *Node) String() string {
+	b, err := json.Marshal(n)
+	if err != nil {
+		return ""
+	}
+	return string(b)
+}
+
+func (n *Node) Copy() *Node {
+	return &Node{
+		graphElement: graphElement{
+			ID:        n.ID,
+			Host:      n.Host,
+			Origin:    n.Origin,
+			CreatedAt: n.CreatedAt,
+			UpdatedAt: n.UpdatedAt,
+			DeletedAt: n.DeletedAt,
+			Revision:  n.Revision,
+			Metadata:  n.Metadata.Copy(),
+		},
+	}
+}
+
+// UnmarshalJSON custom unmarshal function
+func (n *Node) UnmarshalJSON(b []byte) error {
+	// wrapper to avoid unmarshal infinite loop
+	type nodeWrapper Node
+
+	nw := struct {
+		nodeWrapper
+		Metadata map[string]json.RawMessage
+	}{}
+	if err := json.Unmarshal(b, &nw); err != nil {
+		return err
+	}
+	*n = Node(nw.nodeWrapper)
+
+	// set time and unmarshal raw metadata
+	if err := n.normalize(nw.Metadata, NodeMetadataDecoders); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// MatchMetadata returns when an edge matches a specified filter or metadata
+func (e *Edge) MatchMetadata(f ElementMatcher) bool {
+	if f == nil {
+		return true
+	}
+	return f.Match(e)
+}
+
+// MatchBool implements Getter interface
+func (e *Edge) MatchBool(name string, predicate getter.BoolPredicate) bool {
+	if b, err := e.GetFieldBool(name); err == nil {
+		return predicate(b)
+	}
+	return false
+}
+
+// MatchInt64 implements Getter interface
+func (e *Edge) MatchInt64(name string, predicate getter.Int64Predicate) bool {
+	if n, err := e.GetFieldInt64(name); err == nil {
+		return predicate(n)
+	}
+	return false
+}
+
+// MatchString implements Getter interface
+func (e *Edge) MatchString(name string, predicate getter.StringPredicate) bool {
+	if s, err := e.GetFieldString(name); err == nil {
+		return predicate(s)
+	}
+	return false
+}
+
+// GetFieldString implements Getter interface
+func (e *Edge) GetFieldString(name string) (string, error) {
+	switch name {
+	case "Parent":
+		return string(e.Parent), nil
+	case "Child":
+		return string(e.Child), nil
+	default:
+		return e.graphElement.GetFieldString(name)
+	}
+}
+
+func (e *Edge) String() string {
+	b, err := json.Marshal(e)
+	if err != nil {
+		return ""
+	}
+	return string(b)
+}
+
+// UnmarshalJSON custom unmarshal function
+func (e *Edge) UnmarshalJSON(b []byte) error {
+	// wrapper to avoid unmarshal infinite loop
+	type edgeWrapper Edge
+
+	ew := struct {
+		edgeWrapper
+		Metadata map[string]json.RawMessage
+	}{}
+	if err := json.Unmarshal(b, &ew); err != nil {
+		return err
+	}
+	*e = Edge(ew.edgeWrapper)
+
+	// sanity checks
+	if e.Parent == "" {
+		return errors.New("parent ID wrong format")
+	}
+	if e.Child == "" {
+		return errors.New("child ID wrong format")
+	}
+
+	// set time and unmarshal raw metadata
+	if err := e.normalize(ew.Metadata, EdgeMetadataDecoders); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func dedupNodes(nodes []*Node) []*Node {
+	latests := make(map[Identifier]*Node)
+	for _, node := range nodes {
+		if n, found := latests[node.ID]; !found || node.Revision > n.Revision {
+			latests[node.ID] = node
+		}
+	}
+
+	uniq := make([]*Node, len(latests))
+	i := 0
+	for _, node := range latests {
+		uniq[i] = node
+		i++
+	}
+	return uniq
+}
+
+func dedupEdges(edges []*Edge) []*Edge {
+	latests := make(map[Identifier]*Edge)
+	for _, edge := range edges {
+		if e, found := latests[edge.ID]; !found || edge.Revision > e.Revision {
+			latests[edge.ID] = edge
+		}
+	}
+
+	uniq := make([]*Edge, len(latests))
+	i := 0
+	for _, edge := range latests {
+		uniq[i] = edge
+		i++
+	}
+	return uniq
+}
+
+// NodeUpdated updates a node
+func (g *Graph) NodeUpdated(n *Node) error {
+	if node := g.GetNode(n.ID); node != nil {
+		if node.Revision < n.Revision {
+			node.Metadata = n.Metadata
+			node.UpdatedAt = n.UpdatedAt
+			node.Revision = n.Revision
+
+			if err := g.backend.MetadataUpdated(node); err != nil {
+				return err
+			}
+
+			g.eventHandler.NotifyEvent(NodeUpdated, node)
+		}
+		return nil
+	}
+	return ErrNodeNotFound
+}
+
+// NodePartiallyUpdated partially updates a node
+func (g *Graph) NodePartiallyUpdated(id Identifier, revision int64, updatedAt Time, ops ...PartiallyUpdatedOp) error {
+	if node := g.GetNode(id); node != nil {
+		if node.Revision < revision {
+			node.Revision = revision
+			node.UpdatedAt = updatedAt
+			node.Metadata.ApplyUpdates(ops...)
+
+			if err := g.backend.MetadataUpdated(node); err != nil {
+				return err
+			}
+
+			g.eventHandler.NotifyEvent(NodeUpdated, node, ops...)
+		}
+		return nil
+	}
+	return ErrNodeNotFound
+}
+
+// EdgeUpdated updates an edge
+func (g *Graph) EdgeUpdated(e *Edge, ops ...PartiallyUpdatedOp) error {
+	if edge := g.GetEdge(e.ID); edge != nil {
+		if edge.Revision < e.Revision {
+			edge.Metadata = e.Metadata
+			edge.UpdatedAt = e.UpdatedAt
+
+			if err := g.backend.MetadataUpdated(edge); err != nil {
+				return err
+			}
+
+			g.eventHandler.NotifyEvent(EdgeUpdated, edge, ops...)
+			return nil
+		}
+	}
+	return ErrEdgeNotFound
+}
+
+// EdgePartiallyUpdated partially updates an edge
+func (g *Graph) EdgePartiallyUpdated(id Identifier, revision int64, updatedAt Time, ops ...PartiallyUpdatedOp) error {
+	if edge := g.GetEdge(id); edge != nil {
+		if edge.Revision < revision {
+			edge.Revision = revision
+			edge.UpdatedAt = updatedAt
+			edge.Metadata.ApplyUpdates(ops...)
+
+			if err := g.backend.MetadataUpdated(edge); err != nil {
+				return err
+			}
+
+			g.eventHandler.NotifyEvent(EdgeUpdated, edge, ops...)
+		}
+		return nil
+	}
+	return ErrEdgeNotFound
+}
+
+// SetMetadata associate metadata to an edge or node
+func (g *Graph) SetMetadata(i interface{}, m Metadata) error {
+	var e *graphElement
+	var kind graphEventType
+
+	switch i := i.(type) {
+	case *Node:
+		e = &i.graphElement
+		kind = NodeUpdated
+	case *Edge:
+		e = &i.graphElement
+		kind = EdgeUpdated
+	}
+
+	if reflect.DeepEqual(m, e.Metadata) {
+		return nil
+	}
+
+	e.Metadata = m
+	e.UpdatedAt = TimeUTC()
+	e.Revision++
+
+	if err := g.backend.MetadataUpdated(i); err != nil {
+		return err
+	}
+
+	g.eventHandler.NotifyEvent(kind, i)
+	return nil
+}
+
+// DelMetadata delete a metadata to an associated edge or node
+func (g *Graph) DelMetadata(i interface{}, k string) error {
+	var e *graphElement
+	var kind graphEventType
+
+	switch i.(type) {
+	case *Node:
+		e = &i.(*Node).graphElement
+		kind = NodeUpdated
+	case *Edge:
+		e = &i.(*Edge).graphElement
+		kind = EdgeUpdated
+	}
+
+	if updated := e.Metadata.DelField(k); !updated {
+		return nil
+	}
+
+	e.UpdatedAt = TimeUTC()
+	e.Revision++
+
+	if err := g.backend.MetadataUpdated(i); err != nil {
+		return err
+	}
+
+	op := PartiallyUpdatedOp{Type: PartiallyUpdatedDelOpType, Key: k}
+	g.eventHandler.NotifyEvent(kind, i, op)
+	return nil
+}
+
+func (g *Graph) addMetadata(i interface{}, k string, v interface{}, t Time) error {
+	var e *graphElement
+	var kind graphEventType
+
+	switch i.(type) {
+	case *Node:
+		e = &i.(*Node).graphElement
+		kind = NodeUpdated
+	case *Edge:
+		e = &i.(*Edge).graphElement
+		kind = EdgeUpdated
+	}
+
+	if o, ok := e.Metadata[k]; ok && reflect.DeepEqual(o, v) {
+		return nil
+	}
+
+	if !e.Metadata.SetField(k, v) {
+		return nil
+	}
+
+	e.UpdatedAt = t
+	e.Revision++
+
+	if err := g.backend.MetadataUpdated(i); err != nil {
+		return err
+	}
+
+	op := PartiallyUpdatedOp{Type: PartiallyUpdatedAddOpType, Key: k, Value: v}
+	g.eventHandler.NotifyEvent(kind, i, op)
+	return nil
+}
+
+// AddMetadata add a metadata to an associated edge or node
+func (g *Graph) AddMetadata(i interface{}, k string, v interface{}) error {
+	return g.addMetadata(i, k, v, TimeUTC())
+}
+
+// UpdateMetadata retrieves a value and calls a callback that can modify it then notify listeners of the update
+func (g *Graph) UpdateMetadata(i interface{}, key string, mutator func(obj interface{}) bool) error {
+	var e *graphElement
+	var graphEventType graphEventType
+
+	switch i.(type) {
+	case *Node:
+		e = &i.(*Node).graphElement
+		graphEventType = NodeUpdated
+	case *Edge:
+		e = &i.(*Edge).graphElement
+		graphEventType = EdgeUpdated
+	}
+
+	field, err := e.GetField(key)
+	if err != nil {
+		return err
+	}
+
+	e.UpdatedAt = TimeUTC()
+	e.Revision++
+
+	if updated := mutator(field); updated {
+		if err := g.backend.MetadataUpdated(i); err != nil {
+			return err
+		}
+		g.eventHandler.NotifyEvent(graphEventType, i)
+	}
+
+	return nil
+}
+
+// StartMetadataTransaction start a new transaction
+func (g *Graph) StartMetadataTransaction(i interface{}) *MetadataTransaction {
+	t := MetadataTransaction{
+		graph:        g,
+		graphElement: i,
+		adds:         make(map[string]interface{}),
+	}
+
+	return &t
+}
+
+func (g *Graph) getNeighborNodes(n *Node, em ElementMatcher) (nodes []*Node) {
+	for _, e := range g.backend.GetNodeEdges(n, g.context, em) {
+		parents, children := g.backend.GetEdgeNodes(e, g.context, nil, nil)
+		nodes = append(nodes, parents...)
+		nodes = append(nodes, children...)
+	}
+	return nodes
+}
+
+func (g *Graph) findNodeMatchMetadata(nodesMap map[Identifier]*Node, m ElementMatcher) *Node {
+	for _, n := range nodesMap {
+		if n.MatchMetadata(m) {
+			return n
+		}
+	}
+	return nil
+}
+
+func getNodeMinDistance(nodesMap map[Identifier]*Node, distance map[Identifier]uint) *Node {
+	min := ^uint(0)
+	var minID Identifier
+	for ID, d := range distance {
+		_, ok := nodesMap[ID]
+		if !ok {
+			continue
+		}
+		if string(minID) == "" {
+			minID = ID
+		}
+
+		if d < min {
+			min = d
+			minID = ID
+		}
+	}
+	n, ok := nodesMap[minID]
+	if !ok {
+		return nil
+	}
+	return n
+}
+
+// GetNodesMap returns a map of nodes within a time slice
+func (g *Graph) GetNodesMap(t Context) map[Identifier]*Node {
+	nodes := g.backend.GetNodes(t, nil)
+	nodesMap := make(map[Identifier]*Node, len(nodes))
+	for _, n := range nodes {
+		nodesMap[n.ID] = n
+	}
+	return nodesMap
+}
+
+// LookupShortestPath based on Dijkstra algorithm
+func (g *Graph) LookupShortestPath(n *Node, m ElementMatcher, em ElementMatcher) []*Node {
+	nodesMap := g.GetNodesMap(g.context)
+	target := g.findNodeMatchMetadata(nodesMap, m)
+	if target == nil {
+		return []*Node{}
+	}
+	distance := make(map[Identifier]uint, len(nodesMap))
+	previous := make(map[Identifier]*Node, len(nodesMap))
+
+	for _, v := range nodesMap {
+		distance[v.ID] = ^uint(0)
+	}
+	distance[target.ID] = uint(0)
+
+	for len(nodesMap) > 0 {
+		u := getNodeMinDistance(nodesMap, distance)
+		if u == nil {
+			break
+		}
+		delete(nodesMap, u.ID)
+
+		for _, v := range g.getNeighborNodes(u, em) {
+			if _, ok := nodesMap[v.ID]; !ok {
+				continue
+			}
+			alt := distance[u.ID] + 1
+			if alt < distance[v.ID] {
+				distance[v.ID] = alt
+				previous[v.ID] = u
+			}
+		}
+	}
+
+	retNodes := []*Node{}
+	node := n
+	for {
+		retNodes = append(retNodes, node)
+
+		prevNode, ok := previous[node.ID]
+		if !ok || node.ID == prevNode.ID {
+			break
+		}
+		node = prevNode
+	}
+
+	if node.ID != target.ID {
+		return []*Node{}
+	}
+
+	return retNodes
+}
+
+// LookupParents returns the associated parents edge of a node
+func (g *Graph) LookupParents(n *Node, f ElementMatcher, em ElementMatcher) (nodes []*Node) {
+	for _, e := range g.backend.GetNodeEdges(n, g.context, em) {
+		if e.Child == n.ID {
+			parents, _ := g.backend.GetEdgeNodes(e, g.context, f, nil)
+			for _, parent := range parents {
+				nodes = append(nodes, parent)
+			}
+		}
+	}
+
+	return
+}
+
+// LookupFirstChild returns the child
+func (g *Graph) LookupFirstChild(n *Node, f ElementMatcher) *Node {
+	nodes := g.LookupChildren(n, f, nil)
+	if len(nodes) > 0 {
+		return nodes[0]
+	}
+	return nil
+}
+
+// LookupChildren returns a list of children nodes
+func (g *Graph) LookupChildren(n *Node, f ElementMatcher, em ElementMatcher) (nodes []*Node) {
+	for _, e := range g.backend.GetNodeEdges(n, g.context, em) {
+		if e.Parent == n.ID {
+			_, children := g.backend.GetEdgeNodes(e, g.context, nil, f)
+			for _, child := range children {
+				nodes = append(nodes, child)
+			}
+		}
+	}
+
+	return nodes
+}
+
+// AreLinked returns true if nodes n1, n2 are linked
+func (g *Graph) AreLinked(n1 *Node, n2 *Node, m ElementMatcher) bool {
+	for _, e := range g.backend.GetNodeEdges(n1, g.context, m) {
+		parents, children := g.backend.GetEdgeNodes(e, g.context, nil, nil)
+		if len(parents) == 0 || len(children) == 0 {
+			continue
+		}
+
+		for i, parent := range parents {
+			if children[i].ID == n2.ID || parent.ID == n2.ID {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+// Link the nodes n1, n2 with a new edge
+func (g *Graph) Link(n1 *Node, n2 *Node, m Metadata, h ...string) (*Edge, error) {
+	if len(m) > 0 {
+		return g.NewEdge(GenID(), n1, n2, m, h...)
+	}
+	return g.NewEdge(GenID(), n1, n2, nil, h...)
+}
+
+// Unlink the nodes n1, n2 ; delete the associated edge
+func (g *Graph) Unlink(n1 *Node, n2 *Node) error {
+	var err error
+
+	for _, e := range g.backend.GetNodeEdges(n1, liveContext, nil) {
+		parents, children := g.backend.GetEdgeNodes(e, liveContext, nil, nil)
+		if len(parents) == 0 || len(children) == 0 {
+			continue
+		}
+
+		parent, child := parents[0], children[0]
+		if child.ID == n2.ID || parent.ID == n2.ID {
+			if currErr := g.DelEdge(e); currErr != nil {
+				err = currErr
+			}
+		}
+	}
+
+	return err
+}
+
+// GetFirstLink get Link between the parent and the child node
+func (g *Graph) GetFirstLink(parent, child *Node, m ElementMatcher) *Edge {
+	for _, e := range g.GetNodeEdges(parent, m) {
+		if e.Child == child.ID {
+			return e
+		}
+	}
+	return nil
+}
+
+// LookupFirstNode returns the fist node matching metadata
+func (g *Graph) LookupFirstNode(m ElementMatcher) *Node {
+	nodes := g.GetNodes(m)
+	if len(nodes) > 0 {
+		return nodes[0]
+	}
+
+	return nil
+}
+
+// EdgeAdded add an edge
+func (g *Graph) EdgeAdded(e *Edge) error {
+	if g.GetEdge(e.ID) == nil {
+		return g.AddEdge(e)
+	}
+	return nil
+}
+
+// AddEdge in the graph
+func (g *Graph) AddEdge(e *Edge) error {
+	if err := g.backend.EdgeAdded(e); err != nil {
+		return err
+	}
+	g.eventHandler.NotifyEvent(EdgeAdded, e)
+
+	return nil
+}
+
+// GetEdge with Identifier i
+func (g *Graph) GetEdge(i Identifier) *Edge {
+	if edges := g.backend.GetEdge(i, g.context); len(edges) != 0 {
+		return edges[0]
+	}
+	return nil
+}
+
+// NodeAdded in the graph
+func (g *Graph) NodeAdded(n *Node) error {
+	if g.GetNode(n.ID) == nil {
+		return g.AddNode(n)
+	}
+	return nil
+}
+
+// AddNode in the graph
+func (g *Graph) AddNode(n *Node) error {
+	if err := g.backend.NodeAdded(n); err != nil {
+		return err
+	}
+	g.eventHandler.NotifyEvent(NodeAdded, n)
+
+	return nil
+}
+
+// GetNode from Identifier
+func (g *Graph) GetNode(i Identifier) *Node {
+	if nodes := g.backend.GetNode(i, g.context); len(nodes) != 0 {
+		return nodes[0]
+	}
+	return nil
+}
+
+// GetNodesFromIDs returns a list of nodes from a list of identifiers
+func (g *Graph) GetNodesFromIDs(i []Identifier) []*Node {
+	if len(i) == 0 {
+		return []*Node{}
+	}
+	return g.backend.GetNodesFromIDs(i, g.context)
+}
+
+// CreateNode returns a new node not bound to a graph
+func CreateNode(i Identifier, m Metadata, t Time, h string, o string) *Node {
+	n := &Node{
+		graphElement: graphElement{
+			ID:        i,
+			Host:      h,
+			Origin:    o,
+			CreatedAt: t,
+			UpdatedAt: t,
+			Revision:  1,
+		},
+	}
+
+	if m != nil {
+		n.Metadata = m
+	} else {
+		n.Metadata = make(Metadata)
+	}
+
+	return n
+}
+
+// CreateNode creates a new node and adds it to the graph
+func (g *Graph) CreateNode(i Identifier, m Metadata, t Time, h ...string) *Node {
+	hostname := g.host
+	if len(h) > 0 {
+		hostname = h[0]
+	}
+
+	return CreateNode(i, m, t, hostname, g.origin)
+}
+
+// NewNode creates a new node in the graph with attached metadata
+func (g *Graph) NewNode(i Identifier, m Metadata, h ...string) (*Node, error) {
+	n := g.CreateNode(i, m, TimeUTC(), h...)
+
+	if err := g.AddNode(n); err != nil {
+		return nil, err
+	}
+
+	return n, nil
+}
+
+// CreateEdge returns a new edge not bound to any graph
+func CreateEdge(i Identifier, p *Node, c *Node, m Metadata, t Time, h string, o string) *Edge {
+	e := &Edge{
+		Parent: p.ID,
+		Child:  c.ID,
+		graphElement: graphElement{
+			ID:        i,
+			Host:      h,
+			Origin:    o,
+			CreatedAt: t,
+			UpdatedAt: t,
+			Revision:  1,
+		},
+	}
+
+	if m != nil {
+		e.Metadata = m
+	} else {
+		e.Metadata = make(Metadata)
+	}
+
+	return e
+}
+
+// CreateEdge creates a new edge and adds it to the graph
+func (g *Graph) CreateEdge(i Identifier, p *Node, c *Node, m Metadata, t Time, h ...string) *Edge {
+	hostname := g.host
+	if len(h) > 0 {
+		hostname = h[0]
+	}
+
+	if i == "" {
+		i = Identifier(uuid.NewV5(uuid.NamespaceOID, string(p.ID+c.ID)).String())
+	}
+
+	return CreateEdge(i, p, c, m, t, hostname, g.origin)
+}
+
+// NewEdge creates a new edge in the graph based on Identifier, parent, child nodes and metadata
+func (g *Graph) NewEdge(i Identifier, p *Node, c *Node, m Metadata, h ...string) (*Edge, error) {
+	e := g.CreateEdge(i, p, c, m, TimeUTC(), h...)
+
+	if err := g.AddEdge(e); err != nil {
+		return nil, err
+	}
+
+	return e, nil
+}
+
+// EdgeDeleted event
+func (g *Graph) EdgeDeleted(e *Edge) error {
+	if err := g.backend.EdgeDeleted(e); err != nil {
+		return err
+	}
+
+	g.eventHandler.NotifyEvent(EdgeDeleted, e)
+
+	return nil
+}
+
+func (g *Graph) delEdge(e *Edge, t Time) error {
+	e.DeletedAt = t
+	if err := g.backend.EdgeDeleted(e); err != nil {
+		return err
+	}
+
+	g.eventHandler.NotifyEvent(EdgeDeleted, e)
+
+	return nil
+}
+
+// DelEdge delete an edge
+func (g *Graph) DelEdge(e *Edge) error {
+	return g.delEdge(e, TimeUTC())
+}
+
+// NodeDeleted event
+func (g *Graph) NodeDeleted(n *Node) error {
+	return g.delNode(n, n.DeletedAt)
+}
+
+func (g *Graph) delNode(n *Node, t Time) error {
+	for _, e := range g.backend.GetNodeEdges(n, liveContext, nil) {
+		if err := g.delEdge(e, t); err != nil {
+			return err
+		}
+	}
+
+	n.DeletedAt = t
+	if err := g.backend.NodeDeleted(n); err != nil {
+		return err
+	}
+
+	g.eventHandler.NotifyEvent(NodeDeleted, n)
+
+	return nil
+}
+
+// DelNode delete the node n in the graph
+func (g *Graph) DelNode(n *Node) error {
+	return g.delNode(n, TimeUTC())
+}
+
+// DelNodes deletes nodes for given matcher
+func (g *Graph) DelNodes(m ElementMatcher) error {
+	t := TimeUTC()
+	for _, node := range g.GetNodes(m) {
+		if err := g.delNode(node, t); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// GetNodes returns a list of nodes
+func (g *Graph) GetNodes(m ElementMatcher) []*Node {
+	return g.backend.GetNodes(g.context, m)
+}
+
+// GetEdges returns a list of edges
+func (g *Graph) GetEdges(m ElementMatcher) []*Edge {
+	return g.backend.GetEdges(g.context, m)
+}
+
+// GetEdgeNodes returns a list of nodes of an edge
+func (g *Graph) GetEdgeNodes(e *Edge, parentMetadata, childMetadata ElementMatcher) ([]*Node, []*Node) {
+	return g.backend.GetEdgeNodes(e, g.context, parentMetadata, childMetadata)
+}
+
+// GetNodeEdges returns a list of edges of a node
+func (g *Graph) GetNodeEdges(n *Node, m ElementMatcher) []*Edge {
+	return g.backend.GetNodeEdges(n, g.context, m)
+}
+
+// GetNodesEdges returns the list with all edges for a list of nodes
+func (g *Graph) GetNodesEdges(n []*Node, m ElementMatcher) []*Edge {
+	if len(n) == 0 {
+		return []*Edge{}
+	}
+	return g.backend.GetNodesEdges(n, g.context, m)
+}
+
+func (g *Graph) String() string {
+	j, _ := json.Marshal(g)
+	return string(j)
+}
+
+// GetOrigin returns the origin of a graph
+func (g *Graph) GetOrigin() string {
+	return g.origin
+}
+
+// Elements returns graph elements
+func (g *Graph) Elements() *Elements {
+	nodes := g.GetNodes(nil)
+	SortNodes(nodes, "CreatedAt", filters.SortOrder_Ascending)
+
+	edges := g.GetEdges(nil)
+	SortEdges(edges, "CreatedAt", filters.SortOrder_Ascending)
+
+	return &Elements{
+		Nodes: nodes,
+		Edges: edges,
+	}
+}
+
+// MarshalJSON serialize the graph in JSON
+func (g *Graph) MarshalJSON() ([]byte, error) {
+	return json.Marshal(g.Elements())
+}
+
+// CloneWithContext creates a new graph based on the given one and the given context
+func (g *Graph) CloneWithContext(context Context) (*Graph, error) {
+	ng := NewGraph(g.host, g.backend, g.origin)
+	if context.TimeSlice != nil && !g.backend.IsHistorySupported() {
+		return nil, errors.New("Backend does not support history")
+	}
+	ng.context = context
+
+	return ng, nil
+}
+
+// GetContext returns the current context
+func (g *Graph) GetContext() Context {
+	return g.context
+}
+
+// GetHost returns the graph host
+func (g *Graph) GetHost() string {
+	return g.host
+}
+
+// Diff computes the difference between two graphs
+func (g *Graph) Diff(newGraph *Graph) (addedNodes []*Node, removedNodes []*Node, addedEdges []*Edge, removedEdges []*Edge) {
+	for _, e := range newGraph.GetEdges(nil) {
+		if g.GetEdge(e.ID) == nil {
+			addedEdges = append(addedEdges, e)
+		}
+	}
+
+	for _, e := range g.GetEdges(nil) {
+		if newGraph.GetEdge(e.ID) == nil {
+			removedEdges = append(removedEdges, e)
+		}
+	}
+
+	for _, n := range newGraph.GetNodes(nil) {
+		if g.GetNode(n.ID) == nil {
+			addedNodes = append(addedNodes, n)
+		}
+	}
+
+	for _, n := range g.GetNodes(nil) {
+		if newGraph.GetNode(n.ID) == nil {
+			removedNodes = append(removedNodes, n)
+		}
+	}
+
+	return
+}
+
+// AddEventListener subscribe a new graph listener
+func (g *Graph) AddEventListener(l EventListener) {
+	g.eventHandler.AddEventListener(l)
+}
+
+// RemoveEventListener unsubscribe a graph listener
+func (g *Graph) RemoveEventListener(l EventListener) {
+	g.eventHandler.RemoveEventListener(l)
+}
+
+// NewGraph creates a new graph based on the backend
+func NewGraph(host string, backend Backend, origin string) *Graph {
+	return &Graph{
+		eventHandler: NewEventHandler(maxEvents),
+		backend:      backend,
+		host:         host,
+		context:      Context{TimePoint: true},
+		origin:       origin,
+	}
+}
