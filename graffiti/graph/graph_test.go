@@ -320,3 +320,366 @@ func TestPath(t *testing.T) {
 	}
 }
 
+func nodeExpand(g *Graph, nodes []*Node, n int, level int) []*Node {
+	var ret []*Node
+	for _, node := range nodes {
+		for i := 0; i < n; i++ {
+			n, _ := g.NewNode(GenID(), Metadata{"Value": level*1000 + i, "Name": fmt.Sprintf("Node%d-%d", level, i)})
+			g.Link(node, n, Metadata{"Type": "Layer2"})
+			ret = append(ret, n)
+		}
+	}
+	return ret
+}
+
+func nodeCollapse(g *Graph, nodes []*Node, nodeEnd *Node) {
+	for _, node := range nodes {
+		g.Link(node, nodeEnd, Metadata{"Type": "Layer2"})
+	}
+}
+
+func TestComplexPath(t *testing.T) {
+	g := newGraph(t)
+
+	nstart, _ := g.NewNode(GenID(), Metadata{"Value": 1, "Name": "NodeStart"})
+	nend, _ := g.NewNode(GenID(), Metadata{"Value": 1, "Name": "NodeEnd"})
+
+	nprev := nodeExpand(g, []*Node{nstart}, 10, 1)
+	for i := 2; i < 4; i++ { // test complexity limit, as test.timeout = 1min
+		nprev = nodeExpand(g, nprev, 10, i)
+	}
+	nodeCollapse(g, []*Node{nprev[0]}, nend)
+	t.Log("nb nodes", len(g.GetNodes(nil)))
+
+	r := g.LookupShortestPath(nstart, nend.Metadata, nil)
+	if len(r) != 5 {
+		t.Errorf("Wrong nodes returned (start -> end): %d %v", len(r), r)
+	}
+	r = g.LookupShortestPath(nend, nstart.Metadata, nil)
+	if len(r) != 5 {
+		t.Errorf("Wrong nodes returned (end -> start): %d %v", len(r), r)
+	}
+}
+
+func TestMetadata(t *testing.T) {
+	g := newGraph(t)
+
+	n, _ := g.NewNode(GenID(), Metadata{"Value": 1, "Type": "intf"})
+
+	g.AddMetadata(n, "Name", "Node1")
+	v, _ := n.GetFieldString("Name")
+	if v != "Node1" {
+		t.Error("Metadata not updated")
+	}
+
+	g.AddMetadata(n, "Value", "Value1")
+	v, _ = n.GetFieldString("Value")
+	if v != "Value1" {
+		t.Error("Metadata not updated")
+	}
+
+	g.SetMetadata(n, Metadata{"Temp": 35})
+	_, err := n.GetFieldString("Value")
+	if err == nil {
+		t.Error("Metadata should be removed")
+	}
+	i, err := n.GetFieldInt64("Temp")
+	if err != nil || i != 35 {
+		t.Error("Metadata not updated")
+	}
+}
+
+func TestMetadataTransaction(t *testing.T) {
+	g := newGraph(t)
+
+	n, _ := g.NewNode(GenID(), Metadata{"Type": "intf", "Section": []string{"A1", "A2"}})
+	g.AddMetadata(n, "Label.List1", "EL1")
+	g.AddMetadata(n, "Label.List2", "EL2")
+
+	tr := g.StartMetadataTransaction(n)
+	tr.AddMetadata("Name", "test123")
+
+	if _, ok := n.Metadata["Name"]; ok {
+		t.Error("Name field should not be in the node metadata until commit")
+	}
+
+	tr.AddMetadata("Section", []string{"B1"})
+	tr.AddMetadata("Label.List3", "EL3")
+
+	if _, err := n.GetFieldString("Label.List3"); err == nil {
+		t.Errorf("Element shouldn't be present: %+v", n)
+	}
+
+	tr.Commit()
+
+	if len(n.Metadata["Section"].([]string)) != 1 {
+		t.Errorf("Should only have one element, found: %+v\n", n.Metadata["Section"])
+	}
+
+	if _, err := n.GetFieldString("Label.List1"); err != nil {
+		t.Errorf("Element should be present: %+v", n)
+	}
+
+	if _, err := n.GetFieldString("Label.List3"); err != nil {
+		t.Errorf("Element should be present: %+v", n)
+	}
+}
+
+type FakeListener struct {
+	lastNodeUpdated *Node
+	lastNodeAdded   *Node
+	lastNodeDeleted *Node
+	lastEdgeUpdated *Edge
+	lastEdgeAdded   *Edge
+	lastEdgeDeleted *Edge
+}
+
+func (c *FakeListener) OnNodeUpdated(n *Node, ops []PartiallyUpdatedOp) {
+	c.lastNodeUpdated = n
+}
+
+func (c *FakeListener) OnNodeAdded(n *Node) {
+	c.lastNodeAdded = n
+}
+
+func (c *FakeListener) OnNodeDeleted(n *Node) {
+	c.lastNodeDeleted = n
+}
+
+func (c *FakeListener) OnEdgeUpdated(e *Edge, ops []PartiallyUpdatedOp) {
+	c.lastEdgeUpdated = e
+}
+
+func (c *FakeListener) OnEdgeAdded(e *Edge) {
+	c.lastEdgeAdded = e
+}
+
+func (c *FakeListener) OnEdgeDeleted(e *Edge) {
+	c.lastEdgeDeleted = e
+}
+
+func TestEvents(t *testing.T) {
+	g := newGraph(t)
+
+	l := &FakeListener{}
+	g.AddEventListener(l)
+
+	n1, _ := g.NewNode(GenID(), Metadata{"Value": 1, "Type": "intf"})
+	if l.lastNodeAdded.ID != n1.ID {
+		t.Error("Didn't get the notification")
+	}
+
+	n2, _ := g.NewNode(GenID(), Metadata{"Value": 2, "Type": "intf"})
+	if l.lastNodeAdded.ID != n2.ID {
+		t.Error("Didn't get the notification")
+	}
+
+	e, _ := g.NewEdge(GenID(), n1, n2, nil)
+	if l.lastEdgeAdded.ID != e.ID {
+		t.Error("Didn't get the notification")
+	}
+
+	g.AddMetadata(n1, "Name", "Node1")
+	if l.lastNodeUpdated.ID != n1.ID {
+		t.Error("Didn't get the notification")
+	}
+
+	g.Unlink(n1, n2)
+	if l.lastEdgeDeleted.ID != e.ID {
+		t.Error("Didn't get the notification")
+	}
+
+	g.DelNode(n2)
+	if l.lastNodeDeleted.ID != n2.ID {
+		t.Error("Didn't get the notification")
+	}
+}
+
+func TestNodeCopy(t *testing.T) {
+	n := &Node{
+		graphElement: graphElement{
+			ID:        Identifier("id"),
+			Host:      "Host",
+			Origin:    "Origin",
+			CreatedAt: Time(time.Unix(100, 0)),
+			UpdatedAt: Time(time.Unix(200, 0)),
+			DeletedAt: Time(time.Unix(300, 0)),
+			Revision:  1,
+			Metadata:  Metadata{"foo": "bar"},
+		},
+	}
+
+	cn := n.Copy()
+	assert.Equal(t, n, cn)
+
+	// Check that modifications in the copied node do not affect the origin node
+	ok := cn.Metadata.SetField("new", "value")
+	assert.Truef(t, ok, "copied node set metadata")
+	assert.NotEqualf(t, n, cn, "Metadata")
+
+	cn.Host = "modified"
+	assert.NotEqualf(t, n, cn, "Host")
+
+	cn.Origin = "modified"
+	assert.NotEqualf(t, n, cn, "Origin")
+
+	cn.Revision = 99
+	assert.NotEqualf(t, n, cn, "Revision")
+
+	cn.CreatedAt = Time(time.Unix(100, 99))
+	assert.NotEqualf(t, n, cn, "CreatedAt")
+
+	cn.UpdatedAt = Time(time.Unix(200, 99))
+	assert.NotEqualf(t, n, cn, "UpdatedAt")
+
+	cn.DeletedAt = Time(time.Unix(300, 99))
+	assert.NotEqualf(t, n, cn, "DeletedAt")
+}
+
+type FakeRecursiveListener1 struct {
+	DefaultGraphListener
+	graph *Graph
+}
+
+type FakeRecursiveListener2 struct {
+	DefaultGraphListener
+	events []*Node
+}
+
+func (f *FakeRecursiveListener1) OnNodeAdded(n *Node) {
+	f.graph.NewNode(GenID(), Metadata{"Value": 2})
+}
+
+func (f *FakeRecursiveListener2) OnNodeAdded(n *Node) {
+	f.events = append(f.events, n)
+}
+
+func TestRecursiveEvents(t *testing.T) {
+	g := newGraph(t)
+
+	l1 := &FakeRecursiveListener1{graph: g}
+	g.AddEventListener(l1)
+
+	l2 := &FakeRecursiveListener2{}
+	g.AddEventListener(l2)
+
+	g.NewNode(GenID(), Metadata{"Value": 1})
+
+	ev1, _ := l2.events[0].GetFieldInt64("Value")
+	ev2, _ := l2.events[1].GetFieldInt64("Value")
+
+	// check if the notification are in the right order
+	if ev1 != 1 || ev2 != 2 {
+		t.Error("Events are not in the right order")
+	}
+}
+
+type edgeGeneratorLinker struct {
+	parent               *Node
+	child                *Node
+	numberEdgesGenerated int
+}
+
+func (l *edgeGeneratorLinker) GetBALinks(nodeConnection *Node) (edges []*Edge) {
+	return []*Edge{}
+}
+
+func (l *edgeGeneratorLinker) GetABLinks(nodeConnection *Node) (edges []*Edge) {
+	edges = []*Edge{}
+	for i := 0; i < l.numberEdgesGenerated; i++ {
+		edges = append(
+			edges,
+			CreateEdge(Identifier(fmt.Sprint(i)), l.parent, l.child, Metadata{"f": 1}, Time(time.Unix(100, 0)), "", ""),
+		)
+	}
+	return edges
+}
+
+// TestNotifyEventChannelExhaustion
+func TestNotifyEventChannelExhaustion(t *testing.T) {
+	parentNode := CreateNode(Identifier("parent"), Metadata{"host": "parent"}, Time(time.Unix(100, 0)), "", "")
+	childNode := CreateNode(Identifier("child"), Metadata{"host": "child"}, Time(time.Unix(100, 0)), "", "")
+
+	nullHasher := func(n *Node) map[string]interface{} {
+		return map[string]interface{}{}
+	}
+
+	t.Run("channel not exhausted", func(t *testing.T) {
+		g := newGraph(t)
+
+		err := g.AddNode(parentNode)
+		if err != nil {
+			t.Errorf("adding parent node")
+		}
+		err = g.AddNode(childNode)
+		if err != nil {
+			t.Errorf("adding parent node")
+		}
+
+		rl := NewResourceLinker(
+			g,
+			[]ListenerHandler{
+				NewIndexer(g, g, nullHasher, false)},
+			nil,
+			&edgeGeneratorLinker{
+				parent:               parentNode,
+				child:                childNode,
+				numberEdgesGenerated: maxEvents,
+			},
+			nil,
+		)
+
+		rl.Start()
+		g.AddEventListener(rl.abListener)
+
+		g.NewNode(GenID(), Metadata{"Value": 1})
+
+		if len(g.GetEdges(nil)) != maxEvents {
+			t.Errorf("linker was unable to generate edges")
+		}
+	})
+
+	t.Run("channel exhausted", func(t *testing.T) {
+		g := newGraph(t)
+
+		err := g.AddNode(parentNode)
+		if err != nil {
+			t.Errorf("adding parent node")
+		}
+		err = g.AddNode(childNode)
+		if err != nil {
+			t.Errorf("adding parent node")
+		}
+
+		rl := NewResourceLinker(
+			g,
+			[]ListenerHandler{
+				NewIndexer(g, g, nullHasher, false)},
+			nil,
+			&edgeGeneratorLinker{
+				parent:               parentNode,
+				child:                childNode,
+				numberEdgesGenerated: maxEvents + 1,
+			},
+			nil,
+		)
+
+		rl.Start()
+		g.AddEventListener(rl.abListener)
+
+		done := make(chan struct{})
+		go func() {
+			g.NewNode(GenID(), Metadata{"Value": 1})
+			close(done)
+		}()
+
+		select {
+		case <-done:
+		case <-time.After(1 * time.Second):
+			t.Errorf("g.NewNode was unable to finish")
+		}
+		if len(g.GetEdges(nil)) != maxEvents+1 {
+			t.Errorf("linker was unable to generate edges")
+		}
+	})
+}
