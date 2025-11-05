@@ -1,0 +1,79 @@
+package graph
+
+import (
+	"github.com/skydive-project/skydive/graffiti/filters"
+	"github.com/skydive-project/skydive/graffiti/getter"
+)
+
+// ElementMatcher defines an interface used to match an element
+type ElementMatcher interface {
+	Match(g getter.Getter) bool
+	Filter() (*filters.Filter, error)
+}
+
+// ElementFilter implements ElementMatcher interface based on filter
+type ElementFilter struct {
+	filter *filters.Filter
+}
+
+// Match returns true if the given element matches the filter.
+func (mf *ElementFilter) Match(g getter.Getter) bool {
+	return mf.filter.Eval(g)
+}
+
+// Filter returns the filter
+func (mf *ElementFilter) Filter() (*filters.Filter, error) {
+	return mf.filter, nil
+}
+
+// NewElementFilter returns a new ElementFilter
+func NewElementFilter(f *filters.Filter) *ElementFilter {
+	return &ElementFilter{filter: f}
+}
+
+// NewFilterForEdge creates a filter based on parent or child
+func NewFilterForEdge(parent Identifier, child Identifier) *filters.Filter {
+	return filters.NewOrFilter(
+		filters.NewTermStringFilter("Parent", string(parent)),
+		filters.NewTermStringFilter("Child", string(child)),
+	)
+}
+
+// TimeSlice defines a time boudary values
+type TimeSlice struct {
+	Start int64 `json:"Start"`
+	Last  int64 `json:"Last"`
+}
+
+// NewTimeSlice creates a new TimeSlice based on Start and Last
+func NewTimeSlice(s, l int64) *TimeSlice {
+	return &TimeSlice{Start: s, Last: l}
+}
+
+// filterForTimeSlice creates a filter based on a time slice between
+// startName and endName. time.Now() is used as reference if t == nil
+func filterForTimeSlice(t *TimeSlice, startName, endName string) *filters.Filter {
+	if t == nil {
+		now := TimeNow().UnixMilli()
+		t = NewTimeSlice(now, now)
+	}
+
+	return filters.NewAndFilter(
+		filters.NewLteInt64Filter(startName, t.Last),
+		filters.NewOrFilter(
+			filters.NewNullFilter(endName),
+			filters.NewGteInt64Filter(endName, t.Start),
+		),
+	)
+}
+
+func getTimeFilter(t *TimeSlice) *filters.Filter {
+	if t == nil {
+		return filters.NewNullFilter("ArchivedAt")
+	}
+
+	return filters.NewAndFilter(
+		filterForTimeSlice(t, "CreatedAt", "DeletedAt"),
+		filterForTimeSlice(t, "UpdatedAt", "ArchivedAt"),
+	)
+}
