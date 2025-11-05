@@ -335,3 +335,226 @@ func GenID(s ...string) Identifier {
 
 	return Identifier(uuid.NewV4().String())
 }
+
+func (e *graphElement) GetFieldBool(field string) (_ bool, err error) {
+	return e.Metadata.GetFieldBool(strings.TrimPrefix(field, MetadataPrefix))
+}
+
+func (e *graphElement) GetFieldInt64(field string) (_ int64, err error) {
+	switch field {
+	case "@CreatedAt":
+		return e.CreatedAt.UnixMilli(), nil
+	case "@UpdatedAt":
+		return e.UpdatedAt.UnixMilli(), nil
+	case "@DeletedAt":
+		return e.DeletedAt.UnixMilli(), nil
+	case "@Revision":
+		return e.Revision, nil
+	default:
+		return e.Metadata.GetFieldInt64(strings.TrimPrefix(field, MetadataPrefix))
+	}
+}
+
+func (e *graphElement) GetFieldString(field string) (_ string, err error) {
+	switch field {
+	case "@ID":
+		return string(e.ID), nil
+	case "@Host":
+		return e.Host, nil
+	case "@Origin":
+		return e.Origin, nil
+	default:
+		return e.Metadata.GetFieldString(strings.TrimPrefix(field, MetadataPrefix))
+	}
+}
+
+func (e *graphElement) GetField(field string) (interface{}, error) {
+	if i, err := e.GetFieldInt64(field); err == nil {
+		return i, nil
+	}
+
+	if s, err := e.GetFieldString(field); err == nil {
+		return s, nil
+	}
+
+	return e.Metadata.GetField(strings.TrimPrefix(field, MetadataPrefix))
+}
+
+func (e *graphElement) GetFields(names []string) (interface{}, error) {
+	values := make(map[string]interface{})
+
+	for _, name := range names {
+		if v, err := e.GetField(name); err == nil {
+			values[name] = v
+		}
+	}
+
+	if len(values) == 0 {
+		return nil, getter.ErrFieldNotFound
+	}
+
+	return values, nil
+}
+
+var graphElementKeys = map[string]bool{"@ID": false, "@Host": false, "@Origin": false, "@CreatedAt": false, "@UpdatedAt": false, "@DeletedAt": false, "@Revision": false}
+
+func (e *graphElement) GetFieldKeys() []string {
+	keys := make([]string, len(graphElementKeys))
+	i := 0
+	for key := range graphElementKeys {
+		keys[i] = key
+		i++
+	}
+	return append(keys, e.Metadata.GetFieldKeys()...)
+}
+
+func (e *graphElement) MatchBool(field string, predicate getter.BoolPredicate) bool {
+	if index := strings.Index(field, "."); index != -1 {
+		first := field[index+1:]
+		if v, found := e.Metadata[first]; found {
+			if getter, found := v.(getter.Getter); found {
+				return getter.MatchBool(field[index+1:], predicate)
+			}
+		}
+	}
+
+	field = strings.TrimPrefix(field, MetadataPrefix)
+
+	return e.Metadata.MatchBool(field, predicate)
+}
+
+func (e *graphElement) MatchInt64(field string, predicate getter.Int64Predicate) bool {
+	if _, found := graphElementKeys[field]; found {
+		if n, err := e.GetFieldInt64(field); err == nil {
+			return predicate(n)
+		}
+	}
+
+	field = strings.TrimPrefix(field, MetadataPrefix)
+
+	if index := strings.Index(field, "."); index != -1 {
+		first := field[index+1:]
+		if v, found := e.Metadata[first]; found {
+			if getter, found := v.(getter.Getter); found {
+				return getter.MatchInt64(field[index+1:], predicate)
+			}
+		}
+	}
+
+	return e.Metadata.MatchInt64(field, predicate)
+}
+
+func (e *graphElement) MatchString(field string, predicate getter.StringPredicate) bool {
+	if _, found := graphElementKeys[field]; found {
+		if s, err := e.GetFieldString(field); err == nil {
+			return predicate(s)
+		}
+	}
+
+	field = strings.TrimPrefix(field, MetadataPrefix)
+
+	if index := strings.Index(field, "."); index != -1 {
+		first := field[index+1:]
+		if v, found := e.Metadata[first]; found {
+			if getter, found := v.(getter.Getter); found {
+				return getter.MatchString(field[index+1:], predicate)
+			}
+		}
+	}
+
+	return e.Metadata.MatchString(field, predicate)
+}
+
+func (e *graphElement) GetFieldStringList(key string) ([]string, error) {
+	value, err := e.GetField(key)
+	if err != nil {
+		return nil, err
+	}
+
+	switch value := value.(type) {
+	case []interface{}:
+		var strings []string
+		for _, s := range value {
+			if s, ok := s.(string); ok {
+				strings = append(strings, s)
+			} else {
+				return nil, errors.New("one array entry could not be converted to string")
+			}
+		}
+		return strings, nil
+	case []string:
+		return value, nil
+	default:
+		return nil, getter.ErrFieldNotFound
+	}
+}
+
+// MatchMetadata returns whether a graph element matches with the provided filter or metadata
+func (e *graphElement) MatchMetadata(f ElementMatcher) bool {
+	if f == nil {
+		return true
+	}
+	return f.Match(e)
+}
+
+func normalizeNumbers(raw interface{}) interface{} {
+	switch t := raw.(type) {
+	case float64:
+		// float equal to its int version then convert it to int64
+		i := int64(t)
+		if float64(i) == t {
+			return i
+		}
+	case []interface{}:
+		for i, obj := range t {
+			t[i] = normalizeNumbers(obj)
+		}
+	case map[string]interface{}:
+		for k, v := range t {
+			t[k] = normalizeNumbers(v)
+		}
+		return t
+	}
+	return raw
+}
+
+// normalize the graph element after partial deserialization
+func (e *graphElement) normalize(metadata map[string]json.RawMessage, decoders map[string]MetadataDecoder) error {
+	// sanity checks
+	if e.ID == "" {
+		return errors.New("No ID found for graph element")
+	}
+
+	e.Metadata = make(Metadata)
+
+	if e.CreatedAt.IsZero() {
+		e.CreatedAt = TimeUTC()
+	}
+	if e.UpdatedAt.IsZero() {
+		e.UpdatedAt = TimeUTC()
+	}
+
+	for k, r := range metadata {
+		if len(r) == 0 {
+			continue
+		}
+
+		if decoder, ok := decoders[k]; ok {
+			v, err := decoder(r)
+			if err != nil {
+				return err
+			}
+			e.Metadata[k] = v
+			continue
+		}
+
+		var i interface{}
+		if err := json.Unmarshal(r, &i); err != nil {
+			return err
+		}
+
+		e.Metadata[k] = normalizeNumbers(i)
+	}
+
+	return nil
+}
