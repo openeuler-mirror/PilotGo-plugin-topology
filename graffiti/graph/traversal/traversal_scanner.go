@@ -1,0 +1,260 @@
+package traversal
+
+import (
+	"bufio"
+	"bytes"
+	"io"
+	"strings"
+)
+
+// GremlinTraversalScanner describes a buffer scanner for Gremlin expression extension
+type GremlinTraversalScanner struct {
+	reader     *bufio.Reader
+	extensions []GremlinTraversalExtension
+}
+
+// NewGremlinTraversalScanner creates a new Gremlin expression scanner
+func NewGremlinTraversalScanner(r io.Reader, e []GremlinTraversalExtension) *GremlinTraversalScanner {
+	return &GremlinTraversalScanner{
+		reader:     bufio.NewReader(r),
+		extensions: e,
+	}
+}
+
+// Scan and returns tokens
+func (s *GremlinTraversalScanner) Scan() (tok Token, lit string) {
+	ch := s.read()
+
+	if isWhitespace(ch) {
+		return s.scanWhitespace()
+	} else if isDigit(ch) {
+		s.unread()
+		return s.scanNumber()
+	} else if isString(ch) {
+		return s.scanString()
+	} else if isLetter(ch) {
+		s.unread()
+		return s.scanIdent()
+	}
+
+	switch ch {
+	case eof:
+		return EOF, ""
+	case '(':
+		return LEFTPARENTHESIS, string(ch)
+	case ')':
+		return RIGHTPARENTHESIS, string(ch)
+	case ',':
+		return COMMA, string(ch)
+	case '.':
+		return DOT, string(ch)
+	}
+
+	return ILLEGAL, string(ch)
+}
+
+func (s *GremlinTraversalScanner) scanWhitespace() (tok Token, lit string) {
+	var buf bytes.Buffer
+
+	for {
+		if ch := s.read(); ch == eof {
+			break
+		} else if !isWhitespace(ch) {
+			s.unread()
+			break
+		} else {
+			buf.WriteRune(ch)
+		}
+	}
+
+	return WS, buf.String()
+}
+
+func (s *GremlinTraversalScanner) scanNumber() (tok Token, lit string) {
+	var buf bytes.Buffer
+	buf.WriteRune(s.read())
+
+	for {
+		if ch := s.read(); isLetter(ch) {
+			return ILLEGAL, string(ch)
+		} else if ch == eof || (!isDigit(ch) && ch != '.') {
+			s.unread()
+			break
+		} else {
+			_, _ = buf.WriteRune(ch)
+		}
+	}
+
+	return NUMBER, buf.String()
+}
+
+func (s *GremlinTraversalScanner) scanString() (tok Token, lit string) {
+	var buf bytes.Buffer
+
+	for {
+		if ch := s.read(); ch == '"' || ch == '\'' || ch == eof {
+			break
+		} else {
+			_, _ = buf.WriteRune(ch)
+		}
+	}
+
+	return STRING, buf.String()
+}
+
+func (s *GremlinTraversalScanner) scanIdent() (tok Token, lit string) {
+	var buf bytes.Buffer
+	buf.WriteRune(s.read())
+
+	for {
+		if ch := s.read(); ch == eof {
+			break
+		} else if !isLetter(ch) && !isDigit(ch) && ch != '_' {
+			s.unread()
+			break
+		} else {
+			_, _ = buf.WriteRune(ch)
+		}
+	}
+
+	us := strings.ToUpper(buf.String())
+
+	switch us {
+	case "G":
+		return G, buf.String()
+	case "V":
+		return V, buf.String()
+	case "E":
+		return E, buf.String()
+	case "HAS":
+		return HAS, buf.String()
+	case "HASKEY":
+		return HASKEY, buf.String()
+	case "HASNOT":
+		return HASNOT, buf.String()
+	case "HASEITHER":
+		return HASEITHER, buf.String()
+	case "OUT":
+		return OUT, buf.String()
+	case "IN":
+		return IN, buf.String()
+	case "OUTV":
+		return OUTV, buf.String()
+	case "INV":
+		return INV, buf.String()
+	case "BOTHV":
+		return BOTHV, buf.String()
+	case "OUTE":
+		return OUTE, buf.String()
+	case "INE":
+		return INE, buf.String()
+	case "BOTHE":
+		return BOTHE, buf.String()
+	case "WITHIN":
+		return WITHIN, buf.String()
+	case "WITHOUT":
+		return WITHOUT, buf.String()
+	case "DEDUP":
+		return DEDUP, buf.String()
+	case "METADATA":
+		return METADATA, buf.String()
+	case "SHORTESTPATHTO":
+		return SHORTESTPATHTO, buf.String()
+	case "NE":
+		return NE, buf.String()
+	case "NEE":
+		return NEE, buf.String()
+	case "BOTH":
+		return BOTH, buf.String()
+	case "CONTEXT", "AT":
+		return CONTEXT, buf.String()
+	case "REGEX":
+		return REGEX, buf.String()
+	case "LT":
+		return LT, buf.String()
+	case "GT":
+		return GT, buf.String()
+	case "LTE":
+		return LTE, buf.String()
+	case "GTE":
+		return GTE, buf.String()
+	case "INSIDE":
+		return INSIDE, buf.String()
+	case "BETWEEN":
+		return BETWEEN, buf.String()
+	case "COUNT":
+		return COUNT, buf.String()
+	case "RANGE":
+		return RANGE, buf.String()
+	case "LIMIT":
+		return LIMIT, buf.String()
+	case "SORT":
+		return SORT, buf.String()
+	case "VALUES":
+		return VALUES, buf.String()
+	case "VALUEMAP":
+		return VALUEMAP, buf.String()
+	case "KEYS":
+		return KEYS, buf.String()
+	case "SUM":
+		return SUM, buf.String()
+	case "ASC":
+		return ASC, buf.String()
+	case "DESC":
+		return DESC, buf.String()
+	case "IPV4RANGE":
+		return IPV4RANGE, buf.String()
+	case "SUBGRAPH":
+		return SUBGRAPH, buf.String()
+	case "FOREVER":
+		return FOREVER, buf.String()
+	case "NOW":
+		return NOW, buf.String()
+	case "AS":
+		return AS, buf.String()
+	case "SELECT":
+		return SELECT, buf.String()
+	case "TRUE":
+		return TRUE, buf.String()
+	case "FALSE":
+		return FALSE, buf.String()
+	}
+
+	for _, e := range s.extensions {
+		if t, ok := e.ScanIdent(us); ok {
+			return t, buf.String()
+		}
+	}
+
+	return IDENT, buf.String()
+}
+
+func (s *GremlinTraversalScanner) read() rune {
+	ch, _, err := s.reader.ReadRune()
+	if err != nil {
+		return eof
+	}
+	return ch
+}
+
+func (s *GremlinTraversalScanner) unread() {
+	s.reader.UnreadRune()
+}
+
+func isString(ch rune) bool {
+	return ch == '"' || ch == '\''
+}
+
+func isWhitespace(ch rune) bool {
+	return ch == ' ' || ch == '\t' || ch == '\n'
+}
+
+func isLetter(ch rune) bool {
+	return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z')
+}
+
+func isDigit(ch rune) bool {
+	return (ch >= '0' && ch <= '9')
+}
+
+var eof = rune(0)
