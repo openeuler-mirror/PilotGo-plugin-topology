@@ -1,0 +1,141 @@
+//go:generate sh -c "go run github.com/gomatic/renderizer --name=node --resource=node --type=Node --title=Node --article=a ../../../api/server/swagger_operations.tmpl > node_swagger.go"
+//go:generate sh -c "go run github.com/gomatic/renderizer --name=node --resource=node --type=Node --title=Node ../../../api/server/swagger_definitions.tmpl > node_swagger.json"
+
+package server
+
+import (
+	"time"
+
+	"github.com/skydive-project/skydive/graffiti/api/rest"
+	"github.com/skydive-project/skydive/graffiti/api/types"
+	"github.com/skydive-project/skydive/graffiti/graph"
+	shttp "github.com/skydive-project/skydive/graffiti/http"
+)
+
+const apiOrigin = "api"
+
+// NodeResourceHandler aims to creates and manage a new Alert.
+type NodeResourceHandler struct {
+	rest.ResourceHandler
+}
+
+// NodeAPIHandler aims to exposes the Alert API.
+type NodeAPIHandler struct {
+	g *graph.Graph
+}
+
+// New creates a new node
+func (h *NodeAPIHandler) New() rest.Resource {
+	return &types.Node{Node: new(graph.Node)}
+}
+
+// Name returns resource name "node"
+func (h *NodeAPIHandler) Name() string {
+	return "node"
+}
+
+// Index returns the list of existing nodes
+func (h *NodeAPIHandler) Index() map[string]rest.Resource {
+	h.g.RLock()
+	nodes := h.g.GetNodes(nil)
+	nodeMap := make(map[string]rest.Resource, len(nodes))
+	for _, node := range nodes {
+		n := types.Node{Node: node}
+		nodeMap[string(node.ID)] = &n
+	}
+	h.g.RUnlock()
+	return nodeMap
+}
+
+// Get returns a node with the specified id
+func (h *NodeAPIHandler) Get(id string) (rest.Resource, bool) {
+	h.g.RLock()
+	defer h.g.RUnlock()
+
+	n := h.g.GetNode(graph.Identifier(id))
+	if n == nil {
+		return nil, false
+	}
+	return &types.Node{Node: n}, true
+}
+
+// Decorate the specified node
+func (h *NodeAPIHandler) Decorate(resource rest.Resource) {
+}
+
+// Create adds the specified node to the graph
+func (h *NodeAPIHandler) Create(resource rest.Resource, createOpts *rest.CreateOptions) error {
+	node := resource.(*types.Node)
+	graphNode := node.Node
+	if graphNode.CreatedAt.IsZero() {
+		graphNode.CreatedAt = graph.Time(time.Now())
+	}
+	if graphNode.UpdatedAt.IsZero() {
+		graphNode.UpdatedAt = graphNode.CreatedAt
+	}
+	if graphNode.Origin == "" {
+		graphNode.Origin = graph.Origin(h.g.GetHost(), apiOrigin)
+	}
+	if graphNode.Metadata == nil {
+		graphNode.Metadata = graph.Metadata{}
+	}
+
+	h.g.Lock()
+	err := h.g.AddNode(graphNode)
+	h.g.Unlock()
+	return err
+}
+
+// Delete the node with the specified id from the graph
+func (h *NodeAPIHandler) Delete(id string) error {
+	h.g.Lock()
+	defer h.g.Unlock()
+
+	node := h.g.GetNode(graph.Identifier(id))
+	if node == nil {
+		return rest.ErrNotFound
+	}
+
+	return h.g.DelNode(node)
+}
+
+// Update a node metadata
+func (h *NodeAPIHandler) Update(id string, resource rest.Resource) (rest.Resource, bool, error) {
+	h.g.Lock()
+	defer h.g.Unlock()
+
+	// Current node, to be updated
+	n := h.g.GetNode(graph.Identifier(id))
+	if n == nil {
+		return nil, false, rest.ErrNotFound
+	}
+
+	// Node containing the metadata updated
+	patchedNode := resource.(*types.Node)
+
+	// Do not modify/replace Metadata.(TID|Name|Type), use actual node values
+	if actualTID, _ := n.Metadata.GetFieldString("TID"); actualTID != "" {
+		patchedNode.Metadata.SetField("TID", actualTID)
+	}
+	actualName, _ := n.Metadata.GetFieldString("Name")
+	patchedNode.Metadata.SetField("Name", actualName)
+	actualType, _ := n.Metadata.GetFieldString("Type")
+	patchedNode.Metadata.SetField("Type", actualType)
+
+	// Update actual node Metadata with new patched node
+	previousRevision := n.Revision
+	if err := h.g.SetMetadata(n, patchedNode.Metadata); err != nil {
+		return nil, false, err
+	}
+
+	return &types.Node{Node: n}, n.Revision != previousRevision, nil
+}
+
+// RegisterNodeAPI registers the node API
+func RegisterNodeAPI(apiServer *Server, g *graph.Graph, authBackend shttp.AuthenticationBackend) *NodeAPIHandler {
+	nodeAPIHandler := &NodeAPIHandler{
+		g: g,
+	}
+	apiServer.RegisterAPIHandler(nodeAPIHandler, authBackend)
+	return nodeAPIHandler
+}
