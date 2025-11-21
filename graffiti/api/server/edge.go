@@ -1,0 +1,128 @@
+//go:generate sh -c "go run github.com/gomatic/renderizer --name=edge --resource=edge --type=Edge --title=Edge --article=a ../../../api/server/swagger_operations.tmpl > edge_swagger.go"
+//go:generate sh -c "go run github.com/gomatic/renderizer --name=edge --resource=edge --type=Edge --title=Edge ../../../api/server/swagger_definitions.tmpl > edge_swagger.json"
+
+package server
+
+import (
+	"time"
+
+	"github.com/skydive-project/skydive/graffiti/api/rest"
+	"github.com/skydive-project/skydive/graffiti/api/types"
+	"github.com/skydive-project/skydive/graffiti/graph"
+	shttp "github.com/skydive-project/skydive/graffiti/http"
+)
+
+// EdgeResourceHandler aims to creates and manage a new Alert.
+type EdgeResourceHandler struct {
+	rest.ResourceHandler
+}
+
+// EdgeAPIHandler aims to exposes the Alert API.
+type EdgeAPIHandler struct {
+	g *graph.Graph
+}
+
+// New creates a new edge
+func (h *EdgeAPIHandler) New() rest.Resource {
+	return &types.Edge{Edge: new(graph.Edge)}
+}
+
+// Name returns resource name "edge"
+func (h *EdgeAPIHandler) Name() string {
+	return "edge"
+}
+
+// Index returns the list of existing edges
+func (h *EdgeAPIHandler) Index() map[string]rest.Resource {
+	h.g.RLock()
+	edges := h.g.GetEdges(nil)
+	edgeMap := make(map[string]rest.Resource, len(edges))
+	for _, edge := range edges {
+		e := &types.Edge{Edge: edge}
+		edgeMap[string(edge.ID)] = e
+	}
+	h.g.RUnlock()
+	return edgeMap
+}
+
+// Get returns a edge with the specified id
+func (h *EdgeAPIHandler) Get(id string) (rest.Resource, bool) {
+	h.g.RLock()
+	defer h.g.RUnlock()
+
+	e := h.g.GetEdge(graph.Identifier(id))
+	if e == nil {
+		return nil, false
+	}
+	return &types.Edge{Edge: e}, true
+}
+
+// Decorate the specified edge
+func (h *EdgeAPIHandler) Decorate(resource rest.Resource) {
+}
+
+// Create adds the specified edge to the graph
+func (h *EdgeAPIHandler) Create(resource rest.Resource, createOpts *rest.CreateOptions) error {
+	edge := resource.(*types.Edge)
+	graphEdge := edge.Edge
+	if graphEdge.CreatedAt.IsZero() {
+		graphEdge.CreatedAt = graph.Time(time.Now())
+	}
+	if graphEdge.UpdatedAt.IsZero() {
+		graphEdge.UpdatedAt = graphEdge.CreatedAt
+	}
+	if graphEdge.Origin == "" {
+		graphEdge.Origin = graph.Origin(h.g.GetHost(), apiOrigin)
+	}
+	if graphEdge.Metadata == nil {
+		graphEdge.Metadata = graph.Metadata{}
+	}
+
+	h.g.Lock()
+	err := h.g.AddEdge(graphEdge)
+	h.g.Unlock()
+	return err
+}
+
+// Delete the edge with the specified id from the graph
+func (h *EdgeAPIHandler) Delete(id string) error {
+	h.g.RLock()
+	defer h.g.RUnlock()
+
+	edge := h.g.GetEdge(graph.Identifier(id))
+	if edge == nil {
+		return rest.ErrNotFound
+	}
+
+	return h.g.DelEdge(edge)
+}
+
+// Update a edge metadata
+func (h *EdgeAPIHandler) Update(id string, resource rest.Resource) (rest.Resource, bool, error) {
+	h.g.Lock()
+	defer h.g.Unlock()
+
+	e := h.g.GetEdge(graph.Identifier(id))
+	if e == nil {
+		return nil, false, rest.ErrNotFound
+	}
+
+	// Edge containing the metadata updated
+	updateData := resource.(*types.Edge)
+
+	previousRevision := e.Revision
+	if err := h.g.SetMetadata(e, updateData.Metadata); err != nil {
+		return nil, false, err
+	}
+
+	return &types.Edge{Edge: e}, e.Revision != previousRevision, nil
+}
+
+// RegisterEdgeAPI registers the edge API
+func RegisterEdgeAPI(apiServer *Server, g *graph.Graph, authBackend shttp.AuthenticationBackend) *EdgeAPIHandler {
+	edgeAPIHandler := &EdgeAPIHandler{
+		g: g,
+	}
+	apiServer.RegisterAPIHandler(edgeAPIHandler, authBackend)
+	return edgeAPIHandler
+}
