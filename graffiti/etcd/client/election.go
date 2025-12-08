@@ -161,3 +161,42 @@ func (le *MasterElector) start(first chan struct{}) {
 	// unlock before leaving so that another can take the lead
 	le.EtcdKeyAPI.Delete(context.Background(), le.path, &etcd.DeleteOptions{PrevValue: le.HolderID})
 }
+
+// Start the master election mechanism
+func (le *MasterElector) Start() {
+	go le.start(nil)
+}
+
+// StartAndWait starts the election mechanism and wait for the first election
+// before returning
+func (le *MasterElector) StartAndWait() {
+	first := make(chan struct{})
+	defer close(first)
+
+	go le.start(first)
+	<-first
+}
+
+// Stop the election mechanism
+func (le *MasterElector) Stop() {
+	if le.state.CompareAndSwap(service.RunningState, service.StoppingState) {
+		le.cancel()
+		le.wg.Wait()
+	}
+}
+
+// AddEventListener registers a new listener
+func (le *MasterElector) AddEventListener(listener MasterElectionListener) {
+	le.listeners = append(le.listeners, listener)
+}
+
+// NewMasterElector creates a new ETCD master elector
+func NewMasterElector(etcdClient *Client, path string) *MasterElector {
+	return &MasterElector{
+		EtcdKeyAPI: etcdClient.KeysAPI,
+		HolderID:   etcdClient.id,
+		path:       path,
+		master:     false,
+		logger:     etcdClient.logger,
+	}
+}
