@@ -60,3 +60,104 @@ func (le *MasterElector) holdLock(quit chan bool) {
 		}
 	}
 }
+
+// IsMaster returns true if the current instance is master
+func (le *MasterElector) IsMaster() bool {
+	le.RLock()
+	defer le.RUnlock()
+
+	return le.master
+}
+
+// start starts the election process and send something to the chan when the first
+// election is done
+func (le *MasterElector) start(first chan struct{}) {
+	// delete previous Lock
+	le.EtcdKeyAPI.Delete(context.Background(), le.path, &etcd.DeleteOptions{PrevValue: le.HolderID})
+
+	quit := make(chan bool)
+
+	// try to get the lock
+	setOptions := &etcd.SetOptions{
+		TTL:       timeout,
+		PrevExist: etcd.PrevNoExist,
+	}
+
+	if _, err := le.EtcdKeyAPI.Set(context.Background(), le.path, le.HolderID, setOptions); err == nil {
+		le.logger.Infof("starting as the master for %s: %s", le.path, le.HolderID)
+
+		le.Lock()
+		le.master = true
+		le.Unlock()
+
+		go le.holdLock(quit)
+
+		for _, listener := range le.listeners {
+			listener.OnStartAsMaster()
+		}
+	} else {
+		le.logger.Infof("starting as a follower for %s: %s", le.path, le.HolderID)
+		for _, listener := range le.listeners {
+			listener.OnStartAsSlave()
+		}
+	}
+
+	if first != nil {
+		first <- struct{}{}
+	}
+
+	// now watch for changes
+	watcher := le.EtcdKeyAPI.Watcher(le.path, &etcd.WatcherOptions{})
+
+	ctx, cancel := context.WithCancel(context.Background())
+	le.cancel = cancel
+
+	le.wg.Add(1)
+	defer le.wg.Done()
+
+	le.state.Store(service.RunningState)
+	for le.state.Load() == service.RunningState {
+		resp, err := watcher.Next(ctx)
+		if err != nil {
+			if err == context.Canceled {
+				break
+			}
+
+			le.logger.Errorf("Error while watching etcd: %s", err.Error())
+
+			time.Sleep(1 * time.Second)
+			continue
+		}
+
+		switch resp.Action {
+		case "expire", "delete", "compareAndDelete":
+			_, err = le.EtcdKeyAPI.Set(context.Background(), le.path, le.HolderID, setOptions)
+			if err == nil && !le.master {
+				le.Lock()
+				le.master = true
+				le.Unlock()
+
+				go le.holdLock(quit)
+
+				le.logger.Infof("I'm now the master: %s", le.HolderID)
+				for _, listener := range le.listeners {
+					listener.OnSwitchToMaster()
+				}
+			}
+		case "create", "update":
+			le.RLock()
+			master := le.master
+			le.RUnlock()
+
+			if !master {
+				le.logger.Infof("The master is now: %s", resp.Node.Value)
+				for _, listener := range le.listeners {
+					listener.OnSwitchToSlave()
+				}
+			}
+		}
+	}
+
+	// unlock before leaving so that another can take the lead
+	le.EtcdKeyAPI.Delete(context.Background(), le.path, &etcd.DeleteOptions{PrevValue: le.HolderID})
+}
