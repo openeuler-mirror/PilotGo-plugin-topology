@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
+	"net/url"
 	"time"
 
 	"gitee.com/openeuler/PilotGo-plugin-topology/graffiti/service"
@@ -147,4 +149,43 @@ func (se *EmbeddedServer) Start() error {
 	}
 
 	return nil
+}
+
+// Stop the embedded server
+func (se *EmbeddedServer) Stop() error {
+	se.etcd.Close()
+	return nil
+}
+
+// Generate all publishable URLs for a given HTTP port.
+func interfaceURLs(port int) (types.URLs, error) {
+	allAddrs, err := net.InterfaceAddrs()
+	if err != nil {
+		return []url.URL{}, err
+	}
+
+	var allURLs types.URLs
+	for _, a := range allAddrs {
+		ip, ok := a.(*net.IPNet)
+		if !ok || (!ip.IP.IsGlobalUnicast() && !ip.IP.IsLoopback()) {
+			continue
+		}
+
+		tcp := net.TCPAddr{
+			IP:   ip.IP,
+			Port: port,
+		}
+
+		u := url.URL{
+			Scheme: "http",
+			Host:   tcp.String(),
+		}
+		allURLs = append(allURLs, u)
+	}
+
+	if len(allAddrs) == 0 {
+		return []url.URL{}, fmt.Errorf("no publishable addresses")
+	}
+
+	return allURLs, nil
 }
