@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/skydive-project/skydive/graffiti/graph"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/graph"
 )
 
 func newGraph(t *testing.T) *graph.Graph {

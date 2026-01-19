@@ -6,7 +6,7 @@ import (
 
 	"github.com/pmylund/go-cache"
 
-	"github.com/skydive-project/skydive/graffiti/getter"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/getter"
 )
 
 var regexpCache *cache.Cache

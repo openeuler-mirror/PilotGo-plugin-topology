@@ -3,7 +3,7 @@ package graph
 import (
 	"testing"
 
-	"github.com/skydive-project/skydive/graffiti/filters"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/filters"
 )
 
 type simpleLinker struct {

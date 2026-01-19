@@ -4,10 +4,10 @@ import (
 	"errors"
 	"sync/atomic"
 
-	etcd "github.com/skydive-project/skydive/graffiti/etcd/client"
-	"github.com/skydive-project/skydive/graffiti/filters"
-	"github.com/skydive-project/skydive/graffiti/logging"
-	"github.com/skydive-project/skydive/graffiti/service"
+	etcd "atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/etcd/client"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/filters"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/logging"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/service"
 )
 
 // Define the running cache mode, memory and/or persistent

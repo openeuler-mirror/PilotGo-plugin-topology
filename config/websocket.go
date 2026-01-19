@@ -11,9 +11,9 @@ import (
 	"net/url"
 	"time"
 
-	shttp "github.com/skydive-project/skydive/graffiti/http"
-	"github.com/skydive-project/skydive/graffiti/service"
-	"github.com/skydive-project/skydive/graffiti/websocket"
+	shttp "atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/http"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/service"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/websocket"
 )
 
 // NewWSClientOpts creates WebSocket options object from the configuration

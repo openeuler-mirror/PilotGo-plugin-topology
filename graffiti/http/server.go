@@ -14,9 +14,9 @@ import (
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 
-	"github.com/skydive-project/skydive/graffiti/logging"
-	"github.com/skydive-project/skydive/graffiti/rbac"
-	"github.com/skydive-project/skydive/graffiti/service"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/logging"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/rbac"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/service"
 )
 
 // PathPrefix describes the prefix of the path of an URL

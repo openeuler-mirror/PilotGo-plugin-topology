@@ -11,8 +11,8 @@ import (
 	"github.com/mohae/deepcopy"
 	"github.com/spf13/cast"
 
-	"github.com/skydive-project/skydive/graffiti/filters"
-	"github.com/skydive-project/skydive/graffiti/getter"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/filters"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/getter"
 )
 
 // Metadata describes the graph node metadata type. It implements ElementMatcher

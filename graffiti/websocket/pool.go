@@ -9,8 +9,8 @@ import (
 
 	"github.com/safchain/insanelock"
 
-	"github.com/skydive-project/skydive/graffiti/logging"
-	"github.com/skydive-project/skydive/graffiti/service"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/logging"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/service"
 )
 
 // SpeakerPool is the interface that Speaker pools have to implement.

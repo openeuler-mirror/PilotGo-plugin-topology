@@ -9,9 +9,9 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 
-	"github.com/skydive-project/skydive/graffiti/filters"
-	"github.com/skydive-project/skydive/graffiti/storage"
-	"github.com/skydive-project/skydive/graffiti/storage/orientdb"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/filters"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/storage"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/storage/orientdb"
 )
 
 type op struct {

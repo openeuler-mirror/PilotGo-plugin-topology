@@ -12,8 +12,8 @@ import (
 
 	"github.com/pierrec/xxHash/xxHash64"
 
-	etcd "github.com/skydive-project/skydive/graffiti/etcd/client"
-	"github.com/skydive-project/skydive/graffiti/logging"
+	etcd "atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/etcd/client"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/logging"
 )
 
 var (

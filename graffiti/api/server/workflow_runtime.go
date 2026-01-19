@@ -7,11 +7,11 @@ import (
 
 	"github.com/robertkrimen/otto"
 
-	"github.com/skydive-project/skydive/graffiti/api/types"
-	"github.com/skydive-project/skydive/graffiti/assets"
-	"github.com/skydive-project/skydive/graffiti/graph"
-	"github.com/skydive-project/skydive/graffiti/graph/traversal"
-	"github.com/skydive-project/skydive/graffiti/js"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/api/types"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/assets"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/graph"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/graph/traversal"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/js"
 )
 
 // NewRuntime returns a new JavaScript runtime where accesses to resources are done

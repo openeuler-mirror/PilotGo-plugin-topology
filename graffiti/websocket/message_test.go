@@ -13,7 +13,7 @@ import (
 	proto "github.com/gogo/protobuf/proto"
 	"github.com/safchain/insanelock"
 
-	shttp "github.com/skydive-project/skydive/graffiti/http"
+	shttp "atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/http"
 )
 
 func newServerOpts() ServerOpts {

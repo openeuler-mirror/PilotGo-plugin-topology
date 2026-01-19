@@ -6,14 +6,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/skydive-project/skydive/graffiti/api/types"
-	etcdclient "github.com/skydive-project/skydive/graffiti/etcd/client"
-	etcdserver "github.com/skydive-project/skydive/graffiti/etcd/server"
-	"github.com/skydive-project/skydive/graffiti/graph"
-	shttp "github.com/skydive-project/skydive/graffiti/http"
-	"github.com/skydive-project/skydive/graffiti/logging"
-	"github.com/skydive-project/skydive/graffiti/service"
-	"github.com/skydive-project/skydive/graffiti/websocket"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/api/types"
+	etcdclient "atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/etcd/client"
+	etcdserver "atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/etcd/server"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/graph"
+	shttp "atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/http"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/logging"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/service"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/websocket"
 )
 
 var (

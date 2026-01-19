@@ -11,8 +11,8 @@ import (
 	"fmt"
 	"os"
 
+	shttp "atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/http"
 	auth "github.com/abbot/go-http-auth"
-	shttp "github.com/skydive-project/skydive/graffiti/http"
 )
 
 // NewAuthenticationBackendByName creates a new auth backend based on the name

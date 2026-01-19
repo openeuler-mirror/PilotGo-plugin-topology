@@ -8,7 +8,7 @@ import (
 
 	etcd "go.etcd.io/etcd/client/v2"
 
-	"github.com/skydive-project/skydive/graffiti/logging"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/logging"
 )
 
 // Client defaults

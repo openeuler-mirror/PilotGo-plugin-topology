@@ -6,10 +6,10 @@ package server
 import (
 	"time"
 
-	"github.com/skydive-project/skydive/graffiti/api/rest"
-	"github.com/skydive-project/skydive/graffiti/api/types"
-	"github.com/skydive-project/skydive/graffiti/graph"
-	shttp "github.com/skydive-project/skydive/graffiti/http"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/api/rest"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/api/types"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/graph"
+	shttp "atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/http"
 )
 
 // EdgeResourceHandler aims to creates and manage a new Alert.

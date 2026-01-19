@@ -3,9 +3,9 @@ package graph
 import (
 	"fmt"
 
-	"github.com/skydive-project/skydive/graffiti/filters"
-	"github.com/skydive-project/skydive/graffiti/service"
-	ws "github.com/skydive-project/skydive/graffiti/websocket"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/filters"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/service"
+	ws "atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/websocket"
 )
 
 // ClientOrigin return a string identifying a client using its service type and host id

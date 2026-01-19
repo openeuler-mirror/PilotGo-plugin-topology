@@ -13,7 +13,7 @@ import (
 	"github.com/safchain/insanelock"
 	uuid "github.com/satori/go.uuid"
 
-	"github.com/skydive-project/skydive/graffiti/logging"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/logging"
 )
 
 // Protocol used to transport messages

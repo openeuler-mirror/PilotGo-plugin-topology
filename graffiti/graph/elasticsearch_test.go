@@ -8,9 +8,9 @@ import (
 	"github.com/go-test/deep"
 	"github.com/olivere/elastic/v7"
 
-	"github.com/skydive-project/skydive/graffiti/filters"
-	"github.com/skydive-project/skydive/graffiti/storage"
-	es "github.com/skydive-project/skydive/graffiti/storage/elasticsearch"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/filters"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/storage"
+	es "atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/storage/elasticsearch"
 )
 
 type fakeESIndex struct {

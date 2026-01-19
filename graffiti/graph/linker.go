@@ -5,7 +5,7 @@ import (
 
 	"github.com/safchain/insanelock"
 
-	"github.com/skydive-project/skydive/graffiti/getter"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/getter"
 )
 
 // Linker describes an object that returns incoming edges to a node

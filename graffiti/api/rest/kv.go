@@ -1,3 +1,5 @@
+package rest
+
 import (
 	"context"
 	"encoding/json"
@@ -10,8 +12,8 @@ import (
 	uuid "github.com/satori/go.uuid"
 	etcd "go.etcd.io/etcd/client/v2"
 
-	etcdclient "github.com/skydive-project/skydive/graffiti/etcd/client"
-	"github.com/skydive-project/skydive/graffiti/logging"
+	etcdclient "atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/etcd/client"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/logging"
 )
 
 // BasicAPIHandler basic implementation of an Handler, should be used as embedded struct
