@@ -5,9 +5,9 @@ import (
 	"sync"
 	"time"
 
-	etcdclient "github.com/skydive-project/skydive/graffiti/etcd/client"
-	"github.com/skydive-project/skydive/graffiti/logging"
-	"github.com/skydive-project/skydive/graffiti/websocket"
+	etcdclient "atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/etcd/client"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/logging"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/websocket"
 )
 
 type clusterPeering struct {

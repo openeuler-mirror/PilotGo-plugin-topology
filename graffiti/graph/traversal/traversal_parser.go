@@ -11,8 +11,8 @@ import (
 
 	"github.com/safchain/insanelock"
 
-	"github.com/skydive-project/skydive/graffiti/filters"
-	"github.com/skydive-project/skydive/graffiti/graph"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/filters"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/graph"
 )
 
 type (

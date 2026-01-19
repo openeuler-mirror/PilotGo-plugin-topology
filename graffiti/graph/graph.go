@@ -9,9 +9,9 @@ import (
 	"github.com/safchain/insanelock"
 	uuid "github.com/satori/go.uuid"
 
-	"github.com/skydive-project/skydive/graffiti/filters"
-	"github.com/skydive-project/skydive/graffiti/getter"
-	"github.com/skydive-project/skydive/graffiti/logging"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/filters"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/getter"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/logging"
 )
 
 const (

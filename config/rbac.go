@@ -18,8 +18,8 @@ import (
 	"github.com/casbin/casbin/persist"
 	etcd "go.etcd.io/etcd/client/v2"
 
-	"github.com/skydive-project/skydive/graffiti/logging"
-	"github.com/skydive-project/skydive/graffiti/rbac"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/logging"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/rbac"
 	"github.com/skydive-project/skydive/statics"
 )
 

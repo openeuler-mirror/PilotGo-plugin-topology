@@ -1,8 +1,8 @@
 package graph
 
 import (
-	"github.com/skydive-project/skydive/graffiti/filters"
-	"github.com/skydive-project/skydive/graffiti/getter"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/filters"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/getter"
 )
 
 // ElementMatcher defines an interface used to match an element

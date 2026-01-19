@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/skydive-project/skydive/graffiti/filters"
-	"github.com/skydive-project/skydive/graffiti/logging"
-	"github.com/skydive-project/skydive/graffiti/storage/orientdb"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/filters"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/logging"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/storage/orientdb"
 )
 
 // OrientDBBackend describes an OrientDB backend

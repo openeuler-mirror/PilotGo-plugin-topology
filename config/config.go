@@ -21,9 +21,9 @@ import (
 	// Viper remote client need to be internally initialized
 	_ "github.com/spf13/viper/remote"
 
-	etcdclient "github.com/skydive-project/skydive/graffiti/etcd/client"
-	"github.com/skydive-project/skydive/graffiti/http"
-	"github.com/skydive-project/skydive/graffiti/service"
+	etcdclient "atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/etcd/client"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/http"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/service"
 )
 
 const (

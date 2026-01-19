@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"testing"
 
-	capturer "github.com/kami-zh/go-capturer"
+	capturer "github.com/zenizh/go-capturer"
 )
 
 func TestRelocation(t *testing.T) {

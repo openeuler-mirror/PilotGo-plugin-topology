@@ -5,7 +5,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"errors"
-	fmt "fmt"
+	"fmt"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -16,9 +16,9 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/safchain/insanelock"
 
-	shttp "github.com/skydive-project/skydive/graffiti/http"
-	"github.com/skydive-project/skydive/graffiti/logging"
-	"github.com/skydive-project/skydive/graffiti/service"
+	shttp "atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/http"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/logging"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/service"
 )
 
 const (

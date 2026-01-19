@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	"gitee.com/openeuler/PilotGo-plugin-topology/graffiti/service"
-	"github.com/skydive-project/skydive/graffiti/logging"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/logging"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/service"
 	"go.etcd.io/etcd/client/pkg/v3/types"
 	client "go.etcd.io/etcd/client/v2"
 	"go.etcd.io/etcd/pkg/v3/osutil"

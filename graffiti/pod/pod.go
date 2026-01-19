@@ -4,16 +4,16 @@ import (
 	"crypto/tls"
 	"net/http"
 
-	api "github.com/skydive-project/skydive/graffiti/api/server"
-	"github.com/skydive-project/skydive/graffiti/clients"
-	"github.com/skydive-project/skydive/graffiti/endpoints"
-	"github.com/skydive-project/skydive/graffiti/graph"
-	"github.com/skydive-project/skydive/graffiti/graph/traversal"
-	shttp "github.com/skydive-project/skydive/graffiti/http"
-	"github.com/skydive-project/skydive/graffiti/logging"
-	"github.com/skydive-project/skydive/graffiti/schema"
-	"github.com/skydive-project/skydive/graffiti/service"
-	"github.com/skydive-project/skydive/graffiti/websocket"
+	api "atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/api/server"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/clients"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/endpoints"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/graph"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/graph/traversal"
+	shttp "atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/http"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/logging"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/schema"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/service"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/websocket"
 )
 
 // Opts defines pod server options

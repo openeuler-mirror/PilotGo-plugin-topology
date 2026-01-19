@@ -8,8 +8,8 @@ import (
 	etcd "go.etcd.io/etcd/client/v2"
 	"golang.org/x/net/context"
 
-	"github.com/skydive-project/skydive/graffiti/logging"
-	"github.com/skydive-project/skydive/graffiti/service"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/logging"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/service"
 )
 
 const (

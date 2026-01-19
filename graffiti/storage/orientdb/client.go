@@ -15,8 +15,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/skydive-project/skydive/graffiti/filters"
-	"github.com/skydive-project/skydive/graffiti/storage"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/filters"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/storage"
 )
 
 // Result describes an orientdb request result

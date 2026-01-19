@@ -10,7 +10,7 @@ import (
 	auth "github.com/abbot/go-http-auth"
 	"github.com/gorilla/context"
 
-	"github.com/skydive-project/skydive/graffiti/rbac"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/rbac"
 )
 
 var (

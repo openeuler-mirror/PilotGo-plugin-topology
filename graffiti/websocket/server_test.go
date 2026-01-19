@@ -10,7 +10,7 @@ import (
 	"github.com/avast/retry-go"
 	"github.com/safchain/insanelock"
 
-	shttp "github.com/skydive-project/skydive/graffiti/http"
+	shttp "atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/http"
 )
 
 type fakeServerSubscriptionHandler struct {

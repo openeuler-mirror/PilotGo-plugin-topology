@@ -8,10 +8,10 @@ import (
 
 	"github.com/olivere/elastic/v7"
 
-	etcd "github.com/skydive-project/skydive/graffiti/etcd/client"
-	"github.com/skydive-project/skydive/graffiti/filters"
-	"github.com/skydive-project/skydive/graffiti/logging"
-	es "github.com/skydive-project/skydive/graffiti/storage/elasticsearch"
+	etcd "atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/etcd/client"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/filters"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/logging"
+	es "atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/storage/elasticsearch"
 )
 
 // graphElementMapping  elasticsearch db mapping scheme

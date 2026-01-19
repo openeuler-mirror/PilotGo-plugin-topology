@@ -11,9 +11,9 @@ import (
 	"github.com/mitchellh/hashstructure"
 	"github.com/spf13/cast"
 
-	"github.com/skydive-project/skydive/graffiti/filters"
-	"github.com/skydive-project/skydive/graffiti/getter"
-	"github.com/skydive-project/skydive/graffiti/graph"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/filters"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/getter"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/graph"
 )
 
 const (

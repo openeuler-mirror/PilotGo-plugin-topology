@@ -9,7 +9,7 @@ package config
 import (
 	"crypto/tls"
 
-	gtls "github.com/skydive-project/skydive/graffiti/tls"
+	gtls "atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/tls"
 )
 
 // GetTLSClientConfig returns TLS config to be used by client

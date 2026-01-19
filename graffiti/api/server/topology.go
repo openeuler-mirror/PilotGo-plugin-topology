@@ -11,12 +11,12 @@ import (
 
 	auth "github.com/abbot/go-http-auth"
 
-	"github.com/skydive-project/skydive/graffiti/api/types"
-	"github.com/skydive-project/skydive/graffiti/graph"
-	"github.com/skydive-project/skydive/graffiti/graph/traversal"
-	shttp "github.com/skydive-project/skydive/graffiti/http"
-	"github.com/skydive-project/skydive/graffiti/logging"
-	"github.com/skydive-project/skydive/graffiti/rbac"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/api/types"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/graph"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/graph/traversal"
+	shttp "atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/http"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/logging"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/rbac"
 )
 
 // TopologyMarshaller is used to output a gremlin step

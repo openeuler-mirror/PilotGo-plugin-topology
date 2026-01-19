@@ -6,9 +6,9 @@ import (
 
 	auth "github.com/abbot/go-http-auth"
 
-	shttp "github.com/skydive-project/skydive/graffiti/http"
-	"github.com/skydive-project/skydive/graffiti/logging"
-	"github.com/skydive-project/skydive/graffiti/rbac"
+	shttp "atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/http"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/logging"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/rbac"
 )
 
 // StatusReporter is the interface to report the status of a service

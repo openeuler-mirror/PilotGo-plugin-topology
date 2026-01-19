@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"testing"
 
-	ws "github.com/skydive-project/skydive/graffiti/websocket"
+	ws "atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/websocket"
 )
 
 func TestNullNodesEdges(t *testing.T) {

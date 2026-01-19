@@ -32,12 +32,12 @@ import (
 	jsonpatch "github.com/evanphx/json-patch"
 	yaml "gopkg.in/yaml.v2"
 
-	"github.com/skydive-project/skydive/graffiti/api/rest"
-	etcdclient "github.com/skydive-project/skydive/graffiti/etcd/client"
-	shttp "github.com/skydive-project/skydive/graffiti/http"
-	"github.com/skydive-project/skydive/graffiti/logging"
-	"github.com/skydive-project/skydive/graffiti/rbac"
-	"github.com/skydive-project/skydive/graffiti/service"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/api/rest"
+	etcdclient "atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/etcd/client"
+	shttp "atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/http"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/logging"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/rbac"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/service"
 )
 
 // Validator is the interface to implement to validate REST resources

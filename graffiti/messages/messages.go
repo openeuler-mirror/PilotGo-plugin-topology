@@ -6,8 +6,8 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/skydive-project/skydive/graffiti/graph"
-	ws "github.com/skydive-project/skydive/graffiti/websocket"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/graph"
+	ws "atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/websocket"
 )
 
 const (

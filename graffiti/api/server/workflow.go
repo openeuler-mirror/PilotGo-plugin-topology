@@ -8,15 +8,15 @@ import (
 	"fmt"
 	"net/http"
 
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/api/rest"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/api/types"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/graph"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/graph/traversal"
+	shttp "atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/http"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/js"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/rbac"
 	auth "github.com/abbot/go-http-auth"
 	"github.com/gorilla/mux"
-	"github.com/skydive-project/skydive/graffiti/api/rest"
-	"github.com/skydive-project/skydive/graffiti/api/types"
-	"github.com/skydive-project/skydive/graffiti/graph"
-	"github.com/skydive-project/skydive/graffiti/graph/traversal"
-	shttp "github.com/skydive-project/skydive/graffiti/http"
-	"github.com/skydive-project/skydive/graffiti/js"
-	"github.com/skydive-project/skydive/graffiti/rbac"
 )
 
 // StaticWorkflows holds a list of hardcoded workflows
