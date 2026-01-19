@@ -20,7 +20,6 @@ import (
 
 	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/logging"
 	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/rbac"
-	"github.com/skydive-project/skydive/statics"
 )
 
 type logger struct {
@@ -79,15 +78,6 @@ func loadPolicy(content []byte, model model.Model) error {
 	}
 }
 
-func loadStaticPolicy(model model.Model) error {
-	content, err := statics.Asset("rbac/policy.csv")
-	if err != nil {
-		return err
-	}
-
-	return loadPolicy(content, model)
-}
-
 // InitRBAC inits the RBAC mechanism. It load
 // - the model from the configuration
 // - a policy on etcd
@@ -104,9 +94,6 @@ func InitRBAC(kapi etcd.KeysAPI) error {
 	loadSection(m, "role_definition", "g")
 
 	return rbac.Init(m, kapi, func(m model.Model) error {
-		if err := loadStaticPolicy(m); err != nil {
-			return err
-		}
 		loadConfigPolicy(m)
 		return nil
 	})
