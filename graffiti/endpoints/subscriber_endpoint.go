@@ -203,3 +203,158 @@ func (t *SubscriberEndpoint) OnStructMessage(c ws.Speaker, msg *ws.StructMessage
 		return
 	}
 }
+
+// notifyClients forwards local graph modification to subscribers. If a subscriber
+// specified a Gremlin filter, a 'Diff' is applied between the previous graph state
+// for this subscriber and the current graph state.
+func (t *SubscriberEndpoint) notifyClients(typ string, i interface{}, ops []graph.PartiallyUpdatedOp) {
+	var subscribers []*subscriber
+	t.RLock()
+	for _, subscriber := range t.subscribers {
+		subscribers = append(subscribers, subscriber)
+	}
+	t.RUnlock()
+
+SUBSCRIBER:
+	for _, subscriber := range subscribers {
+		msg := i
+		msgType := typ
+
+		if inhibitedSpeaker := t.inhib.Load(); inhibitedSpeaker.(string) != "" {
+			if inhibitedSpeaker.(string) == subscriber.Speaker.GetRemoteHost() {
+				continue SUBSCRIBER
+			}
+		}
+
+		if subscriber.updatePolicy == PartialUpdates {
+			switch typ {
+			case messages.NodeUpdatedMsgType:
+				msgType = messages.NodePartiallyUpdatedMsgType
+				n := msg.(*graph.Node)
+				msg = messages.PartiallyUpdatedMsg{
+					ID:        n.ID,
+					Revision:  n.Revision,
+					UpdatedAt: n.UpdatedAt,
+					Ops:       ops,
+				}
+			case messages.EdgeUpdatedMsgType:
+				msgType = messages.EdgePartiallyUpdatedMsgType
+				e := msg.(*graph.Edge)
+				msg = messages.PartiallyUpdatedMsg{
+					ID:        e.ID,
+					Revision:  e.Revision,
+					UpdatedAt: e.UpdatedAt,
+					Ops:       ops,
+				}
+			}
+		}
+
+		if subscriber.gremlinFilter != "" {
+			g, err := subscriber.getSubGraph(t.graph, false)
+			if err != nil {
+				t.logger.Error(err)
+				continue
+			}
+
+			addedNodes, removedNodes, addedEdges, removedEdges := subscriber.lastGraph.Diff(g)
+
+			for _, n := range addedNodes {
+				subscriber.SendMessage(messages.NewStructMessage(messages.NodeAddedMsgType, n))
+			}
+
+			for _, n := range removedNodes {
+				subscriber.SendMessage(messages.NewStructMessage(messages.NodeDeletedMsgType, n))
+			}
+
+			for _, e := range addedEdges {
+				subscriber.SendMessage(messages.NewStructMessage(messages.EdgeAddedMsgType, e))
+			}
+
+			for _, e := range removedEdges {
+				subscriber.SendMessage(messages.NewStructMessage(messages.EdgeDeletedMsgType, e))
+			}
+
+			// handle updates
+			switch typ {
+			case messages.NodeUpdatedMsgType, messages.NodePartiallyUpdatedMsgType:
+				if g.GetNode(i.(*graph.Node).ID) != nil {
+					subscriber.SendMessage(messages.NewStructMessage(msgType, msg))
+				}
+			case messages.EdgeUpdatedMsgType, messages.EdgePartiallyUpdatedMsgType:
+				if g.GetEdge(i.(*graph.Edge).ID) != nil {
+					subscriber.SendMessage(messages.NewStructMessage(msgType, msg))
+				}
+			}
+
+			subscriber.lastGraph = g
+		} else {
+			subscriber.SendMessage(messages.NewStructMessage(msgType, msg))
+		}
+	}
+}
+
+// OnNodeUpdated graph node updated event. Implements the GraphEventListener interface.
+func (t *SubscriberEndpoint) OnNodeUpdated(n *graph.Node, ops []graph.PartiallyUpdatedOp) {
+	t.notifyClients(messages.NodeUpdatedMsgType, n, ops)
+}
+
+// OnNodeAdded graph node added event. Implements the GraphEventListener interface.
+func (t *SubscriberEndpoint) OnNodeAdded(n *graph.Node) {
+	t.notifyClients(messages.NodeAddedMsgType, n, nil)
+}
+
+// OnNodeDeleted graph node deleted event. Implements the GraphEventListener interface.
+func (t *SubscriberEndpoint) OnNodeDeleted(n *graph.Node) {
+	t.notifyClients(messages.NodeDeletedMsgType, n, nil)
+}
+
+// OnEdgeUpdated graph edge updated event. Implements the GraphEventListener interface.
+func (t *SubscriberEndpoint) OnEdgeUpdated(e *graph.Edge, ops []graph.PartiallyUpdatedOp) {
+	t.notifyClients(messages.EdgeUpdatedMsgType, e, nil)
+}
+
+// OnEdgeAdded graph edge added event. Implements the GraphEventListener interface.
+func (t *SubscriberEndpoint) OnEdgeAdded(e *graph.Edge) {
+	t.notifyClients(messages.EdgeAddedMsgType, e, nil)
+}
+
+// OnEdgeDeleted graph edge deleted event. Implements the GraphEventListener interface.
+func (t *SubscriberEndpoint) OnEdgeDeleted(e *graph.Edge) {
+	t.notifyClients(messages.EdgeDeletedMsgType, e, nil)
+}
+
+// Inhib node and edge forwarding
+func (t *SubscriberEndpoint) Inhib(c ws.Speaker) {
+	remoteHost := ""
+	if c != nil {
+		remoteHost = c.GetRemoteHost()
+	}
+	t.inhib.Store(remoteHost)
+}
+
+// NewSubscriberEndpoint returns a new server to be used by external subscribers,
+// for instance the WebUI.
+func NewSubscriberEndpoint(pool ws.StructSpeakerPool, g *graph.Graph, tr *traversal.GremlinTraversalParser, logger logging.Logger) *SubscriberEndpoint {
+	if logger == nil {
+		logger = logging.GetLogger()
+	}
+
+	t := &SubscriberEndpoint{
+		graph:         g,
+		pool:          pool,
+		subscribers:   make(map[ws.Speaker]*subscriber),
+		gremlinParser: tr,
+		logger:        logger,
+	}
+
+	t.inhib.Store("")
+
+	pool.AddEventHandler(t)
+
+	// subscribe to the graph messages
+	pool.AddStructMessageHandler(t, []string{messages.Namespace})
+
+	// subscribe to the local graph event
+	g.AddEventListener(t)
+	return t
+}
