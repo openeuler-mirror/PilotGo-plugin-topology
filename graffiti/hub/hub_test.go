@@ -215,7 +215,9 @@ func TestReplication(t *testing.T) {
 		"Type": "test-type",
 	}
 	id := graph.GenID()
-	node := types.Node(*graph.CreateNode(id, metadata, graph.Time(time.Now()), hostname, origin))
+	node := types.Node{
+		Node: graph.CreateNode(id, metadata, graph.Time(time.Now()), hostname, origin),
+	}
 
 	if err := crudClient.Create("node", &node, nil); err != nil {
 		t.Error(err)
@@ -248,7 +250,15 @@ func TestReplication(t *testing.T) {
 func createHubNode(hub *Hub, id graph.Identifier, metadata graph.Metadata) types.Node {
 	hostname := hub.httpServer.Host
 	origin := graph.Origin(hostname, "test")
-	return types.Node(*graph.CreateNode(id, metadata, graph.Time(time.Now()), hostname, origin))
+	return types.Node{
+		Node: graph.CreateNode(
+			id,
+			metadata,
+			graph.Time(time.Now()),
+			hostname,
+			origin,
+		),
+	}
 }
 
 func startHubs(t *testing.T, hubs []*testHub) {

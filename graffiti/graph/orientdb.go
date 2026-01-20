@@ -207,7 +207,7 @@ func (o *OrientDBBackend) GetNode(i Identifier, t Context) (nodes []*Node) {
 
 func (o *OrientDBBackend) GetNodesFromIDs(identifiersList []Identifier, t Context) (nodes []*Node) {
 	query := orientdb.FilterToExpression(getTimeFilter(t.TimeSlice), nil)
-	query += fmt.Sprintf(" AND (")
+	query += " AND ("
 	for i, id := range identifiersList {
 		if i == len(identifiersList)-1 {
 			query += fmt.Sprintf(" ID = '%s') ORDER BY Revision", id)
@@ -235,7 +235,7 @@ func (o *OrientDBBackend) GetNodeEdges(n *Node, t Context, m ElementMatcher) (ed
 // GetNodesEdges returns a list of a node edges within time slice
 func (o *OrientDBBackend) GetNodesEdges(nodeList []*Node, t Context, m ElementMatcher) (edges []*Edge) {
 	query := orientdb.FilterToExpression(getTimeFilter(t.TimeSlice), nil)
-	query += fmt.Sprintf(" AND (")
+	query += " AND ("
 	for i, n := range nodeList {
 		if i == len(nodeList)-1 {
 			query += fmt.Sprintf(" Parent = '%s' OR Child = '%s')", n.ID, n.ID)
