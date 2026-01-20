@@ -3,6 +3,7 @@ package graph
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"reflect"
 	"strings"
 
@@ -830,13 +831,15 @@ func (g *Graph) DelMetadata(i interface{}, k string) error {
 	var e *graphElement
 	var kind graphEventType
 
-	switch i.(type) {
+	switch v := i.(type) {
 	case *Node:
-		e = &i.(*Node).graphElement
+		e = &v.graphElement
 		kind = NodeUpdated
 	case *Edge:
-		e = &i.(*Edge).graphElement
+		e = &v.graphElement
 		kind = EdgeUpdated
+	default:
+		return fmt.Errorf("unsupported metadata target type: %T", i)
 	}
 
 	if updated := e.Metadata.DelField(k); !updated {
@@ -859,13 +862,18 @@ func (g *Graph) addMetadata(i interface{}, k string, v interface{}, t Time) erro
 	var e *graphElement
 	var kind graphEventType
 
-	switch i.(type) {
+	switch v := i.(type) {
+
 	case *Node:
-		e = &i.(*Node).graphElement
+		e = &v.graphElement
 		kind = NodeUpdated
+
 	case *Edge:
-		e = &i.(*Edge).graphElement
+		e = &v.graphElement
 		kind = EdgeUpdated
+
+	default:
+		return fmt.Errorf("unsupported metadata target type: %T", i)
 	}
 
 	if o, ok := e.Metadata[k]; ok && reflect.DeepEqual(o, v) {
@@ -898,13 +906,15 @@ func (g *Graph) UpdateMetadata(i interface{}, key string, mutator func(obj inter
 	var e *graphElement
 	var graphEventType graphEventType
 
-	switch i.(type) {
+	switch v := i.(type) {
 	case *Node:
-		e = &i.(*Node).graphElement
+		e = &v.graphElement
 		graphEventType = NodeUpdated
 	case *Edge:
-		e = &i.(*Edge).graphElement
+		e = &v.graphElement
 		graphEventType = EdgeUpdated
+	default:
+		return fmt.Errorf("unsupported metadata target type: %T", i)
 	}
 
 	field, err := e.GetField(key)

@@ -4,7 +4,6 @@ package graph
 
 import (
 	"fmt"
-	"reflect"
 	"strings"
 
 	"github.com/fatih/structs"
@@ -238,14 +237,14 @@ func getFieldKeys(obj map[string]interface{}, path string) []string {
 	for k, v := range obj {
 		fields = append(fields, path+k)
 
-		switch v.(type) {
+		switch v := v.(type) {
 		case getter.Getter:
-			keys := v.(getter.Getter).GetFieldKeys()
+			keys := v.GetFieldKeys()
 			for _, subkey := range keys {
 				fields = append(fields, k+"."+subkey)
 			}
 		case map[string]interface{}:
-			subfields := getFieldKeys(v.(map[string]interface{}), path+k)
+			subfields := getFieldKeys(v, path+k)
 			fields = append(fields, subfields...)
 		}
 	}
@@ -390,28 +389,28 @@ func GetMapField(obj map[string]interface{}, k string) (interface{}, error) {
 
 		subkey := strings.Join(components[n+1:], ".")
 
-		switch i.(type) {
+		switch v := i.(type) {
 		case getter.Getter:
-			return i.(getter.Getter).GetField(subkey)
+			return v.GetField(subkey)
 		case []interface{}:
 			var results []interface{}
-			for _, v := range i.([]interface{}) {
-				switch v := v.(type) {
+			for _, item := range v {
+				switch x := item.(type) {
 				case getter.Getter:
-					if obj, err := v.(getter.Getter).GetField(subkey); err == nil {
+					if obj, err := x.GetField(subkey); err == nil {
 						results = append(results, obj)
 					}
 				case map[string]interface{}:
-					if obj, err := GetMapField(v, subkey); err == nil {
+					if obj, err := GetMapField(x, subkey); err == nil {
 						results = append(results, obj)
 					}
 				}
 			}
 			return results, nil
 		case map[string]interface{}:
-			obj = i.(map[string]interface{})
+			return GetMapField(v, subkey)
 		default:
-			return nil, fmt.Errorf("%s is not a supported type(%+v)", component, reflect.TypeOf(obj))
+			return nil, fmt.Errorf("%s is not a supported type (%T)", component, i)
 		}
 	}
 
