@@ -1,14 +1,18 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/types"
 	"log"
+	"os"
+	"os/exec"
 	"path/filepath"
 	"reflect"
 	"strings"
+	"text/template"
 	"unicode"
 
 	"github.com/davecgh/go-spew/spew"
@@ -296,4 +300,373 @@ func parseFile(filename string, pkgName string) (*module, error) {
 		BuildTags: buildTags,
 		Getters:   getters,
 	}, nil
+}
+
+func main() {
+	inputInfo, err := os.Stat(filename)
+	if err != nil {
+		panic(err)
+	}
+
+	if output == "" {
+		output = strings.TrimSuffix(filename, ".go") + "_gendecoder.go"
+	}
+
+	outputInfo, err := os.Stat(output)
+	if err == nil {
+		if inputInfo.ModTime().Before(outputInfo.ModTime()) {
+			// Skipping file
+			if verbose {
+				log.Printf("Skipping %s as %s is newer", filename, output)
+			}
+			return
+		}
+	}
+
+	tmpl := template.Must(template.New("header").Parse(`{{- range .BuildTags }}// {{.}}{{end}}
+
+// Code generated - DO NOT EDIT.
+
+package	{{.Name}}
+
+import (
+	"strings"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/getter"
+)
+
+{{- define "splitKey" -}}
+first := key
+index := strings.Index(key, ".")
+if index != -1 {
+	first = key[:index]
+}
+{{- end -}}
+
+{{- define "stringGetter" -}}
+func (obj *{{.Name}}) GetFieldString(key string) (string, error) {
+	{{- if or (.Has "string") (.Has "stringer") -}}
+	switch key {
+{{if not .IsArray}}{{range .Fields}}{{if eq .Type "string"}}	case "{{.Name}}":
+		return string(obj.{{.Name}}), nil
+{{else if eq .Type "stringer"}}	case "{{.Name}}":
+		return obj.{{.Name}}.String(), nil
+{{end}}{{end}}{{end}}	}
+	{{end -}}
+	return "", getter.ErrFieldNotFound
+}
+{{- end -}}
+
+{{- define "boolGetter" -}}
+func (obj *{{.Name}}) GetFieldBool(key string) (bool, error) {
+	{{- if .Has "bool" -}}
+	switch key {
+{{if not .IsArray}}{{range .Fields}}{{if eq .Type "bool"}}	case "{{.Name}}":
+		return obj.{{.Name}}, nil
+{{end}}{{end}}{{end}}	}
+	{{end}}
+	return false, getter.ErrFieldNotFound
+}
+{{- end -}}
+
+{{- define "intGetter" -}}
+func (obj *{{.Name}}) GetFieldInt64(key string) (int64, error) {
+	{{- if .Has "int64" -}}
+	switch key {
+{{if not .IsArray}}{{range .Fields}}{{if eq .Type "int64"}}	case "{{.Name}}":
+		return int64(obj.{{.Name}}), nil
+{{end}}{{end}}{{- end -}}	}
+	{{- end}}
+	return 0, getter.ErrFieldNotFound
+}
+{{- end -}}
+
+{{- define "keysGetter" -}}
+func (obj *{{.Name}}) GetFieldKeys() []string {
+	return []string{
+{{range .Fields}}		"{{.Name}}",
+{{end }}	}
+}
+{{- end -}}
+
+{{- define "matchArray" -}}
+	if index == -1 {
+		for _, i := range obj.{{.Name}}	 {
+			if predicate(i) {
+				return true
+			}
+		}
+	}
+{{- end -}}
+
+{{- define "matchMap" -}}
+	if obj.{{.Name}} != nil {
+		if index == -1 {
+			for _, v := range obj.{{.Name}} {
+				if predicate(v) {
+					return true
+				}
+			}
+		} else if v, found := obj.{{.Name}}[key[index+1:]]; found {
+			return predicate(v)
+		}
+	}
+{{- end -}}
+
+{{- define "getters" }}
+{{template "boolGetter" .}}
+
+{{template "intGetter" .}}
+
+{{template "stringGetter" .}}
+
+{{template "keysGetter" .}}
+
+func (obj *{{.Name}}) MatchBool(key string, predicate getter.BoolPredicate) bool {
+	{{- if .IsArray}}
+	for _, obj := range *obj {
+		if obj.MatchBool(key, predicate) {
+			return true
+		}
+	}
+	{{else}}
+	{{- if .Has "bool"}}
+	if b, err := obj.GetFieldBool(key); err == nil {
+		return predicate(b)
+	}
+	{{end}}
+	{{- if or (.Has "[]bool") .HasPublic }}
+	{{template "splitKey"}}
+
+	switch first {
+{{- range .Fields}}
+	{{- if eq .Type "[]bool"}}
+	case "{{.Name}}":
+		{{template "matchArray" .}}
+	{{- else if eq .Type "map[string]bool"}}
+	case "{{.Name}}":
+		{{template "matchMap" .}}
+	{{- else if and .IsArray .Public}}
+	case "{{.Name}}":
+		if index != -1 {
+			for _, obj := range obj.{{.Name}}	 {
+				if obj.MatchBool(key[index+1:], predicate) {
+					return true
+				}
+			}
+		}
+	{{- else if .Public}}
+	case "{{.Name}}":
+		if index != -1 && obj.{{.Name}} != nil {
+			return obj.{{.Name}}.MatchBool(key[index+1:], predicate)
+		}
+	{{- end -}}
+{{end}}
+	}
+	{{end -}}
+	{{end -}}
+
+	return false
+}
+
+func (obj *{{.Name}}) MatchInt64(key string, predicate getter.Int64Predicate) bool {
+	{{- if .IsArray}}
+	for _, obj := range *obj {
+		if obj.MatchInt64(key, predicate) {
+			return true
+		}
+	}
+	{{else}}
+	{{- if .Has "int64"}}
+	if b, err := obj.GetFieldInt64(key); err == nil {
+		return predicate(b)
+	}
+	{{end}}
+	{{- if or (.Has "[]int64") .HasPublic }}
+	{{template "splitKey"}}
+
+	switch first {
+{{range .Fields}}
+	{{- if eq .Type "[]int64"}}
+	case "{{.Name}}":
+		{{template "matchArray" .}}
+	{{- else if eq .Type "map[string]int64"}}
+	case "{{.Name}}":
+		{{template "matchMap" .}}
+	{{- else if and .IsArray .Public}}
+	case "{{.Name}}":
+		if index != -1 {
+			for _, obj := range obj.{{.Name}}	 {
+				if obj.MatchInt64(key[index+1:], predicate) {
+					return true
+				}
+			}
+		}
+	{{- else if .Public}}
+	case "{{.Name}}":
+		if index != -1 && obj.{{.Name}} != nil {
+			return obj.{{.Name}}.MatchInt64(key[index+1:], predicate)
+		}
+	{{- end -}}
+{{end}}
+	}
+	{{end -}}
+	{{end -}}
+
+	return false
+}
+
+func (obj *{{.Name}}) MatchString(key string, predicate getter.StringPredicate) bool {
+	{{- if .IsArray}}
+	for _, obj := range *obj {
+		if obj.MatchString(key, predicate) {
+			return true
+		}
+	}
+	{{else}}
+	{{- if or (.Has "string") (.Has "stringer")}}
+	if b, err := obj.GetFieldString(key); err == nil {
+		return predicate(b)
+	}
+	{{end}}
+	{{- if or (.Has "[]string") .HasPublic }}
+	{{template "splitKey"}}
+
+	switch first {
+{{range .Fields}}
+	{{- if eq .Type "[]string"}}
+	case "{{.Name}}":
+		{{template "matchArray" .}}
+	{{- else if eq .Type "map[string]string"}}
+	case "{{.Name}}":
+		{{template "matchMap" .}}
+	{{- else if and .IsArray .Public}}
+	case "{{.Name}}":
+		if index != -1 {
+			for _, obj := range obj.{{.Name}}	 {
+				if obj.MatchString(key[index+1:], predicate) {
+					return true
+				}
+			}
+		}
+	{{- else if .Public}}
+	case "{{.Name}}":
+		if index != -1 && obj.{{.Name}} != nil {
+			return obj.{{.Name}}.MatchString(key[index+1:], predicate)
+		}
+	{{- end -}}
+{{end}}
+	}
+	{{end -}}
+	{{end -}}
+
+	return false
+}
+
+func (obj *{{.Name}}) GetField(key string) (interface{}, error) {
+	{{- if not .IsArray -}}
+	{{- if or (.Has "string") (.Has "stringer") }}
+		if s, err := obj.GetFieldString(key); err == nil {
+		return s, nil
+	}
+	{{end}}
+
+	{{- if .Has "int64" }}
+	if i, err := obj.GetFieldInt64(key); err == nil {
+		return i, nil
+	}
+	{{end}}
+
+	{{- if .Has "bool" }}
+	if b, err := obj.GetFieldBool(key); err == nil {
+		return b, nil
+	}
+	{{end}}
+
+	{{- if or .HasArray .HasPublic }}
+	{{template "splitKey"}}
+
+	switch first {
+{{range .Fields}}{{if or .Public .IsArray}}	case "{{.Name}}":
+		if obj.{{.Name}} != nil {
+			if index != -1 {
+			{{- if and .IsArray .Public}}
+				var results []interface{}
+				for _, obj := range obj.{{.Name}} {
+					if field, err := obj.GetField(key[index+1:]); err == nil {
+						results = append(results, field)
+					}
+				}
+				return results, nil
+			{{- else if .Public}}
+				return obj.{{.Name}}.GetField(key[index+1:])
+			{{- end}}
+			} else {
+			{{- if .IsArray}}
+				var results []interface{}
+				for _, obj := range obj.{{.Name}} {
+					results = append(results, obj)
+				}
+				return results, nil
+			{{- else}}
+				return obj.{{.Name}}, nil
+			{{- end}}
+			}
+		}
+{{end}}{{end}}
+	}
+	{{end -}}
+	return nil, getter.ErrFieldNotFound
+{{else}}	var result []interface{}
+
+	for _, o := range *obj {
+		switch key {
+{{range .Fields}}		case "{{.Name}}":
+			result = append(result, o.{{.Name}})
+{{end}}		default:
+			return result, getter.ErrFieldNotFound
+		}
+	}
+
+	return result, nil
+{{- end -}}
+}
+{{ end }}
+{{range .Getters}}{{template "getters" .}}{{end}}
+
+func init() {
+	strings.Index("", ".")
+}
+`))
+
+	mod, err := parseFile(filename, pkgname)
+	if err != nil {
+		panic(err)
+	}
+
+	outputFile, err := os.Create(output)
+	if err != nil {
+		panic(err)
+	}
+
+	if err := tmpl.Execute(outputFile, mod); err != nil {
+		panic(err)
+	}
+
+	if err := outputFile.Close(); err != nil {
+		panic(err)
+	}
+
+	cmd := exec.Command("gofmt", "-s", "-w", output)
+	if err := cmd.Run(); err != nil {
+		panic(err)
+	}
+}
+
+func init() {
+	flag.BoolVar(&strict, "strict", true, "Use strict mode")
+	flag.BoolVar(&verbose, "verbose", false, "Be verbose")
+	flag.StringVar(&filename, "filename", os.Getenv("GOFILE"), "Go file to generate decoders from")
+	flag.StringVar(&pkgname, "package", skydivePkg+"/"+os.Getenv("GOPACKAGE"), "Go package name")
+	flag.StringVar(&output, "output", "", "Go generated file")
+	flag.Parse()
 }
