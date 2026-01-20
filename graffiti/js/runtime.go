@@ -13,9 +13,9 @@ import (
 
 	"github.com/robertkrimen/otto"
 
-	"github.com/skydive-project/skydive/graffiti/assets"
-	shttp "github.com/skydive-project/skydive/graffiti/http"
-	"github.com/skydive-project/skydive/graffiti/logging"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/assets"
+	shttp "atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/http"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/logging"
 )
 
 type bindataAssets struct{}
