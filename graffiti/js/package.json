@@ -20,10 +20,10 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/skydive-project/skydive.git"
+    "url": "git+https://atomgit.com/openeuler/PilotGo-plugin-topology.git"
   },
   "bugs": {
-    "url": "https://github.com/skydive-project/skydive/issues"
+    "url": "https://atomgit.com/openeuler/PilotGo-plugin-topology/issues"
   },
-  "homepage": "https://github.com/skydive-project/skydive#readme"
+  "homepage": "https://atomgit.com/openeuler/PilotGo-plugin-topology#readme"
 }
