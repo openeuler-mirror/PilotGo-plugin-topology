@@ -23,7 +23,7 @@ type UpdatePolicy = string
 // Update policies
 const (
 	FullUpdates    UpdatePolicy = "full"
-	PartialUpdates              = "partial"
+	PartialUpdates UpdatePolicy = "partial"
 )
 
 type subscriber struct {
