@@ -32,6 +32,7 @@ require (
 	github.com/robertkrimen/otto v0.3.0
 	github.com/safchain/insanelock v0.0.0-20200217234559-cfbf166e05b3
 	github.com/satori/go.uuid v1.2.0
+	github.com/skydive-project/skydive/graffiti v0.0.0-20240717134610-a4452f214754
 	github.com/spf13/cast v1.6.0
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/pflag v1.0.5
@@ -75,6 +76,7 @@ require (
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/btree v1.1.2 // indirect
 	github.com/google/s2a-go v0.1.7 // indirect
+	github.com/google/uuid v1.6.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.2 // indirect
 	github.com/googleapis/gax-go/v2 v2.12.2 // indirect
 	github.com/gopherjs/gopherjs v0.0.0-20181103185306-d547d1d9531e // indirect
