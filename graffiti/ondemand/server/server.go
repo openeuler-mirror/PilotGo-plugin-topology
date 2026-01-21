@@ -84,3 +84,53 @@ func (o *OnDemandServer) registerTask(n *graph.Node, resource rest.Resource) boo
 	logging.GetLogger().Debugf("New active task on: %v (%v)", n, resource)
 	return true
 }
+
+// unregisterTask should be executed under graph lock
+func (o *OnDemandServer) unregisterTask(n *graph.Node, resource rest.Resource) error {
+	o.RLock()
+	var active *activeTask
+	tasks, isActive := o.activeTasks[n.ID]
+	if isActive {
+		active, isActive = tasks[resource.GetID()]
+	}
+	o.RUnlock()
+
+	if !isActive {
+		return ErrTaskNotFound
+	}
+
+	name, _ := n.GetFieldString("Name")
+	logging.GetLogger().Debugf("Attempting to unregister task on node %s (%s)", name, n.ID)
+
+	if err := o.handler.RemoveTask(n, active.resource, active.task); err != nil {
+		return err
+	}
+
+	o.Lock()
+	if tasks, found := o.activeTasks[n.ID]; found {
+		delete(tasks, resource.GetID())
+	}
+	if len(o.activeTasks[n.ID]) == 0 {
+		delete(o.activeTasks, n.ID)
+	}
+	o.Unlock()
+
+	return nil
+}
+
+// OnNodeDeleted graph event
+func (o *OnDemandServer) OnNodeDeleted(n *graph.Node) {
+	o.RLock()
+	tasks, found := o.activeTasks[n.ID]
+	if found {
+		for _, task := range tasks {
+			capture := task.resource
+			defer func() {
+				if err := o.unregisterTask(n, capture); err != nil {
+					logging.GetLogger().Errorf("Failed to unregister %s %s on node %s", o.resourceName, capture.GetID(), n.ID)
+				}
+			}()
+		}
+	}
+	o.RUnlock()
+}
