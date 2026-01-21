@@ -5,18 +5,23 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"time"
 
 	api "github.com/skydive-project/skydive/api/server"
 	"github.com/skydive-project/skydive/config"
+	"github.com/skydive-project/skydive/flow"
 	"github.com/skydive-project/skydive/flow/client"
+	ondemand "github.com/skydive-project/skydive/flow/ondemand/server"
 	"github.com/skydive-project/skydive/graffiti/graph"
 	shttp "github.com/skydive-project/skydive/graffiti/http"
 	"github.com/skydive-project/skydive/graffiti/logging"
 	"github.com/skydive-project/skydive/graffiti/ondemand/server"
 	"github.com/skydive-project/skydive/graffiti/pod"
 	ws "github.com/skydive-project/skydive/graffiti/websocket"
+	"github.com/skydive-project/skydive/packetinjector"
 	"github.com/skydive-project/skydive/probe"
 	"github.com/skydive-project/skydive/topology"
+	"github.com/skydive-project/skydive/ui"
 	"github.com/skydive-project/skydive/validator"
 )
 
@@ -166,6 +171,30 @@ func NewAgent() (*Agent, error) {
 	if err != nil {
 		return nil, err
 	}
+	updateEvery := time.Duration(config.GetInt("flow.update")) * time.Second
+	expireAfter := time.Duration(config.GetInt("flow.expire")) * time.Second
+
+	analyzerClientPool := pod.ClientPool()
+	agent.flowClientPool = client.NewFlowClientPool(analyzerClientPool, wsClientOpts)
+	flowTableAllocator := flow.NewTableAllocator(updateEvery, expireAfter, agent.flowClientPool)
+
+	agent.flowProbeBundle = NewFlowProbeBundle(agent.topologyProbeBundle, g, flowTableAllocator)
+
+	agent.onDemandPIServer, err = packetinjector.NewOnDemandInjectionServer(g, analyzerClientPool)
+	if err != nil {
+		return nil, fmt.Errorf("unable to initialize on-demand packet injection: %s", err)
+	}
+
+	agent.onDemandProbeServer, err = ondemand.NewOnDemandFlowProbeServer(agent.flowProbeBundle, g, analyzerClientPool)
+	if err != nil {
+		return nil, fmt.Errorf("unable to initialize on-demand flow probe: %s", err)
+	}
+
+	// exposes a flow server through the client connections
+	flow.NewWSTableServer(flowTableAllocator, analyzerClientPool)
+
+	httpServer := pod.HTTPServer()
+	ui.NewServer(httpServer, config.GetString("ui.extra_assets"))
 
 	return agent, nil
 }
