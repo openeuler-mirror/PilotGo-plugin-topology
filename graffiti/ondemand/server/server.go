@@ -201,3 +201,35 @@ func (o *OnDemandServer) OnNodeDeleted(n *graph.Node) {
 	}
 	o.RUnlock()
 }
+
+// Start the task
+func (o *OnDemandServer) Start() error {
+	o.Graph.AddEventListener(o)
+	o.clientPool.AddStructMessageHandler(o, []string{o.wsNamespace})
+	return nil
+}
+
+// Stop the task
+func (o *OnDemandServer) Stop() {
+	o.Graph.RemoveEventListener(o)
+
+	o.Graph.Lock()
+	for _, tasks := range o.activeTasks {
+		for _, active := range tasks {
+			o.unregisterTask(active.node, active.resource)
+		}
+	}
+	o.Graph.Unlock()
+}
+
+// NewOnDemandServer creates a new Ondemand tasks server based on graph and websocket
+func NewOnDemandServer(g *graph.Graph, pool *ws.StructClientPool, handler OnDemandServerHandler) (*OnDemandServer, error) {
+	return &OnDemandServer{
+		Graph:        g,
+		clientPool:   pool,
+		activeTasks:  make(map[graph.Identifier]map[string]*activeTask),
+		wsNamespace:  ondemand.Namespace + handler.ResourceName(),
+		resourceName: handler.ResourceName(),
+		handler:      handler,
+	}, nil
+}
