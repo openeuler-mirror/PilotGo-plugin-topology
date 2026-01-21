@@ -1,10 +1,20 @@
 package agent
 
 import (
-	"atomgit.com/openeuler/PilotGo-plugin-topology/config"
-	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/graph"
+	"fmt"
+
+	"github.com/skydive-project/skydive/config"
 	"github.com/skydive-project/skydive/flow"
 	fp "github.com/skydive-project/skydive/flow/probes"
+	"github.com/skydive-project/skydive/flow/probes/dpdk"
+	"github.com/skydive-project/skydive/flow/probes/ebpf"
+	"github.com/skydive-project/skydive/flow/probes/gopacket"
+	"github.com/skydive-project/skydive/flow/probes/ovsmirror"
+	"github.com/skydive-project/skydive/flow/probes/ovsnetflow"
+	"github.com/skydive-project/skydive/flow/probes/ovssflow"
+	"github.com/skydive-project/skydive/flow/probes/pcapsocket"
+	"github.com/skydive-project/skydive/flow/probes/sflow"
+	"github.com/skydive-project/skydive/graffiti/graph"
 	"github.com/skydive-project/skydive/graffiti/logging"
 	"github.com/skydive-project/skydive/probe"
 )
@@ -28,6 +38,40 @@ func NewFlowProbeBundle(tb *probe.Bundle, g *graph.Graph, fta *flow.TableAllocat
 	for _, t := range list {
 		if bundle.GetHandler(t) != nil {
 			continue
+		}
+
+		switch t {
+		case "pcapsocket":
+			handler, err = pcapsocket.NewProbe(ctx, bundle)
+		case "ovssflow":
+			handler, err = ovssflow.NewProbe(ctx, bundle)
+		case "ovsmirror":
+			handler, err = ovsmirror.NewProbe(ctx, bundle)
+		case "gopacket":
+			handler, err = gopacket.NewProbe(ctx, bundle)
+		case "sflow":
+			handler, err = sflow.NewProbe(ctx, bundle)
+		case "ovsnetflow":
+			handler, err = ovsnetflow.NewProbe(ctx, bundle)
+		case "dpdk":
+			handler, err = dpdk.NewProbe(ctx, bundle)
+		case "ebpf":
+			handler, err = ebpf.NewProbe(ctx, bundle)
+		default:
+			err = fmt.Errorf("unknown probe type %s", t)
+		}
+
+		if err != nil {
+			if err != probe.ErrNotCompiled {
+				logging.GetLogger().Errorf("Failed to create %s probe: %s", t, err)
+			} else {
+				logging.GetLogger().Infof("Not compiled with %s support, skipping it", t)
+			}
+			continue
+		}
+
+		for _, captureType := range handler.CaptureTypes() {
+			bundle.AddHandler(captureType, handler)
 		}
 	}
 
