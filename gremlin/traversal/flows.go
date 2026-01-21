@@ -1,18 +1,23 @@
 package traversal
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net"
 	"strings"
 
 	"atomgit.com/openeuler/PilotGo-plugin-topology/common"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/config"
 	"atomgit.com/openeuler/PilotGo-plugin-topology/flow"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/flow/probes"
 	"atomgit.com/openeuler/PilotGo-plugin-topology/flow/storage"
 	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/filters"
 	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/getter"
 	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/graph"
 	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/graph/traversal"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/logging"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/topology"
 	"atomgit.com/openeuler/PilotGo-plugin-topology/topology/probes/socketinfo"
 )
 
@@ -664,4 +669,270 @@ func (f *FlowTraversalStep) Sockets(ctx traversal.StepContext, s ...interface{})
 	}
 
 	return &SocketsTraversalStep{GraphTraversal: f.GraphTraversal, sockets: flowSockets}
+}
+
+// Group returns flows gourped by TrackingID (by default)
+func (f *FlowTraversalStep) Group(ctx traversal.StepContext, s ...interface{}) *GroupTraversalStep {
+	if f.error != nil {
+		return &GroupTraversalStep{error: f.error}
+	}
+
+	if len(s) > 1 {
+		return &GroupTraversalStep{error: fmt.Errorf("Group requires 0 or 1 parameter")}
+	}
+
+	by := ""
+	if len(s) > 0 {
+		by = s[0].(string)
+	}
+	if by == "" {
+		by = "TrackingID"
+	}
+
+	flowGroupMap := make(map[string][]*flow.Flow, 0)
+	for _, fl := range f.flowset.Flows {
+		var (
+			keyField string
+			err      error
+		)
+		if keyField, err = fl.GetFieldString(by); err != nil {
+			return &GroupTraversalStep{error: err}
+		}
+
+		flowGroupMap[keyField] = append(flowGroupMap[keyField], fl)
+	}
+
+	return &GroupTraversalStep{GraphTraversal: f.GraphTraversal, flowGroupSet: flowGroupMap}
+}
+
+// Values returns list of flows
+func (f *FlowTraversalStep) Values() []interface{} {
+	a := make([]interface{}, len(f.flowset.Flows))
+	for i, flow := range f.flowset.Flows {
+		a[i] = flow
+	}
+	return a
+}
+
+// MarshalJSON serialize in JSON
+func (f *FlowTraversalStep) MarshalJSON() ([]byte, error) {
+	return json.Marshal(f.Values())
+}
+
+// Error returns traversal error
+func (f *FlowTraversalStep) Error() error {
+	return f.error
+}
+
+// NewFlowTraversalExtension creates a new flow traversal extension for Gremlin parser
+func NewFlowTraversalExtension(client flow.TableClient, storage storage.Storage) *FlowTraversalExtension {
+	return &FlowTraversalExtension{
+		FlowToken:        traversalFlowToken,
+		HopsToken:        traversalHopsToken,
+		NodesToken:       traversalNodesToken,
+		CaptureNodeToken: traversalCaptureNodeToken,
+		AggregatesToken:  traversalAggregatesToken,
+		BpfToken:         traversalBpfToken,
+		TableClient:      client,
+		Storage:          storage,
+	}
+}
+
+// ScanIdent tokenize the step
+func (e *FlowTraversalExtension) ScanIdent(s string) (traversal.Token, bool) {
+	switch s {
+	case "FLOWS":
+		return e.FlowToken, true
+	case "HOPS":
+		return e.HopsToken, true
+	case "NODES":
+		return e.NodesToken, true
+	case "NODE", "CAPTURENODE":
+		return e.CaptureNodeToken, true
+	case "AGGREGATES":
+		return e.AggregatesToken, true
+	case "BPF":
+		return e.BpfToken, true
+	case "GROUP":
+		return e.GroupToken, true
+	}
+	return traversal.IDENT, false
+}
+
+// ParseStep creates steps from token
+func (e *FlowTraversalExtension) ParseStep(t traversal.Token, p traversal.GremlinTraversalContext) (traversal.GremlinTraversalStep, error) {
+	switch t {
+	case e.FlowToken:
+		var filter *filters.Filter
+		if len(p.Params) > 0 {
+			f, err := paramsToFilter(filters.BoolFilterOp_AND, p.Params...)
+			if err != nil {
+				return nil, err
+			}
+			filter = f
+		}
+
+		return &FlowGremlinTraversalStep{TableClient: e.TableClient, Storage: e.Storage, context: p, paramsFilter: filter}, nil
+	case e.HopsToken:
+		return &HopsGremlinTraversalStep{GremlinTraversalContext: p}, nil
+	case e.NodesToken:
+		return &NodesGremlinTraversalStep{GremlinTraversalContext: p}, nil
+	case e.CaptureNodeToken:
+		return &CaptureNodeGremlinTraversalStep{GremlinTraversalContext: p}, nil
+	case e.AggregatesToken:
+		return &AggregatesGremlinTraversalStep{GremlinTraversalContext: p}, nil
+	case e.BpfToken:
+		return &BpfGremlinTraversalStep{GremlinTraversalContext: p}, nil
+	case e.GroupToken:
+		return &GroupGremlinTraversalStep{GremlinTraversalContext: p}, nil
+	}
+
+	return nil, nil
+}
+
+func (s *FlowGremlinTraversalStep) makeSearchQuery() (fsq filters.SearchQuery, err error) {
+	var interval *filters.Range
+	if s.context.StepContext.PaginationRange != nil {
+		// not using the From parameter as the pagination will be applied after
+		// flow request.
+		interval = &filters.Range{From: 0, To: s.context.StepContext.PaginationRange[1]}
+	}
+
+	fsq = filters.SearchQuery{
+		Filter:          s.paramsFilter,
+		PaginationRange: interval,
+		Dedup:           s.dedup,
+		DedupBy:         s.dedupBy,
+		Sort:            s.sort,
+		SortBy:          s.sortBy,
+		SortOrder:       s.sortOrder,
+	}
+
+	return
+}
+
+func captureAllowedNodes(nodes []*graph.Node) []*graph.Node {
+	var allowed []*graph.Node
+	for _, n := range nodes {
+		if tp, _ := n.GetFieldString("Type"); tp != "" && probes.IsCaptureAllowed(tp) {
+			allowed = append(allowed, n)
+		}
+	}
+	return allowed
+}
+
+func (s *FlowGremlinTraversalStep) addTimeFilter(fsq *filters.SearchQuery, timeContext *graph.TimeSlice) {
+	var timeFilter *filters.Filter
+	tr := filters.Range{
+		// When we query the flows on the agents, we get the flows that have not
+		// expired yet. To replicate this behaviour for stored storage, we need
+		// to add the expire duration:
+		// [-----------------------------------]         |
+		// Start                            Last       Query
+		//                      ^                        ^
+		//                     From                      To
+		From: timeContext.Start - int64(config.GetInt("flow.expire"))*1000,
+		To:   timeContext.Last,
+	}
+	// flow need to have at least one metric included in the time range
+	timeFilter = filters.NewFilterActiveIn(tr, "")
+	fsq.Filter = filters.NewAndFilter(fsq.Filter, timeFilter)
+}
+
+// Exec flow step
+func (s *FlowGremlinTraversalStep) Exec(last traversal.GraphTraversalStep) (traversal.GraphTraversalStep, error) {
+	var graphTraversal *traversal.GraphTraversal
+	var err error
+	var context graph.Context
+	var nodes []*graph.Node
+
+	flowSearchQuery, err := s.makeSearchQuery()
+	if err != nil {
+		return nil, err
+	}
+
+	flowset := &flow.FlowSet{}
+
+	switch tv := last.(type) {
+	case *traversal.GraphTraversal:
+		graphTraversal = tv
+		graphTraversal.RLock()
+		context = graphTraversal.Graph.GetContext()
+		graphTraversal.RUnlock()
+	case *traversal.GraphTraversalV:
+		graphTraversal = tv.GraphTraversal
+
+		graphTraversal.RLock()
+		context = graphTraversal.Graph.GetContext()
+		// not need to get flows from node not supporting capture
+		if nodes = captureAllowedNodes(tv.GetNodes()); len(nodes) == 0 {
+			graphTraversal.RUnlock()
+			return &FlowTraversalStep{GraphTraversal: graphTraversal, Storage: s.Storage, flowset: flowset, flowSearchQuery: flowSearchQuery}, nil
+		}
+		graphTraversal.RUnlock()
+	case *traversal.GraphTraversalShortestPath:
+		graphTraversal = tv.GraphTraversal
+
+		graphTraversal.RLock()
+		context = graphTraversal.Graph.GetContext()
+		// not need to get flows from node not supporting capture
+		if nodes = captureAllowedNodes(tv.GetNodes()); len(nodes) == 0 {
+			graphTraversal.RUnlock()
+			return &FlowTraversalStep{GraphTraversal: graphTraversal, Storage: s.Storage, flowset: flowset, flowSearchQuery: flowSearchQuery}, nil
+		}
+		graphTraversal.RUnlock()
+	default:
+		return nil, traversal.ErrExecutionError
+	}
+
+	if context.TimeSlice != nil {
+		if s.Storage == nil {
+			return nil, storage.ErrNoStorageConfigured
+		}
+
+		s.addTimeFilter(&flowSearchQuery, context.TimeSlice)
+
+		if len(nodes) != 0 {
+			graphTraversal.RLock()
+			nodeFilter := flow.NewFilterForNodes(nodes)
+			flowSearchQuery.Filter = filters.NewAndFilter(flowSearchQuery.Filter, nodeFilter)
+			graphTraversal.RUnlock()
+		}
+
+		// We do nothing as the following step is Metrics
+		// and we'll make a request on metrics instead of flows
+		if s.metricsNextStep {
+			return &FlowTraversalStep{GraphTraversal: graphTraversal, Storage: s.Storage, flowSearchQuery: flowSearchQuery}, nil
+		}
+
+		// We do nothing as the following step is Metrics
+		// and we'll make a request on rawpackets instead of flows
+		if s.rawpacketsNextStep {
+			return &FlowTraversalStep{GraphTraversal: graphTraversal, Storage: s.Storage, flowSearchQuery: flowSearchQuery}, nil
+		}
+
+		if flowset, err = s.Storage.SearchFlows(flowSearchQuery); err != nil {
+			return nil, err
+		}
+	} else {
+		if len(nodes) != 0 {
+			graphTraversal.RLock()
+			hnmap := topology.BuildHostNodeTIDMap(nodes)
+			graphTraversal.RUnlock()
+			flowset, err = s.TableClient.LookupFlowsByNodes(hnmap, flowSearchQuery)
+		} else {
+			flowset, err = s.TableClient.LookupFlows(flowSearchQuery)
+		}
+	}
+
+	if err != nil {
+		logging.GetLogger().Errorf("Error while looking for flows: %s", err)
+		return nil, err
+	}
+
+	if r := s.context.StepContext.PaginationRange; r != nil {
+		flowset.Slice(int(r[0]), int(r[1]))
+	}
+
+	return &FlowTraversalStep{GraphTraversal: graphTraversal, Storage: s.Storage, flowset: flowset, flowSearchQuery: flowSearchQuery}, nil
 }
