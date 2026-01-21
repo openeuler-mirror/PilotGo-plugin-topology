@@ -3,6 +3,7 @@ package agent
 import (
 	"fmt"
 
+	"github.com/skydive-project/skydive/plugin"
 	"github.com/skydive-project/skydive/probe"
 	"github.com/skydive-project/skydive/topology"
 	"github.com/skydive-project/skydive/topology/probes/bess"
@@ -62,4 +63,29 @@ func NewTopologyProbe(name string, ctx tp.Context, bundle *probe.Bundle) (probe.
 	default:
 		return nil, fmt.Errorf("unsupported probe %s", name)
 	}
+}
+
+func loadPluginProbes(ctx tp.Context, bundle *probe.Bundle) error {
+	plugins, err := plugin.LoadTopologyPlugins()
+	if err != nil {
+		return err
+	}
+
+	for _, p := range plugins {
+		p.Register()
+	}
+
+	// then register agent plugins
+	for _, p := range plugins {
+		if p.AgentCtor != nil {
+			handler, err := p.AgentCtor(ctx, bundle)
+			if err != nil {
+				return fmt.Errorf("Failed to instantiate plugin %s: %s", p.Name, err)
+			}
+
+			bundle.AddHandler(p.Name, handler)
+		}
+	}
+
+	return nil
 }
