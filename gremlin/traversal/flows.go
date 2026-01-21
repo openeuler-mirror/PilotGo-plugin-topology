@@ -936,3 +936,190 @@ func (s *FlowGremlinTraversalStep) Exec(last traversal.GraphTraversalStep) (trav
 
 	return &FlowTraversalStep{GraphTraversal: graphTraversal, Storage: s.Storage, flowset: flowset, flowSearchQuery: flowSearchQuery}, nil
 }
+
+// Reduce flow step
+func (s *FlowGremlinTraversalStep) Reduce(next traversal.GremlinTraversalStep) (traversal.GremlinTraversalStep, error) {
+	if step, ok := next.(*traversal.GremlinTraversalStepHas); ok {
+		// merge has parameters, useful in case of multiple Has reduce
+		filter, err := paramsToFilter(filters.BoolFilterOp_AND, step.Params...)
+		if err != nil {
+			return s, err
+		}
+
+		if s.paramsFilter != nil {
+			s.paramsFilter = filters.NewAndFilter(s.paramsFilter, filter)
+		} else {
+			s.paramsFilter = filter
+		}
+		return s, nil
+	} else if step, ok := next.(*traversal.GremlinTraversalStepHasEither); ok {
+		// merge has parameters, useful in case of multiple Has reduce
+		filter, err := paramsToFilter(filters.BoolFilterOp_OR, step.Params...)
+		if err != nil {
+			return s, err
+		}
+
+		if s.paramsFilter != nil {
+			s.paramsFilter = filters.NewAndFilter(s.paramsFilter, filter)
+		} else {
+			s.paramsFilter = filter
+		}
+		return s, nil
+	}
+
+	if dedupStep, ok := next.(*traversal.GremlinTraversalStepDedup); ok {
+		s.dedup = true
+		if len(dedupStep.Params) > 0 {
+			s.dedupBy = dedupStep.Params[0].(string)
+		}
+		return s, nil
+	}
+
+	if sortStep, ok := next.(*traversal.GremlinTraversalStepSort); ok {
+		s.sort = true
+		s.sortBy = defaultSortBy
+		s.sortOrder = filters.SortOrder_Ascending
+		if len(sortStep.Params) > 0 {
+			var err error
+			if s.sortOrder, s.sortBy, err = traversal.ParseSortParameter(sortStep.Params...); err != nil {
+				// in case of error no reduce, the error will be triggered by the non reduce version
+				return next, nil
+			}
+		}
+
+		return s, nil
+	}
+
+	switch next.(type) {
+	case *MetricsGremlinTraversalStep:
+		s.metricsNextStep = true
+	case *RawPacketsGremlinTraversalStep:
+		s.rawpacketsNextStep = true
+	}
+
+	if s.context.ReduceRange(next) {
+		return s, nil
+	}
+
+	return next, nil
+}
+
+// Context flow step
+func (s *FlowGremlinTraversalStep) Context() *traversal.GremlinTraversalContext {
+	return &s.context
+}
+
+// Exec hops step
+func (s *HopsGremlinTraversalStep) Exec(last traversal.GraphTraversalStep) (traversal.GraphTraversalStep, error) {
+	switch last.(type) {
+	case *FlowTraversalStep:
+		fts := last.(*FlowTraversalStep)
+		return fts.Hops(s.StepContext, s.Params...), nil
+	}
+
+	return nil, traversal.ErrExecutionError
+}
+
+// Reduce hops step
+func (s *HopsGremlinTraversalStep) Reduce(next traversal.GremlinTraversalStep) (traversal.GremlinTraversalStep, error) {
+	if hasStep, ok := next.(*traversal.GremlinTraversalStepHas); ok {
+		s.Params = hasStep.Params
+		return s, nil
+	}
+	return next, nil
+}
+
+// Context hops step
+func (s *HopsGremlinTraversalStep) Context() *traversal.GremlinTraversalContext {
+	return &s.GremlinTraversalContext
+}
+
+// Exec Nodes step
+func (s *NodesGremlinTraversalStep) Exec(last traversal.GraphTraversalStep) (traversal.GraphTraversalStep, error) {
+	switch last.(type) {
+	case *FlowTraversalStep:
+		fts := last.(*FlowTraversalStep)
+		return fts.Nodes(s.StepContext, s.Params...), nil
+	}
+	return nil, traversal.ErrExecutionError
+}
+
+// Reduce Nodes step
+func (s *NodesGremlinTraversalStep) Reduce(next traversal.GremlinTraversalStep) (traversal.GremlinTraversalStep, error) {
+	if hasStep, ok := next.(*traversal.GremlinTraversalStepHas); ok {
+		s.Params = hasStep.Params
+		return s, nil
+	}
+	return next, nil
+}
+
+// Context Nodes step
+func (s *NodesGremlinTraversalStep) Context() *traversal.GremlinTraversalContext {
+	return &s.GremlinTraversalContext
+}
+
+// Exec Capture step
+func (s *CaptureNodeGremlinTraversalStep) Exec(last traversal.GraphTraversalStep) (traversal.GraphTraversalStep, error) {
+	switch last.(type) {
+	case *FlowTraversalStep:
+		fs := last.(*FlowTraversalStep)
+		return fs.CaptureNode(s.StepContext, s.Params...), nil
+	}
+
+	return nil, traversal.ErrExecutionError
+}
+
+// Reduce Capture step
+func (s *CaptureNodeGremlinTraversalStep) Reduce(next traversal.GremlinTraversalStep) (traversal.GremlinTraversalStep, error) {
+	if hasStep, ok := next.(*traversal.GremlinTraversalStepHas); ok {
+		s.Params = hasStep.Params
+		return s, nil
+	}
+	return next, nil
+}
+
+// Context step
+func (s *CaptureNodeGremlinTraversalStep) Context() *traversal.GremlinTraversalContext {
+	return &s.GremlinTraversalContext
+}
+
+// Exec Aggregates step
+func (a *AggregatesGremlinTraversalStep) Exec(last traversal.GraphTraversalStep) (traversal.GraphTraversalStep, error) {
+	switch last.(type) {
+	case *MetricsTraversalStep:
+		mts := last.(*MetricsTraversalStep)
+		return mts.Aggregates(a.StepContext, a.Params...), nil
+	}
+
+	return nil, traversal.ErrExecutionError
+}
+
+// Reduce Aggregates step
+func (a *AggregatesGremlinTraversalStep) Reduce(next traversal.GremlinTraversalStep) (traversal.GremlinTraversalStep, error) {
+	return next, nil
+}
+
+// Context Aggregates step
+func (a *AggregatesGremlinTraversalStep) Context() *traversal.GremlinTraversalContext {
+	return &a.GremlinTraversalContext
+}
+
+// Exec BPF step
+func (s *BpfGremlinTraversalStep) Exec(last traversal.GraphTraversalStep) (traversal.GraphTraversalStep, error) {
+	switch last.(type) {
+	case *RawPacketsTraversalStep:
+		rs := last.(*RawPacketsTraversalStep)
+		return rs.BPF(s.StepContext, s.Params...), nil
+	}
+	return nil, traversal.ErrExecutionError
+}
+
+// Reduce BPF step
+func (s *BpfGremlinTraversalStep) Reduce(next traversal.GremlinTraversalStep) (traversal.GremlinTraversalStep, error) {
+	return next, nil
+}
+
+// Context of BPF step
+func (s *BpfGremlinTraversalStep) Context() *traversal.GremlinTraversalContext {
+	return &s.GremlinTraversalContext
+}
