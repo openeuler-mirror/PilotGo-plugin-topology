@@ -44,3 +44,18 @@ type Server struct {
 	flowStorage     storage.Storage
 	etcdClient      *etcdclient.Client
 }
+
+// GetStatus returns the status of an analyzer
+func (s *Server) GetStatus() interface{} {
+	hubStatus := s.hub.GetStatus().(*hub.Status)
+
+	return &Status{
+		Agents:      hubStatus.Pods,
+		Peers:       hubStatus.Peers,
+		Publishers:  hubStatus.Publishers,
+		Subscribers: hubStatus.Subscribers,
+		Alerts:      hubStatus.Alerts,
+		Captures:    hub.ElectionStatus{IsMaster: s.onDemandClient.IsMaster()},
+		Probes:      s.probeBundle.GetStatus(),
+	}
+}
