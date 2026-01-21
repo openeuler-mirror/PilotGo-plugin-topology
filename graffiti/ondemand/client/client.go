@@ -243,3 +243,54 @@ func (o *OnDemandClient) OnNodeAdded(n *graph.Node) {
 		o.checkForRegistration.Call()
 	}
 }
+
+// OnNodeUpdated graph event
+func (o *OnDemandClient) OnNodeUpdated(n *graph.Node, ops []graph.PartiallyUpdatedOp) {
+	o.RLock()
+	if tasks, ok := o.registeredNodes[n.ID]; ok {
+		for resourceID, started := range tasks {
+			if resource := o.resources[resourceID]; !started && resource != nil {
+				if o.handler.CheckState(n, resource) {
+					o.registeredNodes[n.ID][resourceID] = true
+					o.subscriberPool.BroadcastMessage(ws.NewStructMessage(o.wsNotificationNamespace, "NodeUpdated", resource))
+				}
+			}
+		}
+	}
+	o.RUnlock()
+
+	o.checkForRegistration.Call()
+}
+
+// OnNodeDeleted graph event
+func (o *OnDemandClient) OnNodeDeleted(n *graph.Node) {
+	o.RLock()
+	if tasks, ok := o.registeredNodes[n.ID]; ok {
+		for resourceID := range tasks {
+			o.subscriberPool.BroadcastMessage(ws.NewStructMessage(o.wsNotificationNamespace, "NodeUpdated", o.resources[resourceID]))
+		}
+	}
+	delete(o.registeredNodes, n.ID)
+	o.RUnlock()
+}
+
+// OnEdgeAdded graph event
+func (o *OnDemandClient) OnEdgeAdded(e *graph.Edge) {
+	o.checkForRegistration.Call()
+}
+
+func (o *OnDemandClient) registerResource(resource rest.Resource) {
+	o.graph.RLock()
+	defer o.graph.RUnlock()
+
+	o.Lock()
+	defer o.Unlock()
+
+	o.resources[resource.GetID()] = resource
+
+	if nrs := o.handler.GetNodeResources(resource); len(nrs) > 0 {
+		if nps := o.nodeTasks(nrs); len(nps) > 0 {
+			go o.registerTasks(nps)
+		}
+	}
+}
