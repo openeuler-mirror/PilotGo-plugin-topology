@@ -178,3 +178,151 @@ static inline void fill_vlans(struct __sk_buff *skb, __u16 *protocol, int *offse
 		add_layer(flow, DOT1Q_LAYER);
 	}
 }
+
+static inline void fill_link(struct __sk_buff *skb, int offset, struct flow *flow)
+{
+	struct link_layer *layer = &flow->link_layer;
+
+	fill_haddr(skb, offset + offsetof(struct ethhdr, h_source), layer->mac_src);
+	fill_haddr(skb, offset + offsetof(struct ethhdr, h_dest), layer->mac_dst);
+
+	update_hash_half(&layer->_hash_src, layer->mac_src[0] << 8 | layer->mac_src[1]);
+	update_hash_half(&layer->_hash_src, layer->mac_src[2] << 8 | layer->mac_src[3]);
+	update_hash_half(&layer->_hash_src, layer->mac_src[4] << 8 | layer->mac_src[5]);
+
+	__u64 hash_dst = 0;
+	update_hash_half(&hash_dst, layer->mac_dst[0] << 8 | layer->mac_dst[1]);
+	update_hash_half(&hash_dst, layer->mac_dst[2] << 8 | layer->mac_dst[3]);
+	update_hash_half(&hash_dst, layer->mac_dst[4] << 8 | layer->mac_dst[5]);
+
+	layer->_hash = FNV_BASIS ^ layer->_hash_src ^ hash_dst;
+
+	add_layer(flow, ETH_LAYER);
+	flow->layers_info |= LINK_LAYER_INFO;
+}
+
+static inline void fill_flow(struct __sk_buff *skb, struct flow *flow, __u64 tm)
+{
+	fill_link(skb, 0, flow);
+
+	__u16 protocol = load_half(skb, offsetof(struct ethhdr, h_proto));
+	int offset = ETH_HLEN;
+
+	fill_vlans(skb, &protocol, &offset, flow);
+
+	switch (protocol)
+	{
+	case ETH_P_ARP:
+		update_hash_half(&flow->link_layer._hash, protocol);
+		flow->layers_info |= ARP_LAYER;
+		break;
+	case ETH_P_IP:
+	case ETH_P_IPV6:
+		fill_network(skb, (__u16)protocol, offset, flow, tm);
+		break;
+	}
+
+	flow->key = flow->link_layer._hash;
+	flow->key = rotl(flow->key, 16);
+	flow->key ^= flow->network_layer._hash;
+	flow->key = rotl(flow->key, 16);
+	flow->key ^= flow->transport_layer._hash;
+	flow->key = rotl(flow->key, 16);
+	flow->key ^= flow->icmp_layer._hash;
+}
+
+SOCKET(flow_table)
+int bpf_flow_table(struct __sk_buff *skb)
+{
+	__u64 tm = bpf_ktime_get_ns();
+
+	__u32 key = START_TIME_NS;
+	__u64 *sns = bpf_map_lookup_element(&u64_config_values, &key);
+	if (sns != NULL && *sns == 0)
+	{
+		bpf_map_update_element(&u64_config_values, &key, &tm, BPF_ANY);
+	}
+
+	struct flow flow = { .last = tm }, *prev;
+	fill_flow(skb, &flow, tm);
+
+	key = FLOW_PAGE;
+	__u64 *page = bpf_map_lookup_element(&u64_config_values, &key);
+	__u64 flow_page = 0;
+	if (page != NULL)
+	{
+		flow_page = *page;
+	}
+
+	struct bpf_map_def *flowtable = &flow_table_p1;
+	if (flow_page == 1)
+	{
+		flowtable = &flow_table_p2;
+	}
+
+	prev = bpf_map_lookup_element(flowtable, &flow.key);
+	if (prev)
+	{
+		update_metrics(skb, prev, is_ab_packet(&flow, prev));
+
+		__sync_fetch_and_add(&prev->last, tm - prev->last);
+
+		if (prev->layers_info & flow.layers_info & TRANSPORT_LAYER_INFO > 0)
+		{
+			if (prev->transport_layer.port_src == flow.transport_layer.port_src)
+			{
+				if (prev->transport_layer.ab_syn == 0 && flow.transport_layer.ab_syn != 0)
+				{
+					__sync_fetch_and_add(&prev->transport_layer.ab_syn, flow.transport_layer.ab_syn);
+				}
+				if (prev->transport_layer.ab_fin == 0 && flow.transport_layer.ab_fin != 0)
+				{
+					__sync_fetch_and_add(&prev->transport_layer.ab_fin, flow.transport_layer.ab_fin);
+				}
+				if (prev->transport_layer.ab_rst == 0 && flow.transport_layer.ab_rst != 0)
+				{
+					__sync_fetch_and_add(&prev->transport_layer.ab_rst, flow.transport_layer.ab_rst);
+				}
+			}
+			else
+			{
+				if (prev->transport_layer.ba_syn == 0 && flow.transport_layer.ab_syn != 0)
+				{
+					__sync_fetch_and_add(&prev->transport_layer.ba_syn, flow.transport_layer.ab_syn);
+				}
+				if (prev->transport_layer.ba_fin == 0 && flow.transport_layer.ab_fin != 0)
+				{
+					__sync_fetch_and_add(&prev->transport_layer.ba_fin, flow.transport_layer.ab_fin);
+				}
+				if (prev->transport_layer.ba_rst == 0 && flow.transport_layer.ab_rst != 0)
+				{
+					__sync_fetch_and_add(&prev->transport_layer.ba_rst, flow.transport_layer.ab_rst);
+				}
+			}
+		}
+	}
+	else
+	{
+		update_metrics(skb, &flow, 1);
+
+		__sync_fetch_and_add(&flow.start, tm);
+
+		if (bpf_map_update_element(flowtable, &flow.key, &flow, BPF_ANY) == -1)
+		{
+			__u32 stats_key = 0;
+			__u64 stats_update_val = 1;
+			__u64 *stats_val = bpf_map_lookup_element(&stats_map, &stats_key);
+			if (stats_val == NULL)
+			{
+				bpf_map_update_element(&stats_map, &stats_key, &stats_update_val, BPF_ANY);
+			}
+			else
+			{
+				__sync_fetch_and_add(stats_val, stats_update_val);
+			}
+		}
+	}
+
+	return 0;
+}
+char _license[] LICENSE = "GPL";
