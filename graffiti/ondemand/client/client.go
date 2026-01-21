@@ -144,3 +144,51 @@ func (o *OnDemandClient) registerTask(np nodeTask) bool {
 
 	return true
 }
+
+func (o *OnDemandClient) unregisterTask(node *graph.Node, resource rest.Resource) bool {
+	body, err := o.handler.EncodeMessage(node.ID, resource)
+	if err != nil {
+		logging.GetLogger().Errorf("Unable to encode message for agent %s: %s", node.Host, err)
+		return false
+	}
+
+	msg := ws.NewStructMessage(o.wsNamespace, "Stop", ondemand.RawQuery{
+		NodeID:   node.ID,
+		Resource: body,
+	})
+
+	if err := o.agentPool.SendMessageTo(msg, node.Host); err != nil {
+		logging.GetLogger().Errorf("Unable to send message to agent %s: %s", node.Host, err)
+		return false
+	}
+
+	o.removeRegisteredNode(node.ID, resource.GetID())
+
+	return true
+}
+
+func (o *OnDemandClient) nodeTasks(nrs []OnDemandNodeResource) map[graph.Identifier]nodeTask {
+	toRegister := func(nr OnDemandNodeResource) (nodeID graph.Identifier, host string, register bool) {
+		// check not already registered
+		tasks, ok := o.registeredNodes[nr.Node.ID]
+		if ok {
+			ok = tasks[nr.Resource.GetID()]
+		}
+
+		if ok {
+			logging.GetLogger().Debugf("%s already registered on %s", nr.Resource.GetID(), nr.Node.ID)
+			return
+		}
+
+		return nr.Node.ID, nr.Node.Host, true
+	}
+
+	nps := map[graph.Identifier]nodeTask{}
+	for _, nr := range nrs {
+		if nodeID, host, ok := toRegister(nr); ok {
+			nps[nodeID] = nodeTask{nodeID, host, nr.Resource}
+		}
+	}
+
+	return nps
+}
