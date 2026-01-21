@@ -32,6 +32,7 @@ require (
 	github.com/robertkrimen/otto v0.3.0
 	github.com/safchain/insanelock v0.0.0-20200217234559-cfbf166e05b3
 	github.com/satori/go.uuid v1.2.0
+	github.com/skydive-project/go-debouncer v1.0.0
 	github.com/skydive-project/skydive/graffiti v0.0.0-20240717134610-a4452f214754
 	github.com/spf13/cast v1.6.0
 	github.com/spf13/cobra v1.8.0
