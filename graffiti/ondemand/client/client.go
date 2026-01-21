@@ -2,11 +2,13 @@ package client
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	cache "github.com/pmylund/go-cache"
 	"github.com/safchain/insanelock"
 	"github.com/skydive-project/go-debouncer"
+	"github.com/skydive-project/skydive/graffiti/filters"
 
 	"github.com/skydive-project/skydive/graffiti/api/rest"
 	etcd "github.com/skydive-project/skydive/graffiti/etcd/client"
@@ -292,5 +294,64 @@ func (o *OnDemandClient) registerResource(resource rest.Resource) {
 		if nps := o.nodeTasks(nrs); len(nps) > 0 {
 			go o.registerTasks(nps)
 		}
+	}
+}
+
+func (o *OnDemandClient) onResourceAdded(resource rest.Resource) {
+	if !o.IsMaster() {
+		return
+	}
+
+	o.registerResource(resource)
+}
+
+func (o *OnDemandClient) unregisterResource(resource rest.Resource) {
+	o.graph.RLock()
+	defer o.graph.RUnlock()
+
+	o.deletedNodeCache.Delete(resource.GetID())
+
+	o.Lock()
+	delete(o.resources, resource.GetID())
+	o.Unlock()
+
+	filter := filters.NewTermStringFilter(fmt.Sprintf("%ss.ID", o.resourceName), resource.GetID())
+	nodes := o.graph.GetNodes(graph.NewElementFilter(filter))
+	for _, node := range nodes {
+		go o.unregisterTask(node, resource)
+	}
+}
+
+func (o *OnDemandClient) onResourceDeleted(resource rest.Resource) {
+	if !o.IsMaster() {
+		// fill the cache with recent delete in order to be able to delete then
+		// in case we lose the master and nobody is master yet. This cache will
+		// be used when becoming master.
+		o.deletedNodeCache.Set(resource.GetID(), resource, cache.DefaultExpiration)
+		return
+	}
+
+	o.unregisterResource(resource)
+}
+
+// OnStartAsMaster event
+func (o *OnDemandClient) OnStartAsMaster() {
+}
+
+// OnStartAsSlave event
+func (o *OnDemandClient) OnStartAsSlave() {
+}
+
+// OnSwitchToMaster event
+func (o *OnDemandClient) OnSwitchToMaster() {
+	// try to delete recently added resource to handle case where the api got a delete but wasn't yet master
+	for _, item := range o.deletedNodeCache.Items() {
+		resource := item.Object.(rest.Resource)
+		o.unregisterResource(resource)
+	}
+
+	for _, resource := range o.apiHandler.Index() {
+		resource := resource.(rest.Resource)
+		o.onResourceAdded(resource)
 	}
 }
