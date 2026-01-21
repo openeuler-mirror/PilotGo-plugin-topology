@@ -3,6 +3,8 @@ package server
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
+	"net/http"
 
 	"github.com/safchain/insanelock"
 	"github.com/skydive-project/skydive/graffiti/api/rest"
@@ -116,6 +118,71 @@ func (o *OnDemandServer) unregisterTask(n *graph.Node, resource rest.Resource) e
 	o.Unlock()
 
 	return nil
+}
+
+// OnStructMessage websocket message, valid message type are Start, Stop
+func (o *OnDemandServer) OnStructMessage(c ws.Speaker, msg *ws.StructMessage) {
+	var enveloppe ondemand.RawQuery
+	if err := json.Unmarshal(msg.Obj, &enveloppe); err != nil {
+		logging.GetLogger().Errorf("Unable to decode message %v", msg)
+		return
+	}
+
+	resource, err := o.handler.DecodeMessage(enveloppe.Resource)
+	if err != nil {
+		logging.GetLogger().Errorf("Unable to decode message %v", o.resourceName)
+		return
+	}
+
+	query := ondemand.Query{NodeID: enveloppe.NodeID, Resource: resource}
+
+	status := http.StatusBadRequest
+
+	o.Graph.Lock()
+
+	switch msg.Type {
+	case "Start":
+		n := o.Graph.GetNode(graph.Identifier(query.NodeID))
+		if n == nil {
+			logging.GetLogger().Errorf("Unknown node %s for new %s", query.NodeID, o.resourceName)
+			status = http.StatusNotFound
+			break
+		}
+
+		status = http.StatusOK
+		if _, err := n.GetFieldString(fmt.Sprintf("%s.ID", o.resourceName)); err == nil {
+			logging.GetLogger().Debugf("%s already started on node %s", n.ID, o.resourceName)
+		} else {
+			if ok := o.registerTask(n, resource); !ok {
+				status = http.StatusInternalServerError
+			}
+		}
+
+	case "Stop":
+		n := o.Graph.GetNode(graph.Identifier(query.NodeID))
+		if n == nil {
+			logging.GetLogger().Errorf("Unknown node %s for new %s", query.NodeID, o.resourceName)
+			status = http.StatusNotFound
+			break
+		}
+
+		status = http.StatusOK
+		if err := o.unregisterTask(n, resource); err != nil {
+			if err == ErrTaskNotFound {
+				logging.GetLogger().Warningf("Failed to unregister %s on node %s, %s", o.resourceName, n.ID, err)
+				status = http.StatusNotFound
+			} else {
+				logging.GetLogger().Errorf("Failed to unregister %s on node %s, %s", o.resourceName, n.ID, err)
+				status = http.StatusInternalServerError
+			}
+		}
+	}
+
+	// be sure to unlock before sending message
+	o.Graph.Unlock()
+
+	reply := msg.Reply(&query, msg.Type+"Reply", status)
+	c.SendMessage(reply)
 }
 
 // OnNodeDeleted graph event
