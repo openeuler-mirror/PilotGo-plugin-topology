@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	cache "github.com/pmylund/go-cache"
 	"github.com/safchain/insanelock"
@@ -354,4 +355,62 @@ func (o *OnDemandClient) OnSwitchToMaster() {
 		resource := resource.(rest.Resource)
 		o.onResourceAdded(resource)
 	}
+}
+
+// OnSwitchToSlave event
+func (o *OnDemandClient) OnSwitchToSlave() {
+}
+
+func (o *OnDemandClient) onAPIWatcherEvent(action string, id string, resource rest.Resource) {
+	logging.GetLogger().Debugf("New watcher event %s for %s", action, id)
+	switch action {
+	case "init", "create", "set", "update":
+		o.subscriberPool.BroadcastMessage(ws.NewStructMessage(o.wsNotificationNamespace, "Added", resource))
+		o.onResourceAdded(resource)
+	case "expire", "delete":
+		o.subscriberPool.BroadcastMessage(ws.NewStructMessage(o.wsNotificationNamespace, "Deleted", resource))
+		o.onResourceDeleted(resource)
+	}
+}
+
+// Start the task
+func (o *OnDemandClient) Start() {
+	o.MasterElection.AddEventListener(o)
+	o.agentPool.AddStructMessageHandler(o, []string{o.wsNamespace})
+
+	o.MasterElection.StartAndWait()
+
+	o.checkForRegistration.Start()
+
+	o.watcher = o.apiHandler.AsyncWatch(o.onAPIWatcherEvent)
+	o.graph.AddEventListener(o)
+}
+
+// Stop the task
+func (o *OnDemandClient) Stop() {
+	o.watcher.Stop()
+	o.MasterElection.Stop()
+	o.checkForRegistration.Stop()
+}
+
+// NewOnDemandClient creates a new ondemand task client based on API, graph and websocket
+func NewOnDemandClient(g *graph.Graph, ch rest.WatchableHandler, agentPool ws.StructSpeakerPool, subscriberPool ws.StructSpeakerPool, etcdClient *etcd.Client, handler OnDemandClientHandler) *OnDemandClient {
+	election := etcdClient.NewElection("/elections/ondemand-client-" + handler.ResourceName())
+	o := &OnDemandClient{
+		MasterElection:          election,
+		graph:                   g,
+		handler:                 handler,
+		apiHandler:              ch,
+		agentPool:               agentPool,
+		subscriberPool:          subscriberPool,
+		wsNamespace:             ondemand.Namespace + handler.ResourceName(),
+		wsNotificationNamespace: ondemand.Namespace + handler.ResourceName() + "Notification",
+		resourceName:            handler.ResourceName(),
+		resources:               ch.Index(),
+		registeredNodes:         make(map[graph.Identifier]map[string]bool),
+		deletedNodeCache:        cache.New(election.TTL()*2, election.TTL()*2),
+	}
+	o.checkForRegistration = debouncer.New(time.Second, o.checkForRegistrationCallback)
+
+	return o
 }
