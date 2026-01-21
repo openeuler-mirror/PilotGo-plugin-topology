@@ -1,26 +1,32 @@
 package analyzer
 
 import (
-	"atomgit.com/openeuler/PilotGo-plugin-topology/config"
-	"atomgit.com/openeuler/PilotGo-plugin-topology/ebpf/statics"
-	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/api/rest"
-	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/graph"
-	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/hub"
-	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/logging"
-	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/ondemand/client"
+	"crypto/tls"
+	"net/http"
+	"time"
+
 	"github.com/pkg/errors"
+	yaml "gopkg.in/yaml.v2"
+
 	api "github.com/skydive-project/skydive/api/server"
 	"github.com/skydive-project/skydive/api/types"
+	"github.com/skydive-project/skydive/config"
 	"github.com/skydive-project/skydive/flow/server"
 	"github.com/skydive-project/skydive/flow/storage"
+	"github.com/skydive-project/skydive/graffiti/api/rest"
 	gapi "github.com/skydive-project/skydive/graffiti/api/server"
 	gtypes "github.com/skydive-project/skydive/graffiti/api/types"
 	etcdclient "github.com/skydive-project/skydive/graffiti/etcd/client"
+	"github.com/skydive-project/skydive/graffiti/graph"
+	shttp "github.com/skydive-project/skydive/graffiti/http"
+	"github.com/skydive-project/skydive/graffiti/hub"
+	"github.com/skydive-project/skydive/graffiti/logging"
+	"github.com/skydive-project/skydive/graffiti/ondemand/client"
 	ws "github.com/skydive-project/skydive/graffiti/websocket"
 	"github.com/skydive-project/skydive/probe"
+	"github.com/skydive-project/skydive/statics"
 	usertopology "github.com/skydive-project/skydive/topology/enhancers"
 	"github.com/skydive-project/skydive/ui"
-	"gopkg.in/yaml.v2"
 )
 
 const workflowAssetDir = "statics/workflows"
@@ -137,4 +143,68 @@ func (s *Server) Start() error {
 	}
 
 	return nil
+}
+
+// Stop the analyzer server
+func (s *Server) Stop() {
+	s.hub.Stop()
+	s.flowServer.Stop()
+	s.probeBundle.Stop()
+	s.onDemandClient.Stop()
+	s.piClient.Stop()
+	s.topologyManager.Stop()
+	s.etcdClient.Stop()
+
+	if s.flowStorage != nil {
+		s.flowStorage.Stop()
+	}
+
+	if tr, ok := http.DefaultTransport.(interface {
+		CloseIdleConnections()
+	}); ok {
+		tr.CloseIdleConnections()
+	}
+}
+
+// NewServerFromConfig creates a new empty server
+func NewServerFromConfig() (*Server, error) {
+	host := config.GetString("host_id")
+
+	etcdClientOpts := etcdclient.Opts{
+		Servers: config.GetEtcdServerAddrs(),
+		Timeout: time.Duration(config.GetInt("etcd.client_timeout")) * time.Second,
+	}
+
+	etcdClient, err := etcdclient.NewClient(host, etcdClientOpts)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := config.InitRBAC(etcdClient.KeysAPI); err != nil {
+		return nil, err
+	}
+
+	var tlsConfig *tls.Config
+	if config.IsTLSEnabled() {
+		tlsConfig, err = config.GetTLSServerConfig(true)
+		if err != nil {
+			return nil, err
+		}
+	}
+	s := &Server{
+		probeBundle:  probeBundle,
+		etcdClient:   etcdClient,
+		graphStorage: graphStorage,
+	}
+	return s, nil
+}
+
+// ClusterAuthenticationOpts returns auth info to connect to an analyzer
+// from the configuration
+func ClusterAuthenticationOpts() *shttp.AuthenticationOpts {
+	return &shttp.AuthenticationOpts{
+		Username: config.GetString("analyzer.auth.cluster.username"),
+		Password: config.GetString("analyzer.auth.cluster.password"),
+		Cookie:   config.GetStringMapString("http.cookie"),
+	}
 }
