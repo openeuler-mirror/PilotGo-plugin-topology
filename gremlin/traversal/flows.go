@@ -3,12 +3,17 @@ package traversal
 import (
 	"errors"
 	"fmt"
+	"net"
+	"strings"
 
+	"atomgit.com/openeuler/PilotGo-plugin-topology/common"
 	"atomgit.com/openeuler/PilotGo-plugin-topology/flow"
 	"atomgit.com/openeuler/PilotGo-plugin-topology/flow/storage"
 	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/filters"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/getter"
 	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/graph"
 	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/graph/traversal"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/topology/probes/socketinfo"
 )
 
 const (
@@ -430,4 +435,233 @@ func (f *FlowTraversalStep) CaptureNode(ctx traversal.StepContext, s ...interfac
 		}
 	}
 	return traversal.NewGraphTraversalV(f.GraphTraversal, nodes)
+}
+
+// Sort step
+func (f *FlowTraversalStep) Sort(ctx traversal.StepContext, keys ...interface{}) *FlowTraversalStep {
+	if f.error != nil {
+		return f
+	}
+
+	sortOrder, sortBy, err := traversal.ParseSortParameter(keys...)
+	if err != nil {
+		return &FlowTraversalStep{error: err}
+	}
+
+	if sortBy == "" {
+		sortBy = defaultSortBy
+	}
+
+	f.flowset.Sort(sortOrder, sortBy)
+	return &FlowTraversalStep{GraphTraversal: f.GraphTraversal, Storage: f.Storage, flowset: f.flowset}
+}
+
+// Sum aggregates integer values mapped by 'key' cross flows
+func (f *FlowTraversalStep) Sum(ctx traversal.StepContext, keys ...interface{}) *traversal.GraphTraversalValue {
+	if f.error != nil {
+		return traversal.NewGraphTraversalValueFromError(f.error)
+	}
+
+	if len(keys) != 1 {
+		return traversal.NewGraphTraversalValueFromError(fmt.Errorf("Sum requires 1 parameter"))
+	}
+
+	key, ok := keys[0].(string)
+	if !ok {
+		return traversal.NewGraphTraversalValueFromError(fmt.Errorf("Sum parameter has to be a string key"))
+	}
+
+	k := strings.Split(key, ".")
+	if k[0] != "Metric" && k[0] != "LastUpdateMetric" {
+		return traversal.NewGraphTraversalValueFromError(fmt.Errorf("Sum accepts only sub fields of Metric and LastUpadteMetric"))
+	}
+
+	var s float64
+	for _, fl := range f.flowset.Flows {
+		if v, err := fl.GetFieldInt64(key); err == nil {
+			s += float64(v)
+		} else {
+			return traversal.NewGraphTraversalValueFromError(err)
+		}
+	}
+	return traversal.NewGraphTraversalValue(f.GraphTraversal, s)
+}
+
+// PropertyValues returns a flow field value
+func (f *FlowTraversalStep) PropertyValues(ctx traversal.StepContext, keys ...interface{}) *traversal.GraphTraversalValue {
+	if f.error != nil {
+		return traversal.NewGraphTraversalValueFromError(f.error)
+	}
+
+	key := keys[0].(string)
+	var s []interface{}
+	for _, fl := range f.flowset.Flows {
+		v, err := fl.GetField(key)
+		if err != nil {
+			return traversal.NewGraphTraversalValueFromError(getter.ErrFieldNotFound)
+		}
+		s = append(s, v)
+	}
+	return traversal.NewGraphTraversalValue(f.GraphTraversal, s)
+}
+
+// PropertyKeys returns flow fields
+func (f *FlowTraversalStep) PropertyKeys(ctx traversal.StepContext, keys ...interface{}) *traversal.GraphTraversalValue {
+	if f.error != nil {
+		return traversal.NewGraphTraversalValueFromError(f.error)
+	}
+
+	var s []string
+
+	if len(f.flowset.Flows) > 0 {
+		// all Flow struct are the same, take the first one
+		s = f.flowset.Flows[0].GetFieldKeys()
+	}
+
+	return traversal.NewGraphTraversalValue(f.GraphTraversal, s)
+}
+
+// FlowMetrics returns flow metric counters
+func (f *FlowTraversalStep) FlowMetrics(ctx traversal.StepContext) *MetricsTraversalStep {
+	if f.error != nil {
+		return NewMetricsTraversalStepFromError(f.error)
+	}
+
+	var flowMetrics map[string][]common.Metric
+
+	context := f.GraphTraversal.Graph.GetContext()
+	if context.TimeSlice != nil {
+		// two cases, either we have a flowset and we need to use it in order to filter
+		// flows or we don't have flowset but we have the pre-built flowSearchQuery filter
+		// if none of these cases it's an error.
+		if f.flowset != nil {
+			flowFilter := flow.NewFilterForFlowSet(f.flowset)
+			f.flowSearchQuery.Filter = filters.NewAndFilter(f.flowSearchQuery.Filter, flowFilter)
+		} else if f.flowSearchQuery.Filter == nil {
+			return NewMetricsTraversalStepFromError(errors.New("Unable to filter flows"))
+		}
+
+		fr := filters.Range{To: context.TimeSlice.Last}
+		if context.TimeSlice.Start != context.TimeSlice.Last {
+			fr.From = context.TimeSlice.Start
+		}
+		metricFilter := filters.NewFilterIncludedIn(fr, "")
+
+		f.flowSearchQuery.Sort = true
+		f.flowSearchQuery.SortBy = defaultSortBy
+		f.flowSearchQuery.SortOrder = filters.SortOrder_Ascending
+
+		var err error
+		if flowMetrics, err = f.Storage.SearchMetrics(f.flowSearchQuery, metricFilter); err != nil {
+			return NewMetricsTraversalStepFromError(err)
+		}
+	} else {
+		flowMetrics = make(map[string][]common.Metric, len(f.flowset.Flows))
+		for _, f := range f.flowset.Flows {
+			var metric *flow.FlowMetric
+			if f.LastUpdateMetric != nil {
+				metric = f.LastUpdateMetric
+			} else {
+				// if we get empty LastUpdateMetric it means that we got flow not already updated
+				// by the flow table update ticker, so packets between the start of the flow and
+				// the first update.
+				metric = f.Metric
+			}
+			flowMetrics[f.UUID] = append(flowMetrics[f.UUID], metric)
+		}
+	}
+
+	return NewMetricsTraversalStep(f.GraphTraversal, flowMetrics)
+}
+
+// RawPackets searches for RawPacket based on previous flow filter from
+// either agents or datastore.
+func (f *FlowTraversalStep) RawPackets(ctx traversal.StepContext) *RawPacketsTraversalStep {
+	if f.error != nil {
+		return &RawPacketsTraversalStep{error: f.error}
+	}
+
+	rawPackets := make(map[string][]*flow.RawPacket)
+
+	context := f.GraphTraversal.Graph.GetContext()
+	if context.TimeSlice != nil {
+		// two cases, either we have a flowset and we need to use it in order to filter
+		// flows or we don't have flowset but we have the pre-built flowSearchQuery filter
+		// if none of these cases it's an error.
+		if f.flowset != nil {
+			flowFilter := flow.NewFilterForFlowSet(f.flowset)
+			f.flowSearchQuery.Filter = filters.NewAndFilter(f.flowSearchQuery.Filter, flowFilter)
+		} else if f.flowSearchQuery.Filter == nil {
+			return &RawPacketsTraversalStep{error: errors.New("Unable to filter flows")}
+		}
+
+		fr := filters.Range{To: context.TimeSlice.Last}
+		if context.TimeSlice.Start != context.TimeSlice.Last {
+			fr.From = context.TimeSlice.Start
+		}
+
+		rawPacketsFilter := filters.NewAndFilter(
+			filters.NewGteInt64Filter("Timestamp", fr.From),
+			filters.NewLteInt64Filter("Timestamp", fr.To),
+		)
+
+		f.flowSearchQuery.Sort = true
+		f.flowSearchQuery.SortBy = "Index"
+		f.flowSearchQuery.SortOrder = filters.SortOrder_Ascending
+
+		var err error
+		if rawPackets, err = f.Storage.SearchRawPackets(f.flowSearchQuery, rawPacketsFilter); err != nil {
+			return &RawPacketsTraversalStep{error: err}
+		}
+	} else {
+		for _, fl := range f.flowset.Flows {
+			if len(fl.LastRawPackets) > 0 {
+				rawPackets[fl.UUID] = fl.LastRawPackets
+			}
+		}
+	}
+
+	return &RawPacketsTraversalStep{GraphTraversal: f.GraphTraversal, rawPackets: rawPackets}
+}
+
+// Sockets returns the sockets at both sides of the specified flows
+func (f *FlowTraversalStep) Sockets(ctx traversal.StepContext, s ...interface{}) *SocketsTraversalStep {
+	if f.error != nil {
+		return &SocketsTraversalStep{error: f.error}
+	}
+
+	if len(s) != 0 {
+		return &SocketsTraversalStep{error: fmt.Errorf("Sockets requires no parameter")}
+	}
+
+	indexer := NewSocketIndexer(f.GraphTraversal.Graph)
+
+	flowSockets := make(map[string][]*socketinfo.ConnectionInfo)
+	for _, fl := range f.flowset.Flows {
+		if transport := fl.GetTransport(); transport != nil && (transport.GetProtocol() == flow.FlowProtocol_TCP || transport.GetProtocol() == flow.FlowProtocol_UDP) {
+			var sockets []*socketinfo.ConnectionInfo
+
+			localPort := fl.GetTransport().GetA()
+			remotePort := fl.GetTransport().GetB()
+			protocol := transport.GetProtocol()
+
+			hash := socketinfo.HashTuple(protocol, net.ParseIP(fl.GetNetwork().GetA()), int64(localPort), net.ParseIP(fl.GetNetwork().GetB()), int64(remotePort))
+			_, socks := indexer.FromHash(hash)
+			for _, socket := range socks {
+				sockets = append(sockets, socket.(*socketinfo.ConnectionInfo))
+			}
+
+			hash = socketinfo.HashTuple(protocol, net.ParseIP(fl.GetNetwork().GetB()), int64(remotePort), net.ParseIP(fl.GetNetwork().GetA()), int64(localPort))
+			_, socks = indexer.FromHash(hash)
+			for _, socket := range socks {
+				sockets = append(sockets, socket.(*socketinfo.ConnectionInfo))
+			}
+
+			if len(sockets) > 0 {
+				flowSockets[fl.UUID] = sockets
+			}
+		}
+	}
+
+	return &SocketsTraversalStep{GraphTraversal: f.GraphTraversal, sockets: flowSockets}
 }
