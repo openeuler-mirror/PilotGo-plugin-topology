@@ -1,19 +1,23 @@
 package agent
 
 import (
+	"crypto/tls"
+	"fmt"
 	"net/http"
 	"os"
 
-	"atomgit.com/openeuler/PilotGo-plugin-topology/config"
-	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/graph"
-	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/logging"
-	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/ondemand/server"
-	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/pod"
+	api "github.com/skydive-project/skydive/api/server"
+	"github.com/skydive-project/skydive/config"
 	"github.com/skydive-project/skydive/flow/client"
+	"github.com/skydive-project/skydive/graffiti/graph"
 	shttp "github.com/skydive-project/skydive/graffiti/http"
+	"github.com/skydive-project/skydive/graffiti/logging"
+	"github.com/skydive-project/skydive/graffiti/ondemand/server"
+	"github.com/skydive-project/skydive/graffiti/pod"
 	ws "github.com/skydive-project/skydive/graffiti/websocket"
 	"github.com/skydive-project/skydive/probe"
 	"github.com/skydive-project/skydive/topology"
+	"github.com/skydive-project/skydive/validator"
 )
 
 // Agent object started on each hosts/namespaces
@@ -101,4 +105,67 @@ func NewAgent() (*Agent, error) {
 	if err != nil {
 		return nil, err
 	}
+	clusterAuthOptions := &shttp.AuthenticationOpts{
+		Username: config.GetString("agent.auth.cluster.username"),
+		Password: config.GetString("agent.auth.cluster.password"),
+		Cookie:   config.GetStringMapString("http.cookie"),
+	}
+
+	analyzers, err := config.GetAnalyzerServiceAddresses()
+	if err != nil {
+		return nil, fmt.Errorf("Unable to get the analyzers list: %s", err)
+	}
+
+	if len(analyzers) == 0 {
+		logging.GetLogger().Info("Agent is running in standalone mode")
+	}
+
+	var tlsConfig *tls.Config
+	if config.IsTLSEnabled() {
+		tlsConfig, err = config.GetTLSServerConfig(true)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	wsClientOpts, err := config.NewWSClientOpts(clusterAuthOptions)
+	if err != nil {
+		return nil, err
+	}
+
+	agent := &Agent{}
+
+	opts := pod.Opts{
+		Hubs:                analyzers,
+		WebsocketOpts:       config.NewWSServerOpts(),
+		WebsocketClientOpts: *wsClientOpts,
+		APIValidator:        validator.Validator,
+		GraphValidator:      topology.SchemaValidator,
+		TLSConfig:           tlsConfig,
+		APIAuthBackend:      apiAuthBackend,
+		TopologyMarshallers: api.TopologyMarshallers,
+		StatusReporter:      agent,
+	}
+
+	listenAddr := config.GetString("agent.listen")
+	pod, err := pod.NewPod(hostID, config.AgentService, listenAddr, "/ws/agent/topology", g, opts)
+	if err != nil {
+		return nil, err
+	}
+	agent.pod = pod
+
+	agent.tidMapper = topology.NewTIDMapper(g)
+	agent.tidMapper.Start()
+
+	rootNode, err := createRootNode(g)
+	if err != nil {
+		return nil, err
+	}
+
+	agent.topologyProbeBundle, err = NewTopologyProbeBundle(g, rootNode)
+	if err != nil {
+		return nil, err
+	}
+
+	return agent, nil
 }
