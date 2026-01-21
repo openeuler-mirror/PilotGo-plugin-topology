@@ -192,3 +192,54 @@ func (o *OnDemandClient) nodeTasks(nrs []OnDemandNodeResource) map[graph.Identif
 
 	return nps
 }
+
+// checkForRegistration check the resource gremlin expression in order to
+// register new task.
+func (o *OnDemandClient) checkForRegistrationCallback() {
+	if !o.IsMaster() {
+		return
+	}
+
+	o.graph.RLock()
+	defer o.graph.RUnlock()
+
+	o.RLock()
+	defer o.RUnlock()
+
+	for _, resource := range o.resources {
+		if nrs := o.handler.GetNodeResources(resource); len(nrs) > 0 {
+			if nps := o.nodeTasks(nrs); len(nps) > 0 {
+				go o.registerTasks(nps)
+			}
+		}
+	}
+}
+
+// OnNodeAdded graph event
+func (o *OnDemandClient) OnNodeAdded(n *graph.Node) {
+	if !o.IsMaster() {
+		return
+	}
+
+	// a node comes up with already a resource, this could be due to a re-connect of
+	// an agent. Check if the handler is still active.
+	if field, err := n.GetField(o.resourceName); err == nil {
+		if resources, ok := field.(map[string]interface{}); ok {
+			for id := range resources {
+				o.RLock()
+				_, found := o.resources[id]
+				o.RUnlock()
+
+				if found {
+					continue
+				}
+
+				// not present unregister it
+				logging.GetLogger().Debugf("Unregister remaining %s for node %s: %s", o.resourceName, n.ID, id)
+				go o.unregisterTask(n, &rest.BasicResource{UUID: id})
+			}
+		}
+	} else {
+		o.checkForRegistration.Call()
+	}
+}
