@@ -5,8 +5,10 @@ import (
 
 	"github.com/skydive-project/skydive/flow"
 	gclient "github.com/skydive-project/skydive/graffiti/api/client"
+	shttp "github.com/skydive-project/skydive/graffiti/http"
 	"github.com/skydive-project/skydive/sflow"
 	"github.com/skydive-project/skydive/topology"
+	"github.com/skydive-project/skydive/topology/probes/socketinfo"
 )
 
 // ErrNoResult is returned when a query returned no result
@@ -102,4 +104,69 @@ func (g *GremlinQueryHelper) GetFlowMetric(query interface{}) (*flow.FlowMetric,
 	}
 
 	return &result, nil
+}
+
+// GetInterfaceMetric from Gremlin query
+func (g *GremlinQueryHelper) GetInterfaceMetric(query interface{}) (*topology.InterfaceMetric, error) {
+	data, err := g.Query(query)
+	if err != nil {
+		return nil, err
+	}
+
+	var result topology.InterfaceMetric
+	if err := json.Unmarshal(data, &result); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}
+
+// GetSFlowMetric from Gremlin query
+func (g *GremlinQueryHelper) GetSFlowMetric(query interface{}) (*sflow.SFMetric, error) {
+	data, err := g.Query(query)
+	if err != nil {
+		return nil, err
+	}
+
+	var result sflow.SFMetric
+	if err := json.Unmarshal(data, &result); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}
+
+// GetSockets from the Gremlin query
+func (g *GremlinQueryHelper) GetSockets(query interface{}) (sockets map[string][]*socketinfo.ConnectionInfo, err error) {
+	data, err := g.Query(query)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: use real objects instead of interface + decode
+	// should be []map[string][]ConnectionInfo
+	var maps []map[string][]interface{}
+	if err := json.Unmarshal(data, &maps); err != nil {
+		return nil, err
+	}
+
+	sockets = make(map[string][]*socketinfo.ConnectionInfo)
+	for id, objs := range maps[0] {
+		sockets[id] = make([]*socketinfo.ConnectionInfo, 0)
+		for _, obj := range objs {
+			var socket socketinfo.ConnectionInfo
+			if err = socket.Decode(obj); err == nil {
+				sockets[id] = append(sockets[id], &socket)
+			}
+		}
+	}
+
+	return
+}
+
+// NewGremlinQueryHelper creates a new Gremlin query helper based on authentication
+func NewGremlinQueryHelper(restClient *shttp.RestClient) *GremlinQueryHelper {
+	return &GremlinQueryHelper{
+		GremlinQueryHelper: gclient.NewGremlinQueryHelper(restClient),
+	}
 }
