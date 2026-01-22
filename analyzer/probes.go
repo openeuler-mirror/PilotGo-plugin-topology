@@ -1,13 +1,21 @@
 package analyzer
 
 import (
+	"fmt"
+
+	"github.com/skydive-project/skydive/config"
 	fp "github.com/skydive-project/skydive/flow/probes"
 	"github.com/skydive-project/skydive/graffiti/graph"
+	"github.com/skydive-project/skydive/graffiti/logging"
 	"github.com/skydive-project/skydive/packetinjector"
 	"github.com/skydive-project/skydive/plugin"
+	"github.com/skydive-project/skydive/probe"
 	"github.com/skydive-project/skydive/sflow"
 	"github.com/skydive-project/skydive/topology"
 	"github.com/skydive-project/skydive/topology/probes/blockdev"
+	"github.com/skydive-project/skydive/topology/probes/fabric"
+	"github.com/skydive-project/skydive/topology/probes/istio"
+	"github.com/skydive-project/skydive/topology/probes/k8s"
 	"github.com/skydive-project/skydive/topology/probes/libvirt"
 	"github.com/skydive-project/skydive/topology/probes/lldp"
 	"github.com/skydive-project/skydive/topology/probes/lxd"
@@ -15,7 +23,9 @@ import (
 	"github.com/skydive-project/skydive/topology/probes/neutron"
 	"github.com/skydive-project/skydive/topology/probes/opencontrail"
 	"github.com/skydive-project/skydive/topology/probes/ovn"
+	"github.com/skydive-project/skydive/topology/probes/ovnk8s"
 	"github.com/skydive-project/skydive/topology/probes/ovsdb"
+	"github.com/skydive-project/skydive/topology/probes/peering"
 )
 
 func registerStaticProbes() {
@@ -59,4 +69,58 @@ func registerProbes() error {
 	graph.NodeMetadataDecoders["SFlow"] = sflow.SFMetadataDecoder
 
 	return nil
+}
+
+// NewTopologyProbeBundleFromConfig creates a new topology server probes from configuration
+func NewTopologyProbeBundleFromConfig(g *graph.Graph) (*probe.Bundle, error) {
+	if err := registerProbes(); err != nil {
+		return nil, err
+	}
+
+	list := config.GetStringSlice("analyzer.topology.probes")
+
+	var handler probe.Handler
+	var err error
+
+	bundle := probe.NewBundle()
+
+	fabricProbe, err := fabric.NewProbe(g)
+	if err != nil {
+		return nil, err
+	}
+	bundle.AddHandler("fabric", fabricProbe)
+	bundle.AddHandler("peering", peering.NewProbe(g))
+
+	for _, t := range list {
+		if bundle.GetHandler(t) != nil {
+			continue
+		}
+
+		switch t {
+		case "ovn":
+			addr := config.GetString("analyzer.topology.ovn.address")
+			certFile := config.GetString("analyzer.topology.ovn.cert")
+			keyFile := config.GetString("analyzer.topology.ovn.key")
+			cacertFile := config.GetString("analyzer.topology.ovn.cacert")
+			handler, err = ovn.NewProbe(g, addr, certFile, keyFile, cacertFile)
+		case "ovnk8s":
+			handler, err = ovnk8s.NewProbe(g)
+		case "k8s":
+			handler, err = k8s.NewK8sProbe(g)
+		case "istio":
+			handler, err = istio.NewIstioProbe(g)
+		default:
+			logging.GetLogger().Errorf("unknown probe type: %s", t)
+			continue
+		}
+
+		if err != nil {
+			return nil, fmt.Errorf("failed to create probe %s: %w", t, err)
+		}
+		if handler != nil {
+			bundle.AddHandler(t, handler)
+		}
+	}
+
+	return bundle, nil
 }
