@@ -3,8 +3,10 @@ package server
 import (
 	"errors"
 	"fmt"
+	"net"
 
 	"github.com/skydive-project/skydive/api/types"
+	"github.com/skydive-project/skydive/topology"
 )
 
 func (pi *PacketInjectorAPI) validateRequest(ppr *types.PacketInjection) error {
@@ -40,6 +42,26 @@ func (pi *PacketInjectorAPI) validateRequest(ppr *types.PacketInjection) error {
 				return errors.New("No destination IP in node")
 			}
 			dstIP = ips[0]
+		}
+		if mac, _ := srcNode.GetFieldString("MAC"); ppr.SrcMAC == "" && mac == "" {
+			return errors.New("No source MAC in node")
+		}
+
+		if ppr.DstMAC == "" {
+			var dstMAC string
+			if nextHop, err := topology.GetNextHop(srcNode, net.ParseIP(dstIP)); err != nil || nextHop.MAC == "" {
+				if dstNode != nil {
+					if dstMAC, _ = dstNode.GetFieldString("ExtID.attached-mac"); dstMAC == "" {
+						dstMAC, _ = dstNode.GetFieldString("MAC")
+					}
+				}
+			} else {
+				dstMAC = nextHop.MAC
+			}
+
+			if _, err := net.ParseMAC(dstMAC); err != nil {
+				return errors.New("Failed to resolve destination MAC address")
+			}
 		}
 	}
 	return nil
