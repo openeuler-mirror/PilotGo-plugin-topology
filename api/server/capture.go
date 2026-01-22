@@ -1,11 +1,15 @@
 package server
 
 import (
-	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/graph"
 	"github.com/skydive-project/skydive/api/types"
 	"github.com/skydive-project/skydive/flow"
+	"github.com/skydive-project/skydive/flow/probes"
 	"github.com/skydive-project/skydive/graffiti/api/rest"
+	api "github.com/skydive-project/skydive/graffiti/api/server"
+	"github.com/skydive-project/skydive/graffiti/graph"
 	shttp "github.com/skydive-project/skydive/graffiti/http"
+	"github.com/skydive-project/skydive/graffiti/logging"
+	ge "github.com/skydive-project/skydive/gremlin/traversal"
 )
 
 // CaptureResourceHandler describes a capture ressouce handler
@@ -29,6 +33,52 @@ func (c *CaptureResourceHandler) New() rest.Resource {
 	return &types.Capture{
 		LayerKeyMode: flow.DefaultLayerKeyModeName(),
 	}
+}
+
+// Decorate populates the capture resource
+func (c *CaptureAPIHandler) Decorate(resource rest.Resource) {
+	capture := resource.(*types.Capture)
+
+	count := 0
+
+	c.Graph.RLock()
+	defer c.Graph.RUnlock()
+
+	res, err := ge.TopologyGremlinQuery(c.Graph, capture.GremlinQuery)
+	if err != nil {
+		logging.GetLogger().Errorf("Gremlin error: %s", err)
+		return
+	}
+
+	countCaptures := func(n *graph.Node) (count int) {
+		if field, err := n.GetField("Captures"); err == nil {
+			if captures, ok := field.(*probes.Captures); ok {
+				for _, capture := range *captures {
+					if capture.State == "active" {
+						count++
+					}
+				}
+
+			}
+		}
+		return
+	}
+
+	for _, value := range res.Values() {
+		switch value.(type) {
+		case *graph.Node:
+			n := value.(*graph.Node)
+			count += countCaptures(n)
+		case []*graph.Node:
+			for _, n := range value.([]*graph.Node) {
+				count += countCaptures(n)
+			}
+		default:
+			count = 0
+		}
+	}
+
+	capture.Count = count
 }
 
 // Update a capture
