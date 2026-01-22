@@ -6,26 +6,29 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/hashicorp/go-version"
 	"github.com/pkg/errors"
 	yaml "gopkg.in/yaml.v2"
 
+	"github.com/skydive-project/dede/dede"
 	api "github.com/skydive-project/skydive/api/server"
 	"github.com/skydive-project/skydive/api/types"
 	"github.com/skydive-project/skydive/config"
 	"github.com/skydive-project/skydive/flow"
+	ondemand "github.com/skydive-project/skydive/flow/ondemand/client"
 	"github.com/skydive-project/skydive/flow/server"
 	"github.com/skydive-project/skydive/flow/storage"
 	"github.com/skydive-project/skydive/graffiti/api/rest"
 	gapi "github.com/skydive-project/skydive/graffiti/api/server"
 	gtypes "github.com/skydive-project/skydive/graffiti/api/types"
 	etcdclient "github.com/skydive-project/skydive/graffiti/etcd/client"
+	etcdserver "github.com/skydive-project/skydive/graffiti/etcd/server"
 	"github.com/skydive-project/skydive/graffiti/graph"
 	shttp "github.com/skydive-project/skydive/graffiti/http"
 	"github.com/skydive-project/skydive/graffiti/hub"
 	"github.com/skydive-project/skydive/graffiti/logging"
 	"github.com/skydive-project/skydive/graffiti/ondemand/client"
 	ws "github.com/skydive-project/skydive/graffiti/websocket"
+	ge "github.com/skydive-project/skydive/gremlin/traversal"
 	"github.com/skydive-project/skydive/packetinjector"
 	"github.com/skydive-project/skydive/probe"
 	"github.com/skydive-project/skydive/sflow"
@@ -35,6 +38,7 @@ import (
 	"github.com/skydive-project/skydive/topology/probes/blockdev"
 	"github.com/skydive-project/skydive/ui"
 	"github.com/skydive-project/skydive/validator"
+	"github.com/skydive-project/skydive/version"
 )
 
 const workflowAssetDir = "statics/workflows"
@@ -346,6 +350,46 @@ func NewServerFromConfig() (*Server, error) {
 	s.topologyManager = usertopology.NewTopologyManager(etcdClient, nodeRuleAPIHandler, edgeRuleAPIHandler, g)
 
 	_ = gapi.RegisterAlertAPI(apiServer, apiAuthBackend)
+
+	tr := hub.GremlinTraversalParser()
+	jsre, err := api.NewRuntime(g, tr, apiServer, opts.Assets)
+	if err != nil {
+		return nil, err
+	}
+
+	if _, err := api.RegisterWorkflowAPI(apiServer, apiAuthBackend, jsre); err != nil {
+		return nil, err
+	}
+
+	s.onDemandClient = ondemand.NewOnDemandFlowProbeClient(g, captureAPIHandler, hub.PodServer(), hub.SubscriberServer(), etcdClient)
+
+	s.flowServer, err = server.NewFlowServer(hub.HTTPServer(), g, s.flowStorage, flowSubscriberEndpoint, probeBundle, clusterAuthBackend)
+	if err != nil {
+		return nil, err
+	}
+
+	httpServer := hub.HTTPServer()
+	api.RegisterPcapAPI(httpServer, s.flowStorage, apiAuthBackend)
+	api.RegisterConfigAPI(httpServer, apiAuthBackend)
+
+	if config.GetBool("analyzer.ssh_enabled") {
+		if err := dede.RegisterHandler("terminal", "/dede", httpServer.Router); err != nil {
+			return nil, err
+		}
+	}
+
+	// declare all extension available through API and filtering
+	tr.AddTraversalExtension(ge.NewMetricsTraversalExtension())
+	tr.AddTraversalExtension(ge.NewRawPacketsTraversalExtension())
+	tr.AddTraversalExtension(ge.NewFlowTraversalExtension(tableClient, s.flowStorage))
+	tr.AddTraversalExtension(ge.NewSocketsTraversalExtension())
+	tr.AddTraversalExtension(ge.NewDescendantsTraversalExtension())
+	tr.AddTraversalExtension(ge.NewAscendantsTraversalExtension())
+	tr.AddTraversalExtension(ge.NewNeighborsTraversalExtension())
+	tr.AddTraversalExtension(ge.NewNextHopTraversalExtension())
+	tr.AddTraversalExtension(ge.NewGroupTraversalExtension())
+	tr.AddTraversalExtension(ge.NewWorkflowTraversalExtension(apiServer.GetHandler("workflow"), jsre))
+
 	return s, nil
 }
 
