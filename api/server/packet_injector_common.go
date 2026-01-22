@@ -3,7 +3,9 @@ package server
 import (
 	"github.com/skydive-project/skydive/api/types"
 	"github.com/skydive-project/skydive/graffiti/api/rest"
+	api "github.com/skydive-project/skydive/graffiti/api/server"
 	"github.com/skydive-project/skydive/graffiti/graph"
+	shttp "github.com/skydive-project/skydive/graffiti/http"
 	ge "github.com/skydive-project/skydive/gremlin/traversal"
 )
 
@@ -56,4 +58,17 @@ func (pi *PacketInjectorAPI) getNode(gremlinQuery string) *graph.Node {
 		}
 	}
 	return nil
+}
+
+// RegisterPacketInjectorAPI registers a new packet injector resource in the API
+func RegisterPacketInjectorAPI(g *graph.Graph, apiServer *api.Server, authBackend shttp.AuthenticationBackend) *PacketInjectorAPI {
+	pia := &PacketInjectorAPI{
+		BasicAPIHandler: rest.BasicAPIHandler{
+			ResourceHandler: &packetInjectorResourceHandler{},
+			EtcdClient:      apiServer.EtcdClient,
+		},
+		Graph: g,
+	}
+	apiServer.RegisterAPIHandler(pia, authBackend)
+	return pia
 }
