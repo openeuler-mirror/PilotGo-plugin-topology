@@ -2,6 +2,7 @@ package analyzer
 
 import (
 	"crypto/tls"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -185,11 +186,81 @@ func NewServerFromConfig() (*Server, error) {
 	}
 
 	var tlsConfig *tls.Config
+
 	if config.IsTLSEnabled() {
 		tlsConfig, err = config.GetTLSServerConfig(true)
 		if err != nil {
 			return nil, err
 		}
+	}
+	graphStorage, err := newGraphBackendFromConfig(etcdClient)
+	if err != nil {
+		return nil, err
+	}
+
+	cached, err := graph.NewCachedBackend(graphStorage, etcdClient, host, config.AnalyzerService)
+	if err != nil {
+		return nil, err
+	}
+
+	origin := graph.Origin(host, config.AnalyzerService)
+	g := graph.NewGraph(host, cached, origin)
+
+	clusterAuthBackendName := config.GetString("analyzer.auth.cluster.backend")
+	clusterAuthBackend, err := config.NewAuthenticationBackendByName(clusterAuthBackendName)
+	if err != nil {
+		return nil, err
+	}
+	// force admin user for the cluster backend to ensure that all the user connection through
+	// "cluster" endpoints will be admin
+	clusterAuthBackend.SetDefaultUserRole("admin")
+
+	apiAuthBackendName := config.GetString("analyzer.auth.api.backend")
+	apiAuthBackend, err := config.NewAuthenticationBackendByName(apiAuthBackendName)
+	if err != nil {
+		return nil, err
+	}
+
+	replicationPeers, err := config.GetAnalyzerServiceAddresses()
+	if err != nil {
+		return nil, fmt.Errorf("unable to get the analyzers list: %s", err)
+	}
+
+	wsClientOpts, err := config.NewWSClientOpts(ClusterAuthenticationOpts())
+	if err != nil {
+		return nil, err
+	}
+
+	clusterPeers := make(map[string]*hub.PeeringOpts)
+	peeredClusters := config.GetStringMapString("analyzer.peers")
+	for clusterName := range peeredClusters {
+		peerConfig := "analyzer.peers." + clusterName
+		endpoints, err := config.GetServiceAddresses(peerConfig + ".endpoints")
+		if err != nil {
+			return nil, fmt.Errorf("unable to get peers endpoints for cluster '%s': %w", clusterName, err)
+		}
+		peeringOpts := &hub.PeeringOpts{
+			Endpoints:          endpoints,
+			PublisherFilter:    config.GetString(peerConfig + ".publish_filter"),
+			SubscriptionFilter: config.GetString(peerConfig + ".subscribe_filter"),
+		}
+
+		if wsClientOpts, err := config.NewWSClientOpts(
+			&shttp.AuthenticationOpts{
+				Username: config.GetString(peerConfig + ".username"),
+				Password: config.GetString(peerConfig + ".password"),
+			},
+		); err == nil {
+			peeringOpts.WebsocketClientOpts = *wsClientOpts
+		}
+
+		clusterPeers[clusterName] = peeringOpts
+
+	}
+
+	probeBundle, err := NewTopologyProbeBundleFromConfig(g)
+	if err != nil {
+		return nil, err
 	}
 	s := &Server{
 		probeBundle:  probeBundle,
