@@ -6,12 +6,14 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/hashicorp/go-version"
 	"github.com/pkg/errors"
 	yaml "gopkg.in/yaml.v2"
 
 	api "github.com/skydive-project/skydive/api/server"
 	"github.com/skydive-project/skydive/api/types"
 	"github.com/skydive-project/skydive/config"
+	"github.com/skydive-project/skydive/flow"
 	"github.com/skydive-project/skydive/flow/server"
 	"github.com/skydive-project/skydive/flow/storage"
 	"github.com/skydive-project/skydive/graffiti/api/rest"
@@ -24,10 +26,15 @@ import (
 	"github.com/skydive-project/skydive/graffiti/logging"
 	"github.com/skydive-project/skydive/graffiti/ondemand/client"
 	ws "github.com/skydive-project/skydive/graffiti/websocket"
+	"github.com/skydive-project/skydive/packetinjector"
 	"github.com/skydive-project/skydive/probe"
+	"github.com/skydive-project/skydive/sflow"
 	"github.com/skydive-project/skydive/statics"
+	"github.com/skydive-project/skydive/topology"
 	usertopology "github.com/skydive-project/skydive/topology/enhancers"
+	"github.com/skydive-project/skydive/topology/probes/blockdev"
 	"github.com/skydive-project/skydive/ui"
+	"github.com/skydive-project/skydive/validator"
 )
 
 const workflowAssetDir = "statics/workflows"
@@ -267,6 +274,78 @@ func NewServerFromConfig() (*Server, error) {
 		etcdClient:   etcdClient,
 		graphStorage: graphStorage,
 	}
+
+	opts := hub.Opts{
+		WebsocketOpts:       config.NewWSServerOpts(),
+		WebsocketClientOpts: *wsClientOpts,
+		APIAuthBackend:      apiAuthBackend,
+		ClusterAuthBackend:  clusterAuthBackend,
+		APIValidator:        validator.Validator,
+		GraphValidator:      topology.SchemaValidator,
+		StatusReporter:      s,
+		TLSConfig:           tlsConfig,
+		ReplicationPeers:    replicationPeers,
+		ClusterPeers:        clusterPeers,
+		EtcdClient:          etcdClient,
+		TopologyMarshallers: api.TopologyMarshallers,
+		Assets:              &statics.Assets,
+		Version:             version.Version,
+		ClusterName:         config.GetString("analyzer.cluster"),
+	}
+
+	if config.GetBool("etcd.embedded") {
+		opts.EtcdServerOpts = &etcdserver.EmbeddedServerOpts{
+			Name:         config.GetString("etcd.name"),
+			Listen:       config.GetString("etcd.listen"),
+			DataDir:      config.GetString("etcd.data_dir"),
+			MaxWalFiles:  uint(config.GetInt("etcd.max_wal_files")),
+			MaxSnapFiles: uint(config.GetInt("etcd.max_snap_files")),
+			Debug:        config.GetBool("etcd.debug"),
+			Peers:        config.GetStringMapString("etcd.peers"),
+		}
+	}
+
+	listenAddr := config.GetString("analyzer.listen")
+	hub, err := hub.NewHub(host, config.AnalyzerService, listenAddr, g, cached, "/ws/agent/topology", opts)
+	if err != nil {
+		return nil, err
+	}
+	s.hub = hub
+
+	// Instantiate Web UI
+	uiServer := ui.NewServer(hub.HTTPServer(), config.GetString("ui.extra_assets"))
+
+	// add some global vars
+	uiServer.AddGlobalVar("ui", config.Get("ui"))
+	uiServer.AddGlobalVar("flow-metric-keys", (&flow.FlowMetric{}).GetFieldKeys())
+	uiServer.AddGlobalVar("interface-metric-keys", (&topology.InterfaceMetric{}).GetFieldKeys())
+	uiServer.AddGlobalVar("blockdev-metric-keys", (&blockdev.BlockMetric{}).GetFieldKeys())
+	uiServer.AddGlobalVar("sflow-metric-keys", (&sflow.SFMetric{}).GetFieldKeys())
+	uiServer.AddGlobalVar("probes", config.Get("analyzer.topology.probes"))
+
+	s.flowStorage, err = newFlowBackendFromConfig(etcdClient)
+	if err != nil {
+		return nil, err
+	}
+
+	tableClient := flow.NewWSTableClient(hub.PodServer())
+
+	// new flow subscriber endpoints
+	flowSubscriberWSServer := ws.NewStructServer(config.NewWSServer(hub.HTTPServer(), "/ws/subscriber/flow", apiAuthBackend))
+	flowSubscriberEndpoint := server.NewFlowSubscriberEndpoint(flowSubscriberWSServer)
+
+	apiServer := hub.APIServer()
+
+	captureAPIHandler := api.RegisterCaptureAPI(apiServer, g, apiAuthBackend)
+
+	piAPIHandler := api.RegisterPacketInjectorAPI(g, apiServer, apiAuthBackend)
+	s.piClient = packetinjector.NewOnDemandInjectionClient(g, piAPIHandler, hub.PodServer(), hub.SubscriberServer(), etcdClient)
+
+	nodeRuleAPIHandler := api.RegisterNodeRuleAPI(apiServer, g, apiAuthBackend)
+	edgeRuleAPIHandler := api.RegisterEdgeRuleAPI(apiServer, g, apiAuthBackend)
+	s.topologyManager = usertopology.NewTopologyManager(etcdClient, nodeRuleAPIHandler, edgeRuleAPIHandler, g)
+
+	_ = gapi.RegisterAlertAPI(apiServer, apiAuthBackend)
 	return s, nil
 }
 
