@@ -3,11 +3,12 @@ package analyzer
 import (
 	"fmt"
 
-	"github.com/bketelsen/crypt/backend/etcd"
 	"github.com/skydive-project/skydive/config"
 	"github.com/skydive-project/skydive/flow/storage"
 	"github.com/skydive-project/skydive/flow/storage/elasticsearch"
 	"github.com/skydive-project/skydive/flow/storage/orientdb"
+	etcd "github.com/skydive-project/skydive/graffiti/etcd/client"
+	"github.com/skydive-project/skydive/graffiti/graph"
 	"github.com/skydive-project/skydive/graffiti/logging"
 	es "github.com/skydive-project/skydive/graffiti/storage/elasticsearch"
 )
@@ -46,6 +47,57 @@ func NewESConfig(name ...string) es.Config {
 	cfg.Debug = config.GetBool(path + ".debug")
 
 	return cfg
+}
+
+func newGraphBackendFromConfig(etcdClient *etcd.Client) (graph.PersistentBackend, error) {
+	backend := config.GetString("analyzer.topology.backend")
+	configPath := "storage." + backend
+	driver := config.GetString(configPath + ".driver")
+
+	logging.GetLogger().Infof("Using %s (driver %s) as graph storage backend", backend, driver)
+
+	switch driver {
+	case "elasticsearch":
+		excludeFromIndex := config.GetStringSlice(configPath + ".exclude_from_mapping")
+		useFlattened := config.GetBool(configPath + ".use_flattened")
+
+		var mapping map[string]interface{}
+		if useFlattened {
+			mapping = map[string]interface{}{
+				"type":         "flattened",
+				"ignore_above": config.GetInt(configPath + ".flattened_ignore_above"),
+			}
+		} else {
+			mapping = map[string]interface{}{
+				"type":    "object",
+				"enabled": false,
+				"store":   true,
+				"index":   false,
+			}
+		}
+
+		dynamicTemplates := make(map[string]interface{})
+		for _, field := range excludeFromIndex {
+			dynamicTemplates[field] = map[string]interface{}{
+				"path_match": field,
+				"mapping":    mapping,
+			}
+		}
+
+		cfg := NewESConfig(backend)
+		return graph.NewElasticSearchBackendFromConfig(cfg, dynamicTemplates, etcdClient, logging.GetLogger())
+	case "memory":
+		// cached memory will be used
+		return nil, nil
+	case "orientdb":
+		addr := config.GetString(configPath + ".addr")
+		database := config.GetString(configPath + ".database")
+		username := config.GetString(configPath + ".username")
+		password := config.GetString(configPath + ".password")
+		return graph.NewOrientDBBackend(addr, database, username, password, logging.GetLogger())
+	default:
+		return nil, fmt.Errorf("Topology backend driver '%s' not supported", driver)
+	}
 }
 
 // newStorageFromConfig creates a new flow storage based on the backend
