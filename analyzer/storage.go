@@ -1,0 +1,70 @@
+package analyzer
+
+import (
+	"fmt"
+
+	"github.com/bketelsen/crypt/backend/etcd"
+	"github.com/skydive-project/skydive/config"
+	"github.com/skydive-project/skydive/flow/storage"
+	"github.com/skydive-project/skydive/flow/storage/elasticsearch"
+	"github.com/skydive-project/skydive/flow/storage/orientdb"
+	"github.com/skydive-project/skydive/graffiti/logging"
+	es "github.com/skydive-project/skydive/graffiti/storage/elasticsearch"
+)
+
+// NewESConfig returns a new elasticsearch configuration for the given backend name
+func NewESConfig(name ...string) es.Config {
+	cfg := es.Config{}
+
+	path := "storage."
+	if len(name) > 0 {
+		path += name[0]
+	} else {
+		path += "elasticsearch"
+	}
+
+	// To be backwards compatible, check if .host key (old) has a string value.
+	// In that case, use that value as .hosts (converting the ip:port to http://ip:port)
+	// .host will have preference over .hosts
+	cfg.ElasticHosts = config.GetStringSlice(path + ".hosts")
+	oldElasticHost := config.GetString(path + ".host")
+	if oldElasticHost != "" {
+		cfg.ElasticHosts = []string{fmt.Sprintf("http://%s", oldElasticHost)}
+	}
+
+	cfg.InsecureSkipVerify = config.GetBool(path + ".ssl_insecure")
+	cfg.Username = config.GetString(path + ".auth.username")
+	cfg.Password = config.GetString(path + ".auth.password")
+	cfg.BulkMaxDelay = config.GetInt(path + ".bulk_maxdelay")
+	cfg.TotalFieldsLimit = config.GetInt(path + ".total_fields_limit")
+	cfg.EntriesLimit = config.GetInt(path + ".index_entries_limit")
+	cfg.AgeLimit = config.GetInt(path + ".index_age_limit")
+	cfg.IndicesLimit = config.GetInt(path + ".indices_to_keep")
+	cfg.NoSniffing = config.GetBool(path + ".disable_sniffing")
+	cfg.IndexPrefix = config.GetString(path + ".index_prefix")
+	cfg.NoHealthcheck = config.GetBool(path + ".disable_healthcheck")
+	cfg.Debug = config.GetBool(path + ".debug")
+
+	return cfg
+}
+
+// newStorageFromConfig creates a new flow storage based on the backend
+func newFlowBackendFromConfig(etcdClient *etcd.Client) (s storage.Storage, err error) {
+	backend := config.GetString("analyzer.flow.backend")
+	configPath := "storage." + backend
+	driver := config.GetString(configPath + ".driver")
+
+	logging.GetLogger().Infof("Using %s (driver %s) as flow storage backend", backend, driver)
+
+	switch driver {
+	case "elasticsearch":
+		cfg := NewESConfig(backend)
+		return elasticsearch.New(cfg, etcdClient)
+	case "memory":
+		return nil, nil
+	case "orientdb":
+		return orientdb.New(backend)
+	default:
+		return nil, fmt.Errorf("Flow backend driver '%s' not supported", driver)
+	}
+}
