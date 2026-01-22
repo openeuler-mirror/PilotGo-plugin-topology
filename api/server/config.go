@@ -1,12 +1,36 @@
 package server
 
 import (
+	"encoding/json"
+	"net/http"
+
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/graph"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/logging"
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/rbac"
+	auth "github.com/abbot/go-http-auth"
+	"github.com/gorilla/mux"
 	"github.com/skydive-project/skydive/config"
 	shttp "github.com/skydive-project/skydive/graffiti/http"
 )
 
 type configAPI struct {
 	cfg *config.SkydiveConfig
+}
+
+func (c *configAPI) configGet(w http.ResponseWriter, r *auth.AuthenticatedRequest) {
+	vars := mux.Vars(&r.Request)
+	key := vars["key"]
+	if !rbac.Enforce(r.Username, "config", "read") {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	value := graph.NormalizeValue(c.cfg.Get(key))
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(value); err != nil {
+		logging.GetLogger().Warningf("Error while writing response: %s", err)
+	}
 }
 
 func (c *configAPI) registerEndpoints(r *shttp.Server, authBackend shttp.AuthenticationBackend) {
