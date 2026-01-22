@@ -170,3 +170,13 @@ func NewGremlinQueryHelper(restClient *shttp.RestClient) *GremlinQueryHelper {
 		GremlinQueryHelper: gclient.NewGremlinQueryHelper(restClient),
 	}
 }
+
+// NewGremlinQueryHelperFromConfig creates a new Gremlin query helper based on authentication based on configuration file
+func NewGremlinQueryHelperFromConfig(authOptions *shttp.AuthenticationOpts) (*GremlinQueryHelper, error) {
+	restClient, err := NewRestClientFromConfig(authOptions)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewGremlinQueryHelper(restClient), nil
+}
