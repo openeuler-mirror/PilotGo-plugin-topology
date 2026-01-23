@@ -3,6 +3,7 @@ package allinone
 import (
 	"fmt"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"strings"
 	"syscall"
@@ -104,5 +105,39 @@ var AllInOneCmd = &cobra.Command{
 			_, err := restClient.Request("GET", "/api", nil, nil)
 			return err
 		})
+		if err != nil {
+			logging.GetLogger().Errorf("Failed to start Skydive analyzer: %v", err)
+			os.Exit(1)
+		}
+
+		os.Setenv("SKYDIVE_ANALYZERS", fmt.Sprintf("%s:%d", addr, svcAddr.Port))
+		os.Setenv("SKYDIVE_LOGGING_FILE_PATH", logFile+"-agent"+extension)
+
+		agentAttr := &os.ProcAttr{
+			Files: []*os.File{os.Stdin, os.Stdout, os.Stderr},
+			Env:   os.Environ(),
+		}
+
+		agentArgs := make([]string, len(args))
+		copy(agentArgs, args)
+
+		agentProcess, err := os.StartProcess(skydivePath, append(agentArgs, "agent"), agentAttr)
+		if err != nil {
+			logging.GetLogger().Errorf("Can't start Skydive agent: %s. Please check you are root", err.Error())
+			os.Exit(1)
+		}
+
+		logging.GetLogger().Notice("Skydive All-in-One starting !")
+		ch := make(chan os.Signal)
+		signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
+		<-ch
+
+		analyzerProcess.Signal(os.Interrupt)
+		agentProcess.Signal(os.Interrupt)
+
+		analyzerProcess.Wait()
+		agentProcess.Wait()
+
+		logging.GetLogger().Notice("Skydive All-in-One stopped.")
 	},
 }
