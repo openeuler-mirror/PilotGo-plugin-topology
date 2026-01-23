@@ -120,3 +120,39 @@
 //   required: true
 //   type: string
 //
+// responses:
+//   200:
+//     description: {{ .Title }} deleted
+//   404:
+//     description: {{ .Title }} not found
+
+// swagger:operation PATCH /{{ .Resource }}/{id} modify{{ .Type }}
+//
+// Modify {{ .Article }} {{ .Name }}
+//
+// ---
+// summary: Modify {{ .Name }}
+//
+// tags:
+// - {{ .Title }}s
+//
+// produces:
+// - application/json
+//
+// schemes:
+// - http
+// - https
+//
+// parameters:
+// - name: JSON Patch
+//   in: body
+//   required: true
+//   type: string
+//   description: JSON Patch following RFC 6902
+//
+// responses:
+//   200:
+//     description: {{ .Title }} modified
+//   404:
+//     description: {{ .Title }} not found
+package {{.env.GOPACKAGE}}
