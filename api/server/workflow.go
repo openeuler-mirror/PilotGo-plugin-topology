@@ -136,6 +136,62 @@ func (w *WorkflowAPIHandler) executeWorkflow(resp http.ResponseWriter, r *auth.A
 	}
 }
 
+func (w *WorkflowAPIHandler) registerEndPoints(s *shttp.Server, authBackend shttp.AuthenticationBackend) {
+	// swagger:operation POST /workflow/{id}/call callWorkflow
+	//
+	// Call workflow
+	//
+	// ---
+	// summary: Call workflow
+	//
+	// tags:
+	// - Workflows
+	//
+	// consumes:
+	// - application/json
+	//
+	// produces:
+	// - application/json
+	//
+	// schemes:
+	// - http
+	// - https
+	//
+	// parameters:
+	//   - name: id
+	//     in: path
+	//     required: true
+	//     type: string
+	//
+	//   - name: params
+	//     in: body
+	//     required: true
+	//     schema:
+	//       $ref: '#/definitions/WorkflowCall'
+	//
+	// responses:
+	//   200:
+	//     description: Request accepted
+	//     schema:
+	//       $ref: '#/definitions/AnyValue'
+	//
+	//   400:
+	//     description: Error while executing workflow
+	//   404:
+	//     description: Unknown workflow
+
+	routes := []shttp.Route{
+		{
+			Name:        "WorkflowCall",
+			Method:      "POST",
+			Path:        "/api/workflow/{ID}/call",
+			HandlerFunc: w.executeWorkflow,
+		},
+	}
+
+	s.RegisterRoutes(routes, authBackend)
+}
+
 // RegisterWorkflowAPI registers a new workflow api handler
 func RegisterWorkflowAPI(apiServer *api.Server, authBackend shttp.AuthenticationBackend, runtime *js.Runtime) (*WorkflowAPIHandler, error) {
 	workflowAPIHandler := &WorkflowAPIHandler{
