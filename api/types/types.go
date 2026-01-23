@@ -4,6 +4,8 @@
 package types
 
 import (
+	"errors"
+
 	"github.com/skydive-project/skydive/graffiti/api/rest"
 	gtypes "github.com/skydive-project/skydive/graffiti/api/types"
 	"github.com/skydive-project/skydive/graffiti/graph"
@@ -114,3 +116,70 @@ func (e *EdgeRule) Validate() error {
 	edge := graph.CreateEdge(graph.GenID(), n1, n2, e.Metadata, graph.TimeUTC(), "", "")
 	return SchemaValidator.Validate("edge", edge)
 }
+
+// Node object
+// swagger:model
+// easyjson:skip
+type Node = gtypes.Node
+
+// NodeRule object
+//
+// Node rules allow the dynamic creation of nodes in the graph.
+//
+// easyjson:json
+// swagger:model
+type NodeRule struct {
+	// swagger:allOf
+	rest.BasicResource `yaml:",inline"`
+	// Node rule name
+	Name string `yaml:"Name"`
+	// Node rule description
+	Description string `yaml:"Description"`
+	// Metadata of the nodes to create
+	Metadata graph.Metadata `yaml:"Metadata"`
+	// 'create' to create nodes, 'update' to updates nodes
+	Action string `valid:"regexp=^(create|update)$" yaml:"Action"`
+	// Gremlin expression of the nodes to update
+	Query string `valid:"isGremlinOrEmpty" yaml:"Query"`
+}
+
+// GetName returns the resource name
+func (n *NodeRule) GetName() string {
+	return "NodeRule"
+}
+
+// Validate verifies the node rule does not create invalid node or change
+// important attributes of an existing node
+func (n *NodeRule) Validate() error {
+	switch n.Action {
+	case "create":
+		// TODO: we should modify the JSON schema so that we can validate only the metadata
+		node := graph.CreateNode(graph.GenID(), n.Metadata, graph.TimeUTC(), "", "")
+		return SchemaValidator.Validate("node", node)
+	case "update":
+		if n.Metadata["Type"] != nil || n.Metadata["Name"] != nil {
+			return errors.New("Name and Type fields can not be changed")
+		}
+	}
+	return nil
+}
+
+const (
+	// PIModeUniqPerNode use a unique packet identifier per source node
+	PIModeUniqPerNode = "unique"
+	// PIModeRandom use random packet identifier for each packet
+	PIModeRandom = "random"
+
+	// PITypeICMP4 icmpv4 packet
+	PITypeICMP4 = "icmp4"
+	// PITypeICMP6 icmpv6 packet
+	PITypeICMP6 = "icmp6"
+	// PITypeTCP4 ipv4 + tcp packet
+	PITypeTCP4 = "tcp4"
+	// PITypeTCP6 ipv6 + tcp packet
+	PITypeTCP6 = "tcp6"
+	// PITypeUDP4 ipv4 + udp packet
+	PITypeUDP4 = "udp4"
+	// PITypeUDP6 ipv6 + udp packet
+	PITypeUDP6 = "udp6"
+)
