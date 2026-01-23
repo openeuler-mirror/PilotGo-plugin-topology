@@ -5,6 +5,7 @@ package types
 
 import (
 	"errors"
+	"time"
 
 	"github.com/skydive-project/skydive/graffiti/api/rest"
 	gtypes "github.com/skydive-project/skydive/graffiti/api/types"
@@ -183,3 +184,58 @@ const (
 	// PITypeUDP6 ipv6 + udp packet
 	PITypeUDP6 = "udp6"
 )
+
+// PacketInjection packet injector API parameters
+// easyjson:json
+// swagger:model
+type PacketInjection struct {
+	// swagger:allOf
+	rest.BasicResource `yaml:",inline"`
+	Src                string `yaml:"Src"`
+	Dst                string `yaml:"Dst"`
+	SrcIP              string `valid:"isIPOrCIDR" yaml:"SrcIP"`
+	DstIP              string `valid:"isIPOrCIDR" yaml:"DstIP"`
+	SrcMAC             string `valid:"isMAC" yaml:"SrcMAC"`
+	DstMAC             string `valid:"isMAC" yaml:"DstMAC"`
+	SrcPort            uint16 `yaml:"SrcPort"`
+	DstPort            uint16 `yaml:"DstPort"`
+	Type               string `yaml:"Type"`
+	Payload            string `yaml:"Payload"`
+	ICMPID             uint16 `yaml:"ICMPID"`
+	Count              uint64 `yaml:"Count"`
+	Interval           uint64 `yaml:"Interval"`
+	Mode               string `yaml:"Mode"`
+	IncrementPayload   int64  `yaml:"IncrementPayload"`
+	StartTime          time.Time
+	Pcap               []byte `yaml:"Pcap"`
+	TTL                uint8  `yaml:"TTL"`
+}
+
+// GetName returns the resource name
+func (pi *PacketInjection) GetName() string {
+	return "PacketInjection"
+}
+
+// Validate verifies the packet injection type is supported
+func (pi *PacketInjection) Validate() error {
+	allowedTypes := map[string]bool{
+		PITypeICMP4: true,
+		PITypeICMP6: true,
+		PITypeTCP4:  true,
+		PITypeTCP6:  true,
+		PITypeUDP4:  true,
+		PITypeUDP6:  true,
+	}
+	if _, ok := allowedTypes[pi.Type]; !ok {
+		return errors.New("given type is not supported")
+	}
+
+	if pi.Mode != "" && pi.Mode != PIModeUniqPerNode && pi.Mode != PIModeRandom {
+		return errors.New("given mode is not supported")
+	}
+	return nil
+}
+
+func init() {
+	SchemaValidator = schema.NewJSONValidator()
+}
