@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/skydive-project/skydive/flow"
 	api "github.com/skydive-project/skydive/graffiti/api/server"
 	"github.com/skydive-project/skydive/graffiti/graph"
 	"github.com/skydive-project/skydive/graffiti/graph/traversal"
@@ -71,6 +72,31 @@ func dotMarshaller(step traversal.GraphTraversalStep, w io.Writer) error {
 		return nil
 	}
 	return errors.New("Only graph can be outputted as dot")
+}
+
+// pcapMarshaller outputs a RawPacketsTraversalStep as pcap trace
+func pcapMarshaller(res traversal.GraphTraversalStep, w io.Writer) error {
+	rawPacketsTraversal, ok := res.(*ge.RawPacketsTraversalStep)
+	if !ok {
+		return errors.New("Only RawPackets step result can be outputted as pcap")
+	}
+
+	values := rawPacketsTraversal.Values()
+	if len(values) == 0 {
+		return nil
+	}
+
+	pw := flow.NewPcapWriter(w)
+	for _, pf := range values {
+		m := pf.(map[string][]*flow.RawPacket)
+		for _, fr := range m {
+			if err := pw.WriteRawPackets(fr); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 // TopologyMarshallers hold the dot and pcap marshallers
