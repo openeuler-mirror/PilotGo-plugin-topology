@@ -2,8 +2,10 @@ package server
 
 import (
 	"errors"
+	"fmt"
 	"io"
 
+	api "github.com/skydive-project/skydive/graffiti/api/server"
 	"github.com/skydive-project/skydive/graffiti/graph"
 	"github.com/skydive-project/skydive/graffiti/graph/traversal"
 )
@@ -15,6 +17,53 @@ func shortID(s graph.Identifier) graph.Identifier {
 	return s
 }
 
+func graphToDot(w io.Writer, g *graph.Graph) {
+	g.RLock()
+	defer g.RUnlock()
+
+	w.Write([]byte("digraph g {\n"))
+
+	nodeMap := make(map[graph.Identifier]*graph.Node)
+	for _, n := range g.GetNodes(nil) {
+		nodeMap[n.ID] = n
+		name, _ := n.GetFieldString("Name")
+		title := fmt.Sprintf("%s-%s", name, shortID(n.ID))
+		label := title
+		for k, v := range n.Metadata {
+			switch k {
+			case "Type", "IfIndex", "State", "TID", "IPV4", "IPV6":
+				label += fmt.Sprintf("\\n%s = %v", k, v)
+			}
+		}
+		w.Write([]byte(fmt.Sprintf("\"%s\" [label=\"%s\"]\n", title, label)))
+	}
+
+	for _, e := range g.GetEdges(nil) {
+		parent := nodeMap[e.Parent]
+		child := nodeMap[e.Child]
+		if parent == nil || child == nil {
+			continue
+		}
+
+		childName, _ := child.GetFieldString("Name")
+		parentName, _ := parent.GetFieldString("Name")
+		relationType, _ := e.GetFieldString("RelationType")
+		linkLabel, linkType, direction := "", "->", "forward"
+		switch relationType {
+		case "":
+		case "layer2":
+			direction = "both"
+			fallthrough
+		default:
+			linkLabel = fmt.Sprintf(" [label=%s,dir=%s]\n", relationType, direction)
+		}
+		link := fmt.Sprintf("\"%s-%s\" %s \"%s-%s\"%s", parentName, shortID(parent.ID), linkType, childName, shortID(child.ID), linkLabel)
+		w.Write([]byte(link))
+	}
+
+	w.Write([]byte("}"))
+}
+
 // dotMarshaller outputs a GraversalStep as dot
 func dotMarshaller(step traversal.GraphTraversalStep, w io.Writer) error {
 	if graphTraversal, ok := step.(*traversal.GraphTraversal); ok {
@@ -22,4 +71,10 @@ func dotMarshaller(step traversal.GraphTraversalStep, w io.Writer) error {
 		return nil
 	}
 	return errors.New("Only graph can be outputted as dot")
+}
+
+// TopologyMarshallers hold the dot and pcap marshallers
+var TopologyMarshallers = api.TopologyMarshallers{
+	"text/vnd.graphviz":            dotMarshaller,
+	"application/vnd.tcpdump.pcap": pcapMarshaller,
 }
