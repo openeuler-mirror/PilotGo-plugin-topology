@@ -1,0 +1,33 @@
+{
+  "securityDefinitions": {
+    "basicAuth": {
+      "type": "basic"
+    },
+    "authToken": {
+      "type": "apiKey",
+      "name": "X-Auth-Token",
+      "in": "header"
+    }
+  },
+  "security": [
+    {
+      "basicAuth": []
+    },
+    {
+      "authToken": []
+    }
+  ],
+  "x-tagGroups": [ {
+    "name": "Misc",
+    "tags": [ "Login", "API Info", "Config", "Status" ]
+  }, {
+    "name": "Topology Management",
+    "tags": [ "Topology", "Node rules", "Edge rules" ]
+  }, {
+    "name": "Flow Management",
+    "tags": [ "Captures", "Injections", "PCAP" ]
+  }, {
+    "name": "Automation",
+    "tags": [ "Alerts", "Workflows" ]
+  } ]
+}
