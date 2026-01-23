@@ -1,11 +1,18 @@
 package server
 
 import (
+	"encoding/json"
 	"fmt"
+	"net/http"
 
+	"atomgit.com/openeuler/PilotGo-plugin-topology/graffiti/rbac"
+	auth "github.com/abbot/go-http-auth"
+	"github.com/gorilla/mux"
 	"github.com/skydive-project/dede/statics"
 	"github.com/skydive-project/skydive/graffiti/api/rest"
+	api "github.com/skydive-project/skydive/graffiti/api/server"
 	"github.com/skydive-project/skydive/graffiti/api/types"
+	shttp "github.com/skydive-project/skydive/graffiti/http"
 	"github.com/skydive-project/skydive/graffiti/js"
 	"github.com/skydive-project/skydive/graffiti/logging"
 	"gopkg.in/yaml.v2"
@@ -86,4 +93,59 @@ func (w *WorkflowAPIHandler) Index() map[string]rest.Resource {
 		}
 	}
 	return resources
+}
+
+func (w *WorkflowAPIHandler) executeWorkflow(resp http.ResponseWriter, r *auth.AuthenticatedRequest) {
+	if !rbac.Enforce(r.Username, "workflow.call", "write") {
+		http.Error(resp, http.StatusText(http.StatusUnauthorized), http.StatusMethodNotAllowed)
+		return
+	}
+
+	decoder := json.NewDecoder(r.Body)
+	var wfCall types.WorkflowCall
+	if err := decoder.Decode(&wfCall); err != nil {
+		http.Error(resp, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	vars := mux.Vars(&r.Request)
+
+	resource, ok := w.Get(vars["ID"])
+	if !ok {
+		http.Error(resp, fmt.Sprintf("no workflow '%s' was found", vars["ID"]), http.StatusNotFound)
+		return
+	}
+	workflow := resource.(*types.Workflow)
+
+	ottoResult, err := w.runtime.ExecFunction(workflow.Source, wfCall.Params...)
+	if err != nil {
+		http.Error(resp, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	result, err := ottoResult.Export()
+	if err != nil {
+		http.Error(resp, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	resp.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	resp.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(resp).Encode(result); err != nil {
+		panic(err)
+	}
+}
+
+// RegisterWorkflowAPI registers a new workflow api handler
+func RegisterWorkflowAPI(apiServer *api.Server, authBackend shttp.AuthenticationBackend, runtime *js.Runtime) (*WorkflowAPIHandler, error) {
+	workflowAPIHandler := &WorkflowAPIHandler{
+		BasicAPIHandler: rest.BasicAPIHandler{
+			ResourceHandler: &WorkflowResourceHandler{},
+			EtcdClient:      apiServer.EtcdClient,
+		},
+		runtime: runtime,
+	}
+	apiServer.RegisterAPIHandler(workflowAPIHandler, authBackend)
+	workflowAPIHandler.registerEndPoints(apiServer.HTTPServer, authBackend)
+	return workflowAPIHandler, nil
 }
