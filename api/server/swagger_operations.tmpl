@@ -58,3 +58,65 @@
 //   404:
 //     description: {{ .Title }} not found
 //
+
+// swagger:operation POST /{{ .Resource }} create{{ .Type }}
+//
+// Create {{ .Article }} {{ .Name }}
+//
+// ---
+// summary: Create {{ .Name }}
+//
+// tags:
+// - {{ .Title }}s
+//
+// consumes:
+// - application/json
+// - application/yaml
+//
+// produces:
+// - application/json
+//
+// schemes:
+// - http
+// - https
+//
+// parameters:
+// - name: {{ .Name }}
+//   in: body
+//   required: true
+//   schema:
+//     $ref: '#/definitions/{{ .Type }}'
+//
+// responses:
+//   200:
+//     description: {{ .Title }} created
+//     schema:
+//       $ref: '#/definitions/{{ .Type }}'
+//   400:
+//     description: create error
+//   409:
+//     description: duplicated {{ .Name }}
+
+// swagger:operation DELETE /{{ .Resource }}/{id} delete{{ .Type }}
+//
+// Delete {{ .Article }} {{ .Name }}
+//
+// ---
+// summary: Delete {{ .Name }}
+//
+// tags:
+// - {{ .Title }}s
+//
+// produces:
+// - application/json
+//
+// schemes:
+// - http
+// - https
+//
+// parameters:
+// - name: id
+//   in: path
+//   required: true
+//   type: string
+//
