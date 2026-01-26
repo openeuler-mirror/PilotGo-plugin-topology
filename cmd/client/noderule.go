@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"os"
 
+	api "github.com/skydive-project/skydive/api/types"
 	"github.com/skydive-project/skydive/graffiti/graph"
 	"github.com/skydive-project/skydive/graffiti/logging"
 	"github.com/skydive-project/skydive/validator"
+
 	"github.com/spf13/cobra"
 )
 
@@ -95,6 +97,46 @@ var NodeRuleGet = &cobra.Command{
 	},
 }
 
+// NodeRuleList skydive node list command
+var NodeRuleList = &cobra.Command{
+	Use:          "list",
+	Short:        "list",
+	Long:         "list",
+	SilenceUsage: false,
+
+	Run: func(cmd *cobra.Command, args []string) {
+		var nodes map[string]api.NodeRule
+		if err := CrudClient.List("noderule", &nodes); err != nil {
+			logging.GetLogger().Error(err.Error())
+			os.Exit(1)
+		}
+		printJSON(nodes)
+	},
+}
+
+// NodeRuleDelete skydive node delete command
+var NodeRuleDelete = &cobra.Command{
+	Use:          "delete",
+	Short:        "delete",
+	Long:         "delete",
+	SilenceUsage: false,
+
+	PreRun: func(cmd *cobra.Command, args []string) {
+		if len(args) == 0 {
+			cmd.Usage()
+			os.Exit(1)
+		}
+	},
+
+	Run: func(cmd *cobra.Command, args []string) {
+		for _, id := range args {
+			if err := CrudClient.Delete("noderule", id); err != nil {
+				logging.GetLogger().Error(err.Error())
+			}
+		}
+	},
+}
+
 func addCreateNodeRuleFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&name, "name", "", "", "rule name")
 	cmd.Flags().StringVarP(&description, "description", "", "", "rule description")
@@ -103,4 +145,13 @@ func addCreateNodeRuleFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&metadata, "metadata", "", "", "node metadata, key value pairs. 'k1=v1, k2=v2'")
 	cmd.Flags().StringVarP(&query, "query", "", "", "gremlin query of the nodes to update")
 	cmd.Flags().StringVarP(&action, "action", "", "", "action: create or update")
+}
+
+func init() {
+	NodeRuleCmd.AddCommand(NodeRuleCreate)
+	NodeRuleCmd.AddCommand(NodeRuleList)
+	NodeRuleCmd.AddCommand(NodeRuleGet)
+	NodeRuleCmd.AddCommand(NodeRuleDelete)
+
+	addCreateNodeRuleFlags(NodeRuleCreate)
 }
