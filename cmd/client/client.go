@@ -7,9 +7,11 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/skydive-project/skydive/config"
 	gclient "github.com/skydive-project/skydive/graffiti/cmd/client"
 	"github.com/skydive-project/skydive/graffiti/http"
 	"github.com/skydive-project/skydive/graffiti/logging"
+	"github.com/skydive-project/skydive/statics"
 )
 
 var (
@@ -44,4 +46,34 @@ func RegisterClientCommands(cmd *cobra.Command) {
 	cmd.AddCommand(PacketInjectorCmd)
 	cmd.AddCommand(PcapCmd)
 	cmd.AddCommand(StatusCmd)
+}
+
+func init() {
+	ClientCmd.Short = "Skydive client"
+	ClientCmd.Long = "Skydive client"
+
+	persistentPreRun := ClientCmd.PersistentPreRun
+	ClientCmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
+		cmd.Root().PersistentPreRun(cmd.Root(), args)
+		if analyzerAddr == "" {
+			analyzerAddr = "127.0.0.1:8082"
+		}
+
+		gclient.HubAddress = analyzerAddr
+		persistentPreRun(cmd, args)
+		CrudClient = gclient.CrudClient
+	}
+
+	gclient.AuthenticationOpts.Username = os.Getenv("SKYDIVE_USERNAME")
+	gclient.AuthenticationOpts.Password = os.Getenv("SKYDIVE_PASSWORD")
+
+	ClientCmd.PersistentFlags().StringVarP(&analyzerAddr, "analyzer", "", os.Getenv("SKYDIVE_ANALYZER"), "analyzer address")
+
+	config.BindPFlag("tls.ca_cert", ClientCmd.PersistentFlags().Lookup("cacert"))
+	config.BindPFlag("tls.client_cert", ClientCmd.PersistentFlags().Lookup("cert"))
+	config.BindPFlag("tls.client_key", ClientCmd.PersistentFlags().Lookup("key"))
+
+	gclient.ShellAssets = &statics.Assets
+
+	RegisterClientCommands(ClientCmd)
 }
