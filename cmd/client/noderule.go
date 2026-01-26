@@ -1,9 +1,13 @@
 package client
 
 import (
+	"errors"
+	"fmt"
 	"os"
 
+	"github.com/skydive-project/skydive/graffiti/graph"
 	"github.com/skydive-project/skydive/graffiti/logging"
+	"github.com/skydive-project/skydive/validator"
 	"github.com/spf13/cobra"
 )
 
@@ -23,6 +27,48 @@ var NodeRuleCmd = &cobra.Command{
 	Short:        "node-rule",
 	Long:         "node-rule",
 	SilenceUsage: false,
+}
+
+// NodeRuleCreate skydive node create command
+var NodeRuleCreate = &cobra.Command{
+	Use:          "create",
+	Short:        "create",
+	Long:         "create",
+	SilenceUsage: false,
+
+	Run: func(cmd *cobra.Command, args []string) {
+		m, err := graph.DefToMetadata(metadata, graph.Metadata{})
+		if err != nil {
+			exitOnError(err)
+		}
+
+		if action == "create" {
+			if nodeName == "" || nodeType == "" {
+				exitOnError(errors.New("Both --node-name and --node-type are required for 'create' node rules"))
+			}
+
+			m["Name"] = nodeName
+			m["Type"] = nodeType
+		}
+
+		nodeRule := &api.NodeRule{
+			Name:        name,
+			Description: description,
+			Metadata:    m,
+			Query:       query,
+			Action:      action,
+		}
+
+		if err = validator.Validate("noderule", nodeRule); err != nil {
+			exitOnError(fmt.Errorf("Error while validating node rule: %s", err))
+		}
+
+		if err = CrudClient.Create("noderule", &nodeRule, nil); err != nil {
+			exitOnError(err)
+		}
+
+		printJSON(nodeRule)
+	},
 }
 
 // NodeRuleGet skydive node get command
@@ -47,4 +93,14 @@ var NodeRuleGet = &cobra.Command{
 		}
 		printJSON(&node)
 	},
+}
+
+func addCreateNodeRuleFlags(cmd *cobra.Command) {
+	cmd.Flags().StringVarP(&name, "name", "", "", "rule name")
+	cmd.Flags().StringVarP(&description, "description", "", "", "rule description")
+	cmd.Flags().StringVarP(&nodeName, "node-name", "", "", "node name")
+	cmd.Flags().StringVarP(&nodeType, "node-type", "", "", "node type")
+	cmd.Flags().StringVarP(&metadata, "metadata", "", "", "node metadata, key value pairs. 'k1=v1, k2=v2'")
+	cmd.Flags().StringVarP(&query, "query", "", "", "gremlin query of the nodes to update")
+	cmd.Flags().StringVarP(&action, "action", "", "", "action: create or update")
 }
