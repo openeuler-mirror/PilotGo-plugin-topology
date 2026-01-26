@@ -7,10 +7,14 @@ import (
 	"os"
 	"time"
 
-	"github.com/skydive-project/skydive/graffiti/http"
-	"github.com/skydive-project/skydive/packetinjector"
-	"github.com/skydive-project/skydive/validator"
 	"github.com/spf13/cobra"
+
+	api "github.com/skydive-project/skydive/api/types"
+	"github.com/skydive-project/skydive/graffiti/http"
+	"github.com/skydive-project/skydive/graffiti/logging"
+	"github.com/skydive-project/skydive/packetinjector"
+	pi "github.com/skydive-project/skydive/packetinjector"
+	"github.com/skydive-project/skydive/validator"
 )
 
 var (
@@ -175,4 +179,69 @@ var PacketInjectionCreate = &cobra.Command{
 
 		printJSON(packet)
 	},
+}
+
+// PacketInjectionGet describes the command to retrieve a packet injection
+var PacketInjectionGet = &cobra.Command{
+	Use:   "get",
+	Short: "get packet injection",
+	Long:  "get packet injection",
+	PreRun: func(cmd *cobra.Command, args []string) {
+		if len(args) == 0 {
+			cmd.Usage()
+			os.Exit(1)
+		}
+	},
+	Run: func(cmd *cobra.Command, args []string) {
+		var injection api.PacketInjection
+		if err := CrudClient.Get("injectpacket", args[0], &injection); err != nil {
+			exitOnError(err)
+		}
+		printJSON(&injection)
+	},
+}
+
+// PacketInjectionList describes the command to list all the packet injections
+var PacketInjectionList = &cobra.Command{
+	Use:   "list",
+	Short: "list packet injections",
+	Long:  "list packet injections",
+	Run: func(cmd *cobra.Command, args []string) {
+		var injections map[string]api.PacketInjection
+		if err := CrudClient.List("injectpacket", &injections); err != nil {
+			exitOnError(err)
+		}
+		printJSON(injections)
+	},
+}
+
+// PacketInjectionDelete describes the command to delete a packet injection
+var PacketInjectionDelete = &cobra.Command{
+	Use:   "delete [injection]",
+	Short: "Delete injection",
+	Long:  "Delete packet injection",
+	PreRun: func(cmd *cobra.Command, args []string) {
+		if len(args) == 0 {
+			cmd.Usage()
+			os.Exit(1)
+		}
+	},
+	Run: func(cmd *cobra.Command, args []string) {
+		for _, id := range args {
+			if err := CrudClient.Delete("injectpacket", id); err != nil {
+				logging.GetLogger().Error(err)
+			}
+		}
+	},
+}
+
+func init() {
+	PacketInjectorCmd.AddCommand(PacketInjectionList)
+	PacketInjectorCmd.AddCommand(PacketInjectionGet)
+	PacketInjectorCmd.AddCommand(PacketInjectionDelete)
+	PacketInjectorCmd.AddCommand(PacketInjectionCreate)
+
+	PacketInjectionCreate.Flags().StringVarP(&srcNode, "src", "", "", "source node gremlin expression (mandatory)")
+	PacketInjectionCreate.Flags().StringVarP(&dstNode, "dst", "", "", "destination node gremlin expression")
+	AddInjectPacketInjectFlags(PacketInjectionCreate)
 }
