@@ -5,7 +5,9 @@ import (
 	"io/ioutil"
 	"net"
 	"os"
+	"time"
 
+	"github.com/skydive-project/skydive/graffiti/http"
 	"github.com/skydive-project/skydive/packetinjector"
 	"github.com/skydive-project/skydive/validator"
 	"github.com/spf13/cobra"
@@ -111,4 +113,66 @@ var PacketInjectorCmd = &cobra.Command{
 	Long:         "Inject packets",
 	Aliases:      []string{"inject-packet"},
 	SilenceUsage: false,
+}
+
+// PacketInjectionCreate describes the command to create a packet injection
+var PacketInjectionCreate = &cobra.Command{
+	Use:          "create",
+	Short:        "create packet injection",
+	Long:         "create packet injection",
+	SilenceUsage: false,
+	Run: func(cmd *cobra.Command, args []string) {
+		request, err := GetPacketInjectRequest()
+		if err != nil {
+			exitOnError(err)
+		}
+
+		packet := &api.PacketInjection{
+			Src:              srcNode,
+			Dst:              dstNode,
+			SrcPort:          request.SrcPort,
+			DstPort:          request.DstPort,
+			Type:             request.Type,
+			Payload:          request.Payload,
+			Pcap:             request.Pcap,
+			ICMPID:           request.ICMPID,
+			Count:            request.Count,
+			Interval:         request.Interval,
+			Mode:             request.Mode,
+			IncrementPayload: request.IncrementPayload,
+			TTL:              request.TTL,
+		}
+
+		if request.SrcIP != nil {
+			packet.SrcIP = request.SrcIP.String()
+		}
+
+		if request.DstIP != nil {
+			packet.DstIP = request.DstIP.String()
+		}
+
+		if request.SrcMAC != nil {
+			packet.SrcMAC = request.SrcMAC.String()
+		}
+
+		if request.DstMAC != nil {
+			packet.DstMAC = request.DstMAC.String()
+		}
+
+		if err = validator.Validate("packetinjection", packet); err != nil {
+			exitOnError(err)
+		}
+
+		ttl := 5 * time.Second
+		if packet.Interval != 0 {
+			ttl = time.Duration(packet.Interval*packet.Count)*time.Millisecond + 5*time.Second
+		}
+		createOpts := &http.CreateOptions{TTL: ttl}
+
+		if err := CrudClient.Create("injectpacket", &packet, createOpts); err != nil {
+			exitOnError(err)
+		}
+
+		printJSON(packet)
+	},
 }
