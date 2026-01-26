@@ -65,6 +65,29 @@ var EdgeRuleCreate = &cobra.Command{
 	},
 }
 
+// EdgeRuleGet skydive edge get command
+var EdgeRuleGet = &cobra.Command{
+	Use:          "get",
+	Short:        "get",
+	Long:         "get",
+	SilenceUsage: false,
+
+	PreRun: func(cmd *cobra.Command, args []string) {
+		if len(args) == 0 {
+			cmd.Usage()
+			os.Exit(1)
+		}
+	},
+
+	Run: func(cmd *cobra.Command, args []string) {
+		var edge api.EdgeRule
+		if err := CrudClient.Get("edgerule", args[0], &edge); err != nil {
+			exitOnError(err)
+		}
+		printJSON(&edge)
+	},
+}
+
 // EdgeRuleList skydive edge list command
 var EdgeRuleList = &cobra.Command{
 	Use:          "list",
@@ -79,6 +102,38 @@ var EdgeRuleList = &cobra.Command{
 		}
 		printJSON(edges)
 	},
+}
+
+// EdgeRuleDelete skydive edge delete command
+var EdgeRuleDelete = &cobra.Command{
+	Use:          "delete",
+	Short:        "delete",
+	Long:         "delete",
+	SilenceUsage: false,
+
+	PreRun: func(cmd *cobra.Command, args []string) {
+		if len(args) == 0 {
+			cmd.Usage()
+			os.Exit(1)
+		}
+	},
+
+	Run: func(cmd *cobra.Command, args []string) {
+		for _, id := range args {
+			if err := CrudClient.Delete("edgerule", id); err != nil {
+				logging.GetLogger().Error(err.Error())
+			}
+		}
+	},
+}
+
+func addCreateEdgeRuleFlags(cmd *cobra.Command) {
+	cmd.Flags().StringVarP(&name, "name", "", "", "rule name")
+	cmd.Flags().StringVarP(&description, "description", "", "", "rule description")
+	cmd.Flags().StringVarP(&src, "src", "", "", "src node gremlin expression")
+	cmd.Flags().StringVarP(&dst, "dst", "", "", "dst node gremlin expression")
+	cmd.Flags().StringVarP(&relationType, "relationtype", "", "", "relation type of the link")
+	cmd.Flags().StringVarP(&metadata, "metadata", "", "", "edge metadata")
 }
 
 func init() {
