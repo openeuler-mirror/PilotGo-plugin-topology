@@ -1,6 +1,13 @@
 package client
 
 import (
+	"fmt"
+	"io/ioutil"
+	"net"
+	"os"
+
+	"github.com/skydive-project/skydive/packetinjector"
+	"github.com/skydive-project/skydive/validator"
 	"github.com/spf13/cobra"
 )
 
@@ -41,6 +48,60 @@ func AddInjectPacketInjectFlags(cmd *cobra.Command) {
 	cmd.Flags().Uint64VarP(&count, "count", "", 1, "number of packets to be generated")
 	cmd.Flags().Uint64VarP(&interval, "interval", "", 0, "wait interval milliseconds between sending each packet")
 	cmd.Flags().Uint8VarP(&ttl, "ttl", "", 64, "IP time-to-live header")
+}
+
+// GetPacketInjectRequest returns a packet injection request parsed from the command line flags
+func GetPacketInjectRequest() (*pi.PacketInjectionRequest, error) {
+	var pcapContent []byte
+	if pcap != "" {
+		f, err := os.Open(pcap)
+		if err != nil {
+			return nil, fmt.Errorf("Failed to open pcap file, err: %s", err)
+		}
+
+		pcapContent, err = ioutil.ReadAll(f)
+		if err != nil {
+			return nil, fmt.Errorf("Failed to read pcap file, err: %s", err)
+		}
+	}
+
+	var err error
+	var sMAC, dMAC net.HardwareAddr
+	if srcMAC != "" {
+		if sMAC, err = net.ParseMAC(srcMAC); err != nil {
+			return nil, fmt.Errorf("Source MAC parse error, err: %s", err)
+		}
+	}
+
+	if dstMAC != "" {
+		if dMAC, err = net.ParseMAC(dstMAC); err != nil {
+			return nil, fmt.Errorf("Destination MAC parse error, err: %s", err)
+		}
+	}
+
+	request := &packetinjector.PacketInjectionRequest{
+		SrcIP:            net.ParseIP(srcIP),
+		SrcMAC:           sMAC,
+		SrcPort:          srcPort,
+		DstIP:            net.ParseIP(dstIP),
+		DstMAC:           dMAC,
+		DstPort:          dstPort,
+		Type:             packetType,
+		Count:            count,
+		ICMPID:           id,
+		Interval:         interval,
+		Mode:             mode,
+		IncrementPayload: incrementPayload,
+		Payload:          payload,
+		Pcap:             pcapContent,
+		TTL:              ttl,
+	}
+
+	if err := validator.Validate("packetinjection", request); err != nil {
+		return nil, err
+	}
+
+	return request, nil
 }
 
 // PacketInjectorCmd skydive inject-packet root command
