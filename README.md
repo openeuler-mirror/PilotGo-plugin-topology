@@ -25,7 +25,7 @@ System application architecture detection.
 work directory: PilotGo-plugin-topology/
 1. 拉取仓库代码
 ```bash
-$ git clone https://gitee.com/openeuler/PilotGo-plugin-topology.git
+$ git clone https://atomgit.com/openeuler/PilotGo-plugin-topology.git
 ```
 2. 修改配置文件
 ```bash
@@ -62,12 +62,3 @@ $ ./topoagent -conf /path/to/topo_agent.yaml
 - gitee.com/openeuler/PilotGo-plugin-topology/server/logger 日志管理模块(继承自PilotGo plugin SDK)
 - gitee.com/openeuler/PilotGo-plugin-topology/server/pluginclient 插件客户端模块(继承自PilotGo plugin SDK)
 - gitee.com/openeuler/PilotGo-plugin-topology/server/signal 系统信号处理模块，包含进程终止信号
-
-#### 特技
-
-1.  使用 Readme\_XXX.md 来支持不同的语言，例如 Readme\_en.md, Readme\_zh.md
-2.  Gitee 官方博客 [blog.gitee.com](https://blog.gitee.com)
-3.  你可以 [https://gitee.com/explore](https://gitee.com/explore) 这个地址来了解 Gitee 上的优秀开源项目
-4.  [GVP](https://gitee.com/gvp) 全称是 Gitee 最有价值开源项目，是综合评定出的优秀开源项目
-5.  Gitee 官方提供的使用手册 [https://gitee.com/help](https://gitee.com/help)
-6.  Gitee 封面人物是一档用来展示 Gitee 会员风采的栏目 [https://gitee.com/gitee-stars/](https://gitee.com/gitee-stars/)
