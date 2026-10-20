@@ -5,8 +5,8 @@ Version:        1.0.1
 Release:        4
 Summary:        system application architecture detection plugin for PilotGo
 License:        MulanPSL-2.0
-URL:            https://gitee.com/openeuler/PilotGo-plugin-topology
-Source0:        https://gitee.com/src-openeuler/PilotGo-plugin-topology/%{name}-%{version}.tar.gz
+URL:            https://atomgit.com/openeuler/PilotGo-plugin-topology
+Source0:        https://atomgit.com/src-openeuler/PilotGo-plugin-topology/%{name}-%{version}.tar.gz
 # tar -xvf Source0
 # cd %{name}-%{version}/web/
 # run 'yarn install and yarn build' in it
