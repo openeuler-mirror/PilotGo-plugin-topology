@@ -80,7 +80,7 @@ func readConfig(file string, config interface{}) error {
 
 	err = yaml.Unmarshal(bytes, config)
 	if err != nil {
-		err = errors.Errorf("yaml Unmarshal %s failed", string(bytes))
+		err = errors.Errorf("yaml Unmarshal %s failed: %s", file, err.Error())
 		return err
 	}
 	return nil
