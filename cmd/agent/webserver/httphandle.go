@@ -56,6 +56,7 @@ func ContainerListHandle(ctx *gin.Context) {
 		err = errors.Wrap(err, "")
 		global.ERManager.ErrorTransmit("webserver", "error", err, false, true)
 		response.Fail(ctx, nil, errors.Cause(err).Error())
+		return
 	}
 
 	response.Success(ctx, containers, "success")
